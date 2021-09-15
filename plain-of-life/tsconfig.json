@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "lib": ["es2015"],
+        "module": "commonjs",
+//        "declaration": true, // Needed to include types if building a package
+        "outDir": "./dist",
+        "sourceMap": true,
+        "strict": true,
+        "target": "es2020",
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+//        "node_modules",
+        "**/__tests__/*"
+    ]
+}
