@@ -1,5 +1,6 @@
-export function sayHello(): void {
-  console.log('Hello');
+export function sayHello(): string {
+  console.log('Hello')
+  return 'Hello'
 }
 
-sayHello();
+sayHello()
