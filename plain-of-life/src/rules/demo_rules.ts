@@ -35,4 +35,3 @@ export class DemoRules2 extends Rules<DemoRules> {
     return { owner: null }
   }
 }
-

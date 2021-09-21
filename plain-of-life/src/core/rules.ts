@@ -14,36 +14,36 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
    * @param height of the plain
    * @param seedCell the one and only cell life starts with
    */
-//   constructor(width: number, height: number, seedCell: Cell)
-//   constructor(serializableRules: SerializablePlainOfLife<E>['rules'])
-//   constructor(widthOrSR: number | SerializablePlainOfLife<E>['rules'], height?: number, seedCell?: Cell) {
-//     if( typeof widthOrSR === 'number'){
-//         if( typeof height === 'undefined'  ||  typeof seedCell === 'undefined' ) {
-//             throw new Error('Not supported combination of arguments')
-//         }
-//         const width = widthOrSR
-        
-//         const posX = width / 2
-//         const posY = height / 2
-//         this.plain = new Plain<E>(this, width, height)
-//         this.firstCellRecord = new CellRecord<E>(this) as IntCellRecord<E>
-//         this.firstCellRecord.initSeedCellRecord(this.plain, seedCell, posX, posY)
-//         this.plain.getAtInt(posX, posY).addCellRecord(this.firstCellRecord)
+  //   constructor(width: number, height: number, seedCell: Cell)
+  //   constructor(serializableRules: SerializablePlainOfLife<E>['rules'])
+  //   constructor(widthOrSR: number | SerializablePlainOfLife<E>['rules'], height?: number, seedCell?: Cell) {
+  //     if( typeof widthOrSR === 'number'){
+  //         if( typeof height === 'undefined'  ||  typeof seedCell === 'undefined' ) {
+  //             throw new Error('Not supported combination of arguments')
+  //         }
+  //         const width = widthOrSR
 
-//     }
-//     else if( typeof widthOrSR === 'object'){
-//         if( typeof height !== 'undefined'  ||  typeof seedCell !== 'undefined' ) {
-//             throw new Error('Not supported combination of arguments')
-//         }
-//         this.fromSerializable( widthOrSR )        
-//      }
-//      else {
-//         throw new Error('Ups, shall be unreachable')
-//      }
-//   }
+  //         const posX = width / 2
+  //         const posY = height / 2
+  //         this.plain = new Plain<E>(this, width, height)
+  //         this.firstCellRecord = new CellRecord<E>(this) as IntCellRecord<E>
+  //         this.firstCellRecord.initSeedCellRecord(this.plain, seedCell, posX, posY)
+  //         this.plain.getAtInt(posX, posY).addCellRecord(this.firstCellRecord)
+
+  //     }
+  //     else if( typeof widthOrSR === 'object'){
+  //         if( typeof height !== 'undefined'  ||  typeof seedCell !== 'undefined' ) {
+  //             throw new Error('Not supported combination of arguments')
+  //         }
+  //         this.fromSerializable( widthOrSR )
+  //      }
+  //      else {
+  //         throw new Error('Ups, shall be unreachable')
+  //      }
+  //   }
 
   constructor() {}
- 
+
   init(width: number, height: number, Cell: new () => Cell): void {
     const posX = width / 2
     const posY = height / 2
@@ -57,11 +57,11 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
     this.plain = new Plain<E>(this, serializableRules.plainWidth, serializableRules.plainHeight)
   }
 
-  toSerializable( serializableRules: SerializablePlainOfLife<E>['rules'] ): void {
+  toSerializable(serializableRules: SerializablePlainOfLife<E>['rules']): void {
     serializableRules['plainWidth'] = this.plain.width
     serializableRules['plainHeight'] = this.plain.height
-    
-//    return serializable
+
+    //    return serializable
   }
 
   /**
@@ -110,7 +110,6 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
    * at plain field level
    */
   abstract getPlainFieldExtension(): Record<string, unknown>
-
 }
 
 /**
@@ -149,16 +148,20 @@ class Plain<E extends ExtensionProvider> {
   /**
    * Get the width of the plain
    */
-  get width() {return this._width}
+  get width() {
+    return this._width
+  }
 
   /**
    * Get the height of the plain
    */
-  get height() {return this._height}
+  get height() {
+    return this._height
+  }
 
   /**
    * The modulo function working also for negative numbers as needed for a torus topography:
-   * 
+   *
    * ...-3%3=0  -2%3=1  -1%3=2  0%3=0  1%3=1  2%3=2  3%3=0  4%3=1...
    */
   static modulo(n: number, mod: number): number {
@@ -181,23 +184,20 @@ type IntPlainField<E extends ExtensionProvider> = PlainField<E> & ReturnType<E['
  * External plain fields can be used safely outside this module by omitting critical properties that could break the
  * internal structure when misused from outside
  */
-type ExtPlainField<E extends ExtensionProvider> = Omit<
-  IntPlainField<E>,
-  'addCellRecord' | 'removeCellRecord'
->
+type ExtPlainField<E extends ExtensionProvider> = Omit<IntPlainField<E>, 'addCellRecord' | 'removeCellRecord'>
 
 export { ExtPlainField as PlainField }
 
 /**
  * The plain field class - not for direct usage:
- * 
+ *
  * Within the module {@link IntPlainField} shall be used
- * 
+ *
  * Outside the module {@link ExtPlainField} shall be used
- * 
+ *
  * Adding or removing cell records, consistency with the cell record itself has to be ensured. For example
  * the cell record holds the x and y coordinated where it is located on the plain.
- * 
+ *
  */
 class PlainField<E extends ExtensionProvider> {
   private cellRecords: IntCellRecord<E>[] = []
@@ -212,7 +212,7 @@ class PlainField<E extends ExtensionProvider> {
 
   /**
    * Add a cell record to the plain field.
-   * 
+   *
    * For module internal use only
    */
   addCellRecord(toAdd: IntCellRecord<E>): void {
@@ -221,7 +221,7 @@ class PlainField<E extends ExtensionProvider> {
 
   /**
    * Remove a cell record from the plain field.
-   * 
+   *
    * For module internal use only
    */
   removeCellRecord(toRemove: IntCellRecord<E>): void {
@@ -231,7 +231,8 @@ class PlainField<E extends ExtensionProvider> {
   /**
    * Get all cell records located on the plain field
    */
-  getCellRecords(): Readonly<ExtCellRecord<E>[]> { // For usage outside the module, thus returning ExtCellRecord
+  getCellRecords(): Readonly<ExtCellRecord<E>[]> {
+    // For usage outside the module, thus returning ExtCellRecord
     return this.cellRecords
   }
 }
@@ -265,11 +266,11 @@ export class CellRecords<E extends ExtensionProvider> {
 
 /**
  * The cell record - not for direct usage:
- * 
+ *
  * Within the module {@link IntCellRecord} shall be used
- * 
+ *
  * Outside the module {@link ExtCellRecord} shall be used
- * 
+ *
  * Cell records form a cyclic list. Starting from a seed record {@link makeChild} inserts the child into the cycle, {@link die}
  * removes the child from the cycle. The removed child still points to it's former successor so that it's possible to re-enter
  * the cycle via .next from a removed child. That's important if you somewhere hold a cell record and this cell record dies.
@@ -291,12 +292,12 @@ class CellRecord<E extends ExtensionProvider> {
   private _color = 0
 
   /**
-   * Constructor that creates a cell record instance and additionally assigns all properties returned by the extension provider 
+   * Constructor that creates a cell record instance and additionally assigns all properties returned by the extension provider
    * to that instance so that it actually returns a {@link IntCellRecord}.
-   * 
+   *
    * Call {@link initSeedCellRecord} before using the instance.
-   * 
-   * The constructor creates a seed cell record for a new plain of life. Within a plain new cells must be created via 
+   *
+   * The constructor creates a seed cell record for a new plain of life. Within a plain new cells must be created via
    * {@link makeChild}.
    */
   constructor(private extensionProvider: ExtensionProvider) {
@@ -327,7 +328,7 @@ class CellRecord<E extends ExtensionProvider> {
 
   /**
    * Create a child.
-   *  
+   *
    * The child is added before the parent to the cell records. Thus when iterating over the cell records, the just born child
    * will not be included in the current iteration.
    * @param dX the delta to the parent's x position - e.g. 2 places the child 2 fields on the right of the parent
@@ -336,12 +337,12 @@ class CellRecord<E extends ExtensionProvider> {
    */
   makeChild(dX: number, dY: number): ExtCellRecord<E> {
     const childRecord = new CellRecord<E>(this.extensionProvider) as IntCellRecord<E>
-    
+
     // Init the child record
     childRecord.plain = this.plain
     childRecord.cell = this.cell.makeChild()
-    childRecord._posX = Plain.modulo(this.posX+dX, this.plain.width)
-    childRecord._posY = Plain.modulo(this.posY+dY, this.plain.height)
+    childRecord._posX = Plain.modulo(this.posX + dX, this.plain.width)
+    childRecord._posY = Plain.modulo(this.posY + dY, this.plain.height)
 
     childRecord._prev = this._prev
     childRecord._next = this as IntCellRecord<E>
@@ -350,7 +351,7 @@ class CellRecord<E extends ExtensionProvider> {
 
     // Don't forget to add the child to the plain
     this.plain.getAtInt(childRecord._posX, childRecord._posY).addCellRecord(childRecord)
-    
+
     return childRecord
   }
 

@@ -1,13 +1,6 @@
-import 'reflect-metadata';
-import { Expose } from 'class-transformer';
-import { plainToClass } from 'class-transformer';
-import { classToPlain } from 'class-transformer';
-import { serialize } from 'class-transformer';
-import { deserialize } from 'class-transformer';
 import { PlainOfLife } from './core/plain_of_life'
 import { DemoRules } from './rules/demo_rules'
 import { DemoCell } from './cells/demo_cell'
-import * as Rules from './rules/rules_names'
 
 export function sayHello(): string {
   console.log('Hello')
@@ -17,12 +10,12 @@ export function sayHello(): string {
 sayHello()
 
 //const plainOfLife = new PlainOfLife(new DemoRules(2, 2, new DemoCell()))
-const plainOfLife = PlainOfLife.createNew( 2, 2, DemoRules, DemoCell )
+const plainOfLife = PlainOfLife.createNew(2, 2, DemoRules, DemoCell)
 plainOfLife.executeTurn()
 let serializablePOL = plainOfLife.toSerializable()
-console.log( serializablePOL )
+console.log(serializablePOL)
 //const plainOfLife2 = new PlainOfLife( serializablePOL )
-const plainOfLife2 = PlainOfLife.createFromSerializable( serializablePOL )
+const plainOfLife2 = PlainOfLife.createFromSerializable(serializablePOL)
 sayHello()
 // console.log( Rules.getRuleNames() )
 // console.log( Rules.getRuleName( DemoRules) )
@@ -36,7 +29,6 @@ sayHello()
 
 //var jsonString = JSON.stringify(a);
 //const obj = JSON.parse('{"name":"John", "age":30, "city":"New York"}');
-
 
 // class POL{
 //     @Expose() turn = 0
@@ -78,7 +70,7 @@ sayHello()
 // abstract class Cell{
 //     getConstructorAndName(){
 //         for( const cm in getCellConstructorsAndNames() ){
-            
+
 //         }
 //     }
 // }
@@ -94,12 +86,9 @@ sayHello()
 
 //console.log( new (getCellConstructorsAndNames())[0].constructor() )
 
-
-
 // class PlainOfLifeModel{
 
 //     cells: Cell[] = [new Cell1(), new Cell2() ]
 // }
 
 // console.log( JSON.stringify(new PlainOfLifeModel()))
-
