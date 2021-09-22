@@ -10,27 +10,6 @@ export class PlainOfLife<E extends ExtensionProvider> {
   private familyTree = new FamilyTree()
   private rules!: Rules<E>
 
-  //   constructor(rules: Rules<E>)
-  //   constructor(serializablePOL: SerializablePlainOfLife<E> )
-  //   constructor(rules?: Rules<E>, serializablePOL? :SerializablePlainOfLife<E>){
-  //       if( (typeof rules === 'undefined' && typeof serializablePOL === 'undefined' ) ||
-  //           (typeof rules !== 'undefined' && typeof serializablePOL !== 'undefined' )) {
-  //               throw new Error('Not supported combination of arguments')
-  //           }
-  //       if(typeof rules !== 'undefined') {
-  //           this.rules = rules
-  //       }
-  //       if(typeof serializablePOL !== 'undefined'){
-  //         this._currentTurn = BigInt(serializablePOL.currentTurn)
-  //         let constructor = getRuleConstructor(serializablePOL.rulesName)
-  //         if(typeof constructor === 'undefined'){
-  //             throw new Error('Unable to get constructor from rules name. Forgot to register constructor for rules implementation?')
-  //         }
-  //         this.rules = new constructor(serializablePOL.rules)
-  //       }
-
-  //   }
-
   private constructor() {}
 
   static createNew<E extends ExtensionProvider>(
@@ -73,7 +52,7 @@ export class PlainOfLife<E extends ExtensionProvider> {
     }
 
     this.rules.executeTurn(this.rules.getPlain(), cellRecords)
-    this.familyTree.update(this.rules.getCellRecords())
+    this.familyTree.update(cellRecords)
     this._currentTurn++
     return true
   }

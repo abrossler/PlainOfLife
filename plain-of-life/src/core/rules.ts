@@ -8,42 +8,6 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
   private plain!: Plain<E>
   private firstCellRecord!: IntCellRecord<E>
 
-  /**
-   * Create a new Plain of Life rule set
-   * @param width of the plain
-   * @param height of the plain
-   * @param seedCell the one and only cell life starts with
-   */
-  //   constructor(width: number, height: number, seedCell: Cell)
-  //   constructor(serializableRules: SerializablePlainOfLife<E>['rules'])
-  //   constructor(widthOrSR: number | SerializablePlainOfLife<E>['rules'], height?: number, seedCell?: Cell) {
-  //     if( typeof widthOrSR === 'number'){
-  //         if( typeof height === 'undefined'  ||  typeof seedCell === 'undefined' ) {
-  //             throw new Error('Not supported combination of arguments')
-  //         }
-  //         const width = widthOrSR
-
-  //         const posX = width / 2
-  //         const posY = height / 2
-  //         this.plain = new Plain<E>(this, width, height)
-  //         this.firstCellRecord = new CellRecord<E>(this) as IntCellRecord<E>
-  //         this.firstCellRecord.initSeedCellRecord(this.plain, seedCell, posX, posY)
-  //         this.plain.getAtInt(posX, posY).addCellRecord(this.firstCellRecord)
-
-  //     }
-  //     else if( typeof widthOrSR === 'object'){
-  //         if( typeof height !== 'undefined'  ||  typeof seedCell !== 'undefined' ) {
-  //             throw new Error('Not supported combination of arguments')
-  //         }
-  //         this.fromSerializable( widthOrSR )
-  //      }
-  //      else {
-  //         throw new Error('Ups, shall be unreachable')
-  //      }
-  //   }
-
-  constructor() {}
-
   init(width: number, height: number, Cell: new () => Cell): void {
     const posX = width / 2
     const posY = height / 2
@@ -54,14 +18,60 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
   }
 
   initFromSerializable(serializableRules: SerializablePlainOfLife<E>['rules']): void {
-    this.plain = new Plain<E>(this, serializableRules.plainWidth, serializableRules.plainHeight)
+    const width = serializableRules.plainWidth
+    const height = serializableRules.plainHeight
+    this.plain = new Plain<E>(this, width, height)
+
+    let i=0
+    if(serializableRules.plainFields.length != width*height){
+      throw new Error('Incorrect number og plain fields - number must be width * height of plain.')
+    }
+
+    for( let y=0; y<height; y++){
+      for( let x=0; x<width; x++){
+        this.initPlainFieldExtensionFromSerializable( this.plain.getAtInt(x,y), serializableRules.plainFields[i++] )
+      }
+    }
+
+    if(serializableRules.cellRecords.length < 1){
+      throw new Error('There must be at least one record in cell records')
+    }
+
+    let predecessor: IntCellRecord<E> | undefined
+    for( let serializableRecord of serializableRules.cellRecords){
+      const record = new CellRecord<E>(this) as IntCellRecord<E>
+      if( typeof predecessor === 'undefined' ){
+        predecessor = this.firstCellRecord = record
+      }
+      record.addFromSerializable( serializableRules.cellRecords[i++], this.plain, predecessor,this.firstCellRecord  )
+      this.initCellRecordExtensionFromSerializable( record, serializableRules.cellRecords[i++] )
+      predecessor = record
+    }
   }
 
   toSerializable(serializableRules: SerializablePlainOfLife<E>['rules']): void {
-    serializableRules['plainWidth'] = this.plain.width
-    serializableRules['plainHeight'] = this.plain.height
+    const width = this.plain.width
+    const height = this.plain.height
+    
+    serializableRules['plainWidth'] = width
+    serializableRules['plainHeight'] = height
 
-    //    return serializable
+    let i=0
+    for( let y=0; y<height; y++){
+      for( let x=0; x<width; x++){
+        this.initPlainFieldExtensionFromSerializable( this.plain.getAtInt(x,y), serializableRules.plainFields[i++] )
+      }
+    }
+    
+    let record = this.firstCellRecord
+    i=0
+    do{
+      serializableRules.cellRecords[i]
+      
+      if(record.next === this.firstCellRecord) {break}
+      record = record.next
+    } while (true)
+
   }
 
   /**
@@ -102,6 +112,12 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
    */
   abstract getCellRecordExtension(): Record<string, unknown>
 
+  initCellRecordExtensionFromSerializable( toInit: ReturnType<E['getCellRecordExtension']>, initFrom: SerializablePlainOfLife<E>['rules']['cellRecords'][number]  ): void {
+    for(let property in this.getCellRecordExtension() ){
+      (toInit as Record<string, unknown>)[property] = initFrom[property]
+    }
+  }
+
   /**
    * Provide an object with any property you want to add to all plain fields. The properties are e.g. accessible
    * by the plan fields returned via {@link Plain.getAt}.
@@ -110,7 +126,53 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
    * at plain field level
    */
   abstract getPlainFieldExtension(): Record<string, unknown>
+
+  initPlainFieldExtensionFromSerializable( toInit: ReturnType<E['getPlainFieldExtension']>, initFrom: SerializablePlainOfLife<E>['rules']['plainFields'][number] ): void {
+    for(let property in this.getPlainFieldExtension() ){
+
+      if( initFrom.cellRecordProperties.find(_ => _ === property ) ){
+        const recordIndex = initFrom[property]
+        if( typeof recordIndex !== 'number' ){
+          throw new Error( 'Cell record properties must contain a number (the index of the referenced record)' )
+        }
+        let record = this.getCellRecord(recordIndex)
+        if(record === null){
+          throw new Error('Cell record with index ' + recordIndex + " doesn't exist" )
+        }
+        (toInit as Record<string, unknown>)[property] = record
+      } else {
+        (toInit as Record<string, unknown>)[property] = initFrom[property]
+      }
+    }
+  }
+
+  plainFieldExtensionToSerializable(): void {
+
+  }
+
+  /**
+   * Slow, only not performance critical usage
+   */
+  private getCellRecord( index: number ): ExtCellRecord<E> | null {
+    let records = this.getCellRecords()
+    if( records === null ) {
+      return null
+    }
+    
+    let i=0
+    for(let record of records ){
+      if(i++ === index){
+        return record
+      }
+    }
+    return null
+  }
+
 }
+
+
+
+
 
 /**
  * A plain of plain fields that can be accessed by their x and y coordinates.
@@ -119,7 +181,7 @@ export abstract class Rules<E extends ExtensionProvider> implements ExtensionPro
  * The external plain can be used safely outside this module by omitting critical properties that could break the
  * internal structure when misused from outside
  */
-type ExtPlain<E extends ExtensionProvider> = Omit<Plain<E>, 'getAtInt'>
+type ExtPlain<E extends ExtensionProvider> = Omit<Plain<E>, 'getAtInt' | 'init' | 'initFromSerializable' | 'toSerializable'>
 export { ExtPlain as Plain }
 
 /**
@@ -316,6 +378,30 @@ class CellRecord<E extends ExtensionProvider> {
     this._posY = Plain.modulo(posY, plain.height)
   }
 
+  addFromSerializable( serializableRule: SerializablePlainOfLife<E>['rules']['cellRecords'][number], plain: Plain<E>, predecessor: IntCellRecord<E>, successor: IntCellRecord<E> ): void {
+    this._prev = predecessor
+    this._next = successor
+    predecessor._next = this as IntCellRecord<E>
+    successor._prev = this as IntCellRecord<E>
+    this.plain = plain
+
+    if(serializableRule.posX != Plain.modulo(Math.floor(serializableRule.posX), plain.width)){
+      throw new Error('Cell record x position ' + serializableRule.posX + ' is no valid index in the plain field' )
+    }
+    if(serializableRule.posy != Plain.modulo(Math.floor(serializableRule.posY), plain.height)){
+      throw new Error('Cell record y position ' + serializableRule.posY + ' is no valid index in the plain field' )
+    }
+    this._posX = serializableRule.posX
+    this._posY = serializableRule.posY
+
+    if( typeof serializableRule.isDead !== 'boolean'){
+      throw new Error('Property isDead must be a boolean')
+    }
+    this._isDead = serializableRule.isDead
+
+    this.plain.getAtInt(this._posX, this._posY).addCellRecord( this as IntCellRecord<E> )
+  }
+
   get next() {
     return this._next
   }
@@ -372,6 +458,6 @@ class CellRecord<E extends ExtensionProvider> {
 }
 
 export interface ExtensionProvider {
-  getCellRecordExtension: () => Record<string, unknown>
-  getPlainFieldExtension: () => Record<string, unknown>
+  getCellRecordExtension(): Record<string, unknown>
+  getPlainFieldExtension(): Record<string, unknown>
 }

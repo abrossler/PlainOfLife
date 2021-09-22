@@ -1,7 +1,5 @@
 import { DemoRules, DemoRules2 } from './demo_rules'
-import { ExtensionProvider, Rules } from '../core/rules'
-import { Cell } from '../core/cell'
-import { SerializablePlainOfLife } from '../core/serializable_plain_of_life'
+import { Rules } from '../core/rules'
 
 /**
  * Any class extending {@link Rules} most register a unique readable rule name mapped to the rule constructor here to work

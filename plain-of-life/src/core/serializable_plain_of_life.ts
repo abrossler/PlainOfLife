@@ -6,6 +6,19 @@ export type SerializablePlainOfLife<E extends ExtensionProvider> = {
   rules: {
     plainWidth: number
     plainHeight: number
-    plainFields: ({} & ReturnType<E['getPlainFieldExtension']>)[]
+    plainFields: (
+      {
+        cellRecordProperties:string[] // Names of the properties that hold an index of a cell record (in case that plain field extensions include cell records)
+      } & ReturnType<E['getPlainFieldExtension']>)[]
+    cellRecords: (
+      {
+        cellName:string,
+        cell: Record<string, unknown>, // ToDo: Perhaps better - type returned by serialize method of cell
+        posX: number,
+        posY: number
+        isDead:boolean,
+        color:number
+      } & ReturnType<E['getCellRecordExtension']>)[]
   }
+  familyTree: {} //ToDo
 }
