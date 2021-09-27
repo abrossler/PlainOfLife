@@ -8,87 +8,106 @@ export function sayHello(): string {
 }
 
 sayHello()
+try{
+  const plainOfLife = PlainOfLife.createNew(2, 2, DemoRules, DemoCell)
+  plainOfLife.executeTurn()
+  let serializablePOL = plainOfLife.toSerializable()
+  console.log(serializablePOL)
+  let serializedPOL = JSON.stringify( serializablePOL )
+  console.log(serializedPOL)
+  let serializablePOL2 = JSON.parse( serializedPOL )
+  console.log(serializablePOL2)
+  const plainOfLife2 = PlainOfLife.createFromSerializable(serializablePOL2)
+} catch(e){
+  if( e instanceof Error ){
 
-//const plainOfLife = new PlainOfLife(new DemoRules(2, 2, new DemoCell()))
-const plainOfLife = PlainOfLife.createNew(2, 2, DemoRules, DemoCell)
-plainOfLife.executeTurn()
-let serializablePOL = plainOfLife.toSerializable()
-console.log(serializablePOL)
-//const plainOfLife2 = new PlainOfLife( serializablePOL )
-const plainOfLife2 = PlainOfLife.createFromSerializable(serializablePOL)
+  }
+}
+
 sayHello()
-// console.log( Rules.getRuleNames() )
-// console.log( Rules.getRuleName( DemoRules) )
-// const constructor = Rules.getRuleConstructor( Rules.getRuleNames()[0] )
-// if( typeof constructor !== 'undefined'){
-//     const rules = new constructor(2, 2, new DemoCell())
+
+
+
+
+
+// interface I {
+//   f(s:string):void
 // }
 
-// PlainOfLife.createFromSerializable( serializable )
-// PlainIfLife.createNew( 2, 2, DemoRules, DemoCell )
-
-//var jsonString = JSON.stringify(a);
-//const obj = JSON.parse('{"name":"John", "age":30, "city":"New York"}');
-
-// class POL{
-//     @Expose() turn = 0
+// function checkIfI(toTest: any): toTest is I {
+//   return 'f' in toTest
 // }
 
-// const pol = new POL()
-// pol.turn = 2
-
-// const plainPol = classToPlain( pol )
-// console.log( plainPol )
-// const pol2 = plainToClass(POL, plainPol)
-
-// const serializedPol = serialize( pol )
-// console.log( 'serialize: ', serializedPol )
-// console.log( 'stringify: ', JSON.stringify( pol ) )
-// const pol3 = deserialize (POL, serializedPol )
-
-// const unsafePol = {
-//     turn: 2,
-//     //turn: '22' // Not detected that this is a string were a number is expected. There is no type checking
-//     surprise: 'unexpected'
+// class IsI {
+//   f(s:string):void{}
 // }
 
-// const serializedUnsafePol = serialize( unsafePol )
-// const pol4 = deserialize(POL, serializedUnsafePol )
-// console.log( pol4 )
-
-// const serializedUnsafePol2 = serialize( unsafePol )
-// const pol5 = deserialize(POL, serializedUnsafePol, { excludeExtraneousValues: true } )
-// console.log( pol5 ) // Hides unexpected properties
-
-// function getCellConstructorsAndNames(): {constructor: new()=>Cell, name: string}[] {
-//     return [
-//         { constructor: Cell1, name: 'cell1' },
-//         { constructor: Cell2, name: 'cell2' }
-//     ]
+// class IsNotI {
+//   f(s:number):void{}
 // }
 
-// abstract class Cell{
-//     getConstructorAndName(){
-//         for( const cm in getCellConstructorsAndNames() ){
+// const isI: any = new IsI()
+// const isNotI: any = new IsNotI()
 
-//         }
-//     }
+// if( checkIfI(isI) ){
+//   isI.f('Hi')
 // }
 
-// class Cell1 extends Cell{
-//     myData = 'ABCD'
+// if(checkIfI(isNotI)){
+//   isNotI.f('Ups')
 // }
 
-// class Cell2 extends Cell{
-//     memory = '1234'
-//     code = 'abc'
+
+// interface I {
+//   kind: 'I'
+//   f(s:string):void
 // }
 
-//console.log( new (getCellConstructorsAndNames())[0].constructor() )
-
-// class PlainOfLifeModel{
-
-//     cells: Cell[] = [new Cell1(), new Cell2() ]
+// function checkIfI(toTest: any): toTest is I {
+//   //return 'f' in toTest
+//   return toTest.kind === 'I'
 // }
 
-// console.log( JSON.stringify(new PlainOfLifeModel()))
+// class IsI implements I{
+//   kind:'I' = 'I'
+//   f(s:string):void{}
+// }
+
+// class IsNotI {
+//   f(s:number):void{}
+// }
+
+// const isI: any = new IsI()
+// const isNotI: any = new IsNotI()
+
+// if( checkIfI(isI) ){
+//   isI.f('Hi')
+// }
+
+// if(checkIfI(isNotI)){
+//   isNotI.f('Ups')
+// }
+
+abstract class A {
+
+}
+
+abstract class APlus extends A{
+
+}
+
+class C extends A{
+
+}
+
+
+class CPlus extends APlus{
+
+}
+
+const c = new C()
+const cPlus = new CPlus()
+
+console.log( 'c is instance of APlus: ' + (c instanceof APlus))
+console.log( 'cPlus is instance of APlus: ' + (cPlus instanceof APlus))
+

@@ -12,11 +12,10 @@ export type SerializablePlainOfLife<E extends ExtensionProvider> = {
       } & ReturnType<E['getPlainFieldExtension']>)[]
     cellRecords: (
       {
-        cellName:string,
-        cell: Record<string, unknown>, // ToDo: Perhaps better - type returned by serialize method of cell
+        cellTypeName:string,
+        cell: unknown//Record<string, unknown>, // ToDo: Perhaps better - type returned by serialize method of cell
         posX: number,
-        posY: number
-        isDead:boolean,
+        posY: number,
         color:number
       } & ReturnType<E['getCellRecordExtension']>)[]
   }

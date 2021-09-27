@@ -1,0 +1,59 @@
+{
+    "currentTurn": "1",
+    "rulesName": "Demo Rules",
+    "rules": {
+        "plainWidth": 2,
+        "plainHeight": 2,
+        "plainFields": [
+            {
+                "cellRecordProperties": [
+                    "owner"
+                ],
+                "temperature": 25,
+                "owner": 0
+            },
+            {
+                "cellRecordProperties": [],
+                "temperature": 25,
+                "owner": null
+            },
+            {
+                "cellRecordProperties": [],
+                "temperature": 25,
+                "owner": null
+            },
+            {
+                "cellRecordProperties": [
+                    "owner"
+                ],
+                "temperature": 25,
+                "owner": 0
+            }
+        ],
+        "cellRecords": [
+            {
+                "energy": 0,
+                "cellTypeName": "Demo Cell",
+                "cell": {
+                    "testPublic": "Public",
+                    "testPrivate": "Private"
+                },
+                "posX": 1,
+                "posY": 1,
+                "color": 0
+            },
+            {
+                "energy": 0,
+                "cellTypeName": "Demo Cell",
+                "cell": {
+                    "testPublic": "Public",
+                    "testPrivate": "Private"
+                },
+                "posX": 0,
+                "posY": 0,
+                "color": 0
+            }
+        ]
+    },
+    "familyTree": {}
+}

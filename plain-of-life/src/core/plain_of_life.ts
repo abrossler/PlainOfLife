@@ -1,13 +1,13 @@
 import { FamilyTree } from './family_tree'
 import { ExtensionProvider, Rules } from './rules'
 import { SerializablePlainOfLife } from '../core/serializable_plain_of_life'
-//import { runInThisContext } from 'vm'
 import { getRuleName, getRuleConstructor } from '../rules/rules_names'
 import { Cell } from './cell'
+import { checkBigInt, checkObject, checkString } from '../util/type_checks'
 
 export class PlainOfLife<E extends ExtensionProvider> {
   private _currentTurn = 0n
-  private familyTree = new FamilyTree()
+  private familyTree!: FamilyTree<E>
   private rules!: Rules<E>
 
   private constructor() {}
@@ -20,30 +20,39 @@ export class PlainOfLife<E extends ExtensionProvider> {
   ): PlainOfLife<E> {
     const newPOL = new PlainOfLife<E>()
 
-    newPOL.rules = new Rules()
-    newPOL.rules.init(width, height, Cell)
+    newPOL.rules = new Rules().initNew(width, height, Cell)
+    newPOL.familyTree = new FamilyTree().initNew()
     return newPOL
   }
 
-  static createFromSerializable<E extends ExtensionProvider>(
-    serializablePOL: SerializablePlainOfLife<E>,
-  ): PlainOfLife<E> {
+  static createFromSerializable<E extends ExtensionProvider>( serializable: SerializablePlainOfLife<E> ): PlainOfLife<E> {
     const newPOL = new PlainOfLife<E>()
 
-    newPOL._currentTurn = BigInt(serializablePOL.currentTurn)
-    let ruleConstructor = getRuleConstructor(serializablePOL.rulesName)
+    newPOL._currentTurn = checkBigInt( serializable.currentTurn, 0n )
+    let ruleConstructor = getRuleConstructor( checkString(serializable.rulesName) )
     if (typeof ruleConstructor === 'undefined') {
       throw new Error(
-        'Unable to get constructor from rules name. Forgot to register constructor for rules implementation?',
+        'Unable to get constructor from rules name ' + serializable.rulesName + '. Invalid name or forgot to register constructor for rules implementation?',
       )
     }
-    newPOL.rules = new ruleConstructor()
-    newPOL.rules.initFromSerializable(serializablePOL.rules)
+    newPOL.rules = new ruleConstructor().initFromSerializable(checkObject(serializable.rules))
+    newPOL.familyTree = new FamilyTree().initFromSerializable(checkObject(serializable.familyTree))
 
     return newPOL
   }
 
-  // PlainIfLife.createNew( 2, 2, DemoRules, DemoCell )
+  toSerializable(): SerializablePlainOfLife<E> {
+    const serializable: SerializablePlainOfLife<E> = {} as SerializablePlainOfLife<E>
+    serializable['currentTurn'] = this.currentTurn.toString()
+    const rulesName = getRuleName(Object.getPrototypeOf(this.rules).constructor)
+    if (typeof rulesName === 'undefined') {
+      throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
+    }
+    serializable['rulesName'] = rulesName
+    serializable['rules'] = this.rules.toSerializable()
+    serializable['familyTree'] = this.familyTree.toSerializable()
+    return serializable
+  }
 
   executeTurn(): boolean {
     const cellRecords = this.rules.getCellRecords()
@@ -59,18 +68,5 @@ export class PlainOfLife<E extends ExtensionProvider> {
 
   get currentTurn(): bigint {
     return this._currentTurn
-  }
-
-  toSerializable(): SerializablePlainOfLife<E> {
-    const serializable: SerializablePlainOfLife<E> = {} as SerializablePlainOfLife<E>
-    serializable['currentTurn'] = this.currentTurn.toString()
-    const rulesName = getRuleName(Object.getPrototypeOf(this.rules).constructor)
-    if (typeof rulesName === 'undefined') {
-      throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
-    }
-    serializable['rulesName'] = rulesName
-    this.rules.toSerializable((serializable.rules = {} as SerializablePlainOfLife<E>['rules']))
-
-    return serializable
   }
 }
