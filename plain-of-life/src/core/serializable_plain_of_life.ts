@@ -1,23 +1,23 @@
-import { ExtensionProvider } from './rules'
+import { ExtensionProvider } from "./extension_provider"
 
-export type SerializablePlainOfLife<E extends ExtensionProvider> = {
+export type SerializablePlainOfLife/*<E extends ExtensionProvider>*/ = {
   currentTurn: string
+  plainWidth: number
+  plainHeight: number
   rulesName: string
-  rules: {
-    plainWidth: number
-    plainHeight: number
-    plainFields: (
-      {
-        cellRecordProperties:string[] // Names of the properties that hold an index of a cell record (in case that plain field extensions include cell records)
-      } & ReturnType<E['getPlainFieldExtension']>)[]
-    cellRecords: (
-      {
-        cellTypeName:string,
-        cell: unknown//Record<string, unknown>, // ToDo: Perhaps better - type returned by serialize method of cell
-        posX: number,
-        posY: number,
-        color:number
-      } & ReturnType<E['getCellRecordExtension']>)[]
-  }
+  rules: Record<string, unknown>//unknown // ReturnType<E['toSerializable']>
+  plainFields: Record<string, unknown>[]//ReturnType<E['createNewPlainField']>[] // ToDo: Must be return type of plainFieldExtensionToSerializable
+  cellContainers: {
+    cellTypeName:string,
+    cell: Record<string, unknown>//Container<string, unknown>, // ToDo: Perhaps better - type returned by serialize method of cell
+    cellRecord: Record<string, unknown>//ReturnType<E['createNewCellRecord']>[]// ToDo: Must be return type of cellContainerExtensionToSerializable
+    posX: number,
+    posY: number,
+    color:number
+  } []
   familyTree: {} //ToDo
 }
+
+export function defaultToSerializable( toSerialize: unknown ): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(toSerialize))
+} 

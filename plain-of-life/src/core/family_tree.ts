@@ -1,10 +1,11 @@
-import { CellRecords, ExtensionProvider } from './rules'
+import { CellContainers } from "./cell_container"
+import { ExtensionProvider } from "./extension_provider"
 import { SerializablePlainOfLife } from './serializable_plain_of_life'
 
 export class FamilyTree<E extends ExtensionProvider> {
 
-  toSerializable(): SerializablePlainOfLife<E>['familyTree'] {
-    const serializable = {} as SerializablePlainOfLife<E>['familyTree']
+  toSerializable(): SerializablePlainOfLife['familyTree'] {
+    const serializable = {} as SerializablePlainOfLife['familyTree']
     return serializable
   }
 
@@ -12,16 +13,16 @@ export class FamilyTree<E extends ExtensionProvider> {
     return this
   }
   
-  initFromSerializable( serializable: SerializablePlainOfLife<E>['familyTree']): this{
+  initFromSerializable( serializable: SerializablePlainOfLife['familyTree']): this{
     return this
   }
 
-  update(cellRecords: CellRecords<E> | null): void {
-    if (cellRecords === null) {
+  update(cellContainers: CellContainers<E> | null): void {
+    if (cellContainers === null) {
       return
     }
 
-    for (const record in cellRecords) {
+    for (const container in cellContainers) {
       // ToDo
     }
   }

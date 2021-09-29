@@ -60,9 +60,14 @@ export function checkBoolean(toCheck: unknown): boolean{
     return toCheck
 }
 
-export function checkObject<T extends object>(toCheck: T): T{
+export function checkObject<T>(toCheck: T): T{
     if(typeof toCheck !== 'object' ){
         throw new SyntaxError('Object expected but got ' + typeof toCheck)
     }
-    return toCheck   
+
+    // if(toCheck === null ) {
+    //     throw new SyntaxError('Object expected but got null')
+    // }
+
+    return toCheck
 }

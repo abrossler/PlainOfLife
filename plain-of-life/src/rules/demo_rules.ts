@@ -1,56 +1,62 @@
 import { Rules } from '../core/rules'
-import { Plain } from '../core/rules'
-import { CellRecord, CellRecords } from '../core/rules'
-import { Cell } from '../core/cell'
+import { ExtPlain } from "../core/plain"
+import { CellContainers, ExtCellContainer } from '../core/cell_container'
 
 export class DemoRules extends Rules<DemoRules> {
-  executeTurn(plain: Plain<DemoRules>, cellRecords: CellRecords<DemoRules>): void {
-    for (const record of cellRecords) {
-      record.makeChild(1, 1)
+
+  executeTurn(plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): void {
+    for (const container of cellContainers) {
+      container.makeChild(1, 1)
       
-      plain.getAt(0, 0).owner = record
+      plain.getAt(0, 0).owner = container
     }
     
   }
 
-  getCellRecordExtension(): { energy: number } {
+  createNewCellRecord(): { energy: number } {
     return { energy: 0 }
   }
 
-  getPlainFieldExtension(): { temperature: number, owner: CellRecord<DemoRules> | null } {
+  createNewPlainField(): { temperature: number, owner: ExtCellContainer<DemoRules> | null } {
     return { temperature: 25, owner: null }
   }
 
-  initNew(width: number, height: number, Cell: new () => Cell): this {
-    super.initNew( width, height, Cell )
-    const plainField = this.getPlain().getAt(width/2, height/2)
-    plainField.owner = plainField.getCellRecords()[0]
+  initNew( plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): this {
+    for( let container of cellContainers ){
+      plain.getAt( container.posX, container.posY ).owner = container
+    }
 
     return this
   }
 }
 
+
 export class DemoRules2 extends Rules<DemoRules> {
-  executeTurn(plain: Plain<DemoRules>, cellRecords: CellRecords<DemoRules>): void {
-    for (const record of cellRecords) {
-      record.makeChild(1, 1)
-      plain.getAt(0, 0).owner = record
+
+  executeTurn(plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): void {
+    for (const container of cellContainers) {
+      container.makeChild(1, 1)
+      
+      plain.getAt(0, 0).owner = container
     }
+    
   }
 
-  getCellRecordExtension(): { energy: number } {
+  createNewCellRecord(): { energy: number } {
     return { energy: 0 }
   }
 
-  getPlainFieldExtension(): { owner: CellRecord<DemoRules> | null } {
-    return { owner: null }
+  createNewPlainField(): { temperature: number, owner: ExtCellContainer<DemoRules> | null } {
+    return { temperature: 25, owner: null }
   }
 
-  initNew(width: number, height: number, Cell: new () => Cell): this {
-    super.initNew( width, height, Cell )
-    const plainField = this.getPlain().getAt(width/2, height/2)
-    plainField.owner = plainField.getCellRecords()[0]
+  initNew( plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): this {
+    for( let container of cellContainers ){
+      plain.getAt( container.posX, container.posY ).owner = container
+    }
 
     return this
   }
 }
+
+
