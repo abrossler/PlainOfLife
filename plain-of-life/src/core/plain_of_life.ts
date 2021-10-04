@@ -1,168 +1,286 @@
 import { FamilyTree } from './family_tree'
 import { Rules } from './rules'
-import { ExtensionProvider } from "./extension_provider"
+import { RuleExtensionFactory } from './rule_extension_factory'
 import { SerializablePlainOfLife } from '../core/serializable_plain_of_life'
 import { getRuleName, getRuleConstructor } from '../rules/rules_names'
 import { Cell } from './cell'
-import { checkBigInt, checkInt, checkNumber, checkObject, checkString } from '../util/type_checks'
-import { CellContainer, CellContainers, ExtCellContainer } from './cell_container'
-import { ExtPlain, Plain } from './plain'
+import { checkBigInt, checkInt, checkObject, checkString } from '../util/type_checks'
+import { CellContainer, CellContainers, ExtCellContainer, FirstCellContainer } from './cell_container'
+import { Plain } from './plain'
+import { Indexer } from '../util/indexer'
 
-const maxPlainSize = 10000000 
+const maxPlainSize = 10000000
 
-export class PlainOfLife<E extends ExtensionProvider> {
+/**
+ * The Plain of Life programming game:
+ *
+ * A plain of fields on which cells live. Turns are executed and according to rules each cell gets input
+ * with information about it's surroundings (such as information on food or neighbor cells). The cell calculates an output from
+ * this input and it's inner state. Based on the output the rules perform actions such as moving the cell or
+ * let the cell reproduce. When reproducing, the copy of the cell includes slight random variations influencing the
+ * calculation of the output from the input. These variations might be an advantage for the new cell so that it has
+ * a better chance to survive and reproduce further. Or it might be a disadvantage with a higher probability to die. There is
+ * a family tree visualizing how branches of related cells evolve over time - some branches die out, other branches split and
+ * start replacing other branches.
+ *
+ * Coding Custom Rules:
+ * Implement your own rules by overriding {@link Rules}
+ *
+ * Coding Custom Cells:
+ * Implement your own cells by overriding {@link Cell}
+ */
+/*
+ * External plain of life expose all properties and methods that make sense (and safely can be used) outside the
+ * POL core
+ */
+export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
+  PlainOfLife<E>,
+  'executeTurn' | 'currentTurn' | 'toSerializable'
+>
+
+/**
+ * The plain of life - not for direct usage outside of the POL core: Outside {@link ExtPlainOfLife} shall be used.
+ */
+export class PlainOfLife<E extends RuleExtensionFactory> {
+  /** The current turn, incremented by {@link executeTurn} */
   private _currentTurn = 0n
+  /** The family tree of this plain of life starting from the first seed cell */
   private familyTree!: FamilyTree<E>
+  /** The rules for this plain of life */
   private rules!: Rules<E>
+  /** The 2D plain of plain fields */
   private plain!: Plain<E>
-  private firstCellContainer!: CellContainer<E>
-  
-  private constructor() {}
+  /** The first cell container in the container list of all alive cells  */
+  private firstCellContainer!: FirstCellContainer<E>
 
-  static createNew<E extends ExtensionProvider>(
+  /* eslint-disable @typescript-eslint/no-empty-function */
+  private constructor() {}
+  /* eslint-enable @typescript-eslint/no-empty-function */
+
+  /**
+   * Create a new plain of life for a rule set and a first seed cell.
+   * @param width  Width of the plain
+   * @param height Height of the plain
+   * @param Rules Constructor to create the rules that apply to the plain
+   * @param Cell Constructor to create a first seed cell on the plain that starts reproducing
+   * @returns the new plain of life
+   */
+  static createNew<E extends RuleExtensionFactory>(
     width: number,
     height: number,
     Rules: new () => Rules<E>,
     Cell: new () => Cell,
-  ): PlainOfLife<E> {
+  ): ExtPlainOfLife<E> {
+    // Create plain of life, rules and family tree
     const newPOL = new PlainOfLife<E>()
-
     newPOL.rules = new Rules()
-    newPOL.familyTree = new FamilyTree().initNew()
+    newPOL.familyTree = new FamilyTree()
+    newPOL.familyTree.initNew()
 
-    PlainOfLife.checkSize( width, height )
+    // Create plain and add seed cell
+    PlainOfLife.checkSize(width, height)
     const posX = width / 2
     const posY = height / 2
-
     newPOL.plain = new Plain<E>(newPOL.rules, width, height)
-    newPOL.firstCellContainer = new CellContainer<E>(newPOL.rules)
-    newPOL.firstCellContainer.initSeedCellContainer(newPOL.plain, new Cell().initNew(), posX, posY)
-    newPOL.plain.getAtInt(posX, posY).addCellContainer(newPOL.firstCellContainer)
+    newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
+    const seedCell = new Cell()
+    seedCell.initSeedCell(newPOL.rules.getRecommendedSeedCellOutput())
+    newPOL.firstCellContainer.first.initSeedCellContainer(seedCell, posX, posY, newPOL.firstCellContainer)
 
-    newPOL.rules.initNew( newPOL.getPlain(), newPOL.getCellContainers() as CellContainers<E> /* must not be null as we just added a container */ )
+    // Init the rules with already initialized plain and cell containers
+    newPOL.rules.initNew(
+      newPOL.plain,
+      newPOL.getCellContainers() as CellContainers<E> /* must not be null as we just added a container */,
+    )
 
     return newPOL
   }
 
-  static createFromSerializable<E extends ExtensionProvider>( serializable: SerializablePlainOfLife ): PlainOfLife<E> {
+  /**
+   * Create a new plain of life from a serializable plain of life.
+   * @param serializable A serializable plan of life as returned by {@link toSerializable}
+   * @returns the new plain of life
+   */
+  static createFromSerializable<E extends RuleExtensionFactory>(serializable: SerializablePlainOfLife): PlainOfLife<E> {
+    // Create the plain of life
     const newPOL = new PlainOfLife<E>()
+    newPOL._currentTurn = checkBigInt(serializable.currentTurn, 0n)
 
-    newPOL._currentTurn = checkBigInt( serializable.currentTurn, 0n )
-    let ruleConstructor = getRuleConstructor( checkString(serializable.rulesName) )
+    // Create the rules
+    const ruleConstructor = getRuleConstructor(checkString(serializable.rulesName))
     if (typeof ruleConstructor === 'undefined') {
       throw new Error(
-        'Unable to get constructor from rules name ' + serializable.rulesName + '. Invalid name or forgot to register the constructor for this name?',
+        'Unable to get constructor from rules name ' +
+          serializable.rulesName +
+          '. Invalid name or forgot to register the constructor for this name?',
       )
     }
-    newPOL.rules = new ruleConstructor().initFromSerializable(checkObject(serializable.rules))
-    newPOL.familyTree = new FamilyTree().initFromSerializable(checkObject(serializable.familyTree))
+    newPOL.rules = new ruleConstructor()
+    newPOL.rules.initFromSerializable(checkObject(serializable.rules))
 
+    // Create the family tree
+    newPOL.familyTree = new FamilyTree()
+    newPOL.familyTree.initFromSerializable(checkObject(serializable.familyTree))
+
+    // Create the plain
     const width = checkInt(serializable.plainWidth)
     const height = checkInt(serializable.plainHeight)
-    PlainOfLife.checkSize( width, height )
-
+    PlainOfLife.checkSize(width, height)
     newPOL.plain = new Plain<E>(newPOL.rules, width, height)
 
-    let i=0
-    if(serializable.plainFields.length != width*height){
-      throw new Error('Incorrect number of plain fields - number must be width * height of plain.')
-    }
-
-    for( let y=0; y<height; y++){
-      for( let x=0; x<width; x++){
-        newPOL.rules.initPlainFieldFromSerializable( newPOL.plain.getAtInt(x,y), serializable.plainFields[i++] )
-      }
-    }
-
-    if(serializable.cellContainers.length < 1){
+    // Create the cell containers
+    if (serializable.cellContainers.length < 1) {
       throw new Error('There must be at least one container in cell containers')
     }
+    newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
+    const cellContainerIndexer = new Indexer<ExtCellContainer<E>>()
+    newPOL.firstCellContainer.first.initFromSerializable(
+      serializable.cellContainers,
+      newPOL.firstCellContainer,
+      cellContainerIndexer,
+    )
 
-    let predecessor: CellContainer<E> | undefined
-    for( let serializableContainer of serializable.cellContainers){
-      const container = new CellContainer<E>(newPOL.rules)
-      if( typeof predecessor === 'undefined' ){
-        predecessor = newPOL.firstCellContainer = container
+    // Init the cell records in the cell containers and the field records in the plain fields after all containers are created
+    // (as cell records and field records might hold references to containers)
+    let i = 0
+    for (const container of cellContainerIndexer) {
+      newPOL.rules.initCellRecordFromSerializable(
+        container.cellRecord,
+        serializable.cellRecords[i++],
+        cellContainerIndexer,
+      )
+    }
+    i = 0
+    if (serializable.fieldRecords.length != width * height) {
+      throw new Error('Incorrect number of plain fields - number must be width * height of plain.')
+    }
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        newPOL.rules.initFieldRecordFromSerializable(
+          newPOL.plain.getAtInt(x, y).fieldRecord,
+          serializable.fieldRecords[i++],
+          cellContainerIndexer,
+        )
       }
-      container.initFromSerializable( serializableContainer, newPOL.plain, predecessor,newPOL.firstCellContainer  )
-      newPOL.rules.initCellRecordFromSerializable( container.cellRecord, serializableContainer.cellRecord )
-      predecessor = container
     }
 
     return newPOL
   }
 
-  private static checkSize( width: number, height: number){
-    if(width < 2){
+  /**
+   * Check that the width and hight are in a valid range and throw an error if not...
+   */
+  private static checkSize(width: number, height: number) {
+    if (width < 2) {
       throw new Error('The minimum width for a plain of life is 2 but got ' + width)
     }
 
-    if(height < 2){
+    if (height < 2) {
       throw new Error('The minimum height for a plain of life is 2 but got ' + height)
     }
 
-    if(!Number.isInteger(width)  ||  !Number.isInteger(height)){
+    if (!Number.isInteger(width) || !Number.isInteger(height)) {
       throw new Error('Width and height for a plain of life must be integer numbers')
     }
 
-    if( width * height > maxPlainSize ){
-      throw new Error('Plain is too big - width * height must be <= ' + maxPlainSize )
+    if (width * height > maxPlainSize) {
+      throw new Error('Plain is too big - width * height must be <= ' + maxPlainSize)
     }
   }
 
+  /**
+   * Convert a plain of life (that has data structures optimized for turn execution) in a serializable format.
+   * @returns a serializable format of the plain of life as supported by {@link JSON.stringify}
+   */
   toSerializable(): SerializablePlainOfLife {
+    // Create serializable
     const serializable: SerializablePlainOfLife = {} as SerializablePlainOfLife
+
+    // Add some flat properties
     serializable['currentTurn'] = this.currentTurn.toString()
+    const width = this.plain.width
+    const height = this.plain.height
+    serializable['plainWidth'] = width
+    serializable['plainHeight'] = height
+
+    // Add rules
     const rulesName = getRuleName(Object.getPrototypeOf(this.rules).constructor)
     if (typeof rulesName === 'undefined') {
       throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
     }
     serializable['rulesName'] = rulesName
     serializable['rules'] = this.rules.toSerializable()
+
+    // Add family tree
     serializable['familyTree'] = this.familyTree.toSerializable()
 
-    const width = this.plain.width
-    const height = this.plain.height
-    
-    serializable['plainWidth'] = width
-    serializable['plainHeight'] = height
-
-    serializable['plainFields'] = []
-    for( let y=0; y<height; y++){
-      for( let x=0; x<width; x++){
-        serializable.plainFields.push(this.rules.plainFieldToSerializable( this.plain.getAtInt(x,y) ) )
-      }
-    }
-    
+    // Add cell containers from container list of all alive cells to indexer
+    const cellContainerIndexer = new Indexer<ExtCellContainer<E>>()
     const containers = this.getCellContainers()
-    if( containers ){
-      serializable['cellContainers'] = []
-      for( let container of containers ) {
-        const serializableContainer = container.toSerializable()
-        serializableContainer.cellRecord = this.rules.cellRecordToSerializable( container.cellRecord )
-        serializable.cellContainers.push(serializableContainer)
+    if (containers) {
+      for (const container of containers) {
+        cellContainerIndexer.getIndex(container) // Add to indexer (we are not interested in the returned index here)
       }
     }
 
-    // container.initFromSerializable( serializableContainer, newPOL.plain, predecessor,newPOL.firstCellContainer  )
-    // newPOL.rules.initCellRecordFromSerializable( container.cellRecord, serializableContainer.cellRecord )
+    // Add field records. The field records might hold cell container references that are replaced by the corresponding index
+    // from indexer.
+    // Note that the field records might hold references to the containers of dead cells that are not yet indexed.
+    serializable['fieldRecords'] = []
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        serializable.fieldRecords.push(
+          this.rules.fieldRecordToSerializable(this.plain.getAtInt(x, y).fieldRecord, cellContainerIndexer),
+        )
+      }
+    }
 
+    // Add (rule specific) cell records. If the cell records hold cell container references, add those references to indexer.
+    // Note that the cell records might hold references to the containers of dead cells that are not yet indexed.
+    let fromIndex = 0
+    let toIndex = cellContainerIndexer.length
+    serializable['cellRecords'] = []
+    while (fromIndex !== toIndex) {
+      // Deeply follow dead cells records pointing to dead cell containers not yet indexed
+      for (let i = fromIndex; i < toIndex; i++) {
+        serializable.cellRecords.push(
+          this.rules.cellRecordToSerializable(cellContainerIndexer.get(i).cellRecord, cellContainerIndexer),
+        )
+      }
+      fromIndex = toIndex
+      toIndex = cellContainerIndexer.length
+    }
+
+    // Add all cell records (of alive and dead cells) from indexer to serializable plain of life
+    serializable['cellContainers'] = []
+    for (const cellContainer of cellContainerIndexer) {
+      serializable.cellContainers.push(cellContainer.toSerializable())
+    }
 
     return serializable
   }
 
+  /**
+   * Execute a turn and update the family tree. During execution each alive cell gets input according to the rules and
+   * produces a corresponding output. The rules interpret this output and trigger actions like moving the cell or let the
+   * cell make children.
+   * @returns False if all cells died (game over), otherwise true
+   */
   executeTurn(): boolean {
     const cellContainers = this.getCellContainers()
     if (cellContainers === null) {
       return false // All cells are dead, game over
     }
 
-    this.rules.executeTurn(this.getPlain(), cellContainers)
+    this.rules.executeTurn(this.plain, cellContainers)
     this.familyTree.update(cellContainers)
     this._currentTurn++
     return true
   }
 
+  /**
+   * Get the current turn of the plain of life. The current turn is increased each time a turn is executed.
+   */
   get currentTurn(): bigint {
     return this._currentTurn
   }
@@ -170,66 +288,10 @@ export class PlainOfLife<E extends ExtensionProvider> {
   /**
    * Get the containers of all living cells on the plain for iterating
    */
-   getCellContainers(): CellContainers<E> | null {
-    // Remove leading dead cells
-    while (this.firstCellContainer.isDead) {
-      this.firstCellContainer = this.firstCellContainer.next
-
-      // Only one last dead cell remaining => game over
-      if (this.firstCellContainer.isDead && this.firstCellContainer === this.firstCellContainer.next) {
-        return null
-      }
+  getCellContainers(): CellContainers<E> | null {
+    if (this.firstCellContainer.first.isDead) {
+      return null // Game over - there is only one last dead cell
     }
-    return new CellContainers(this.firstCellContainer)
+    return new CellContainers(this.firstCellContainer.first)
   }
-
-    /**
-   * Get the plain to access the individual plain fields by x and y coordinates
-   */
-     getPlain(): ExtPlain<E> {
-      return this.plain
-    }
-
-  /**
-   * Slow, only not performance critical usage
-   */
-   private getCellContainer( index: number ): ExtCellContainer<E> | null {
-    let containers = this.getCellContainers()
-    if( containers === null ) {
-      return null
-    }
-    
-    let i=0
-    for(let container of containers ){
-      if(i++ === index){
-        return container
-      }
-    }
-    return null
-  }
-
-  /**
-   * Slow, only not performance critical usage
-   */
-  private getCellContainerIndex( toFind: ExtCellContainer<E> ): number | null {
-    let containers = this.getCellContainers()
-    if( containers === null ) {
-      return null
-    }
-
-    let i=0
-    for(let container of containers ){
-      if(container === toFind){
-        return i
-      }
-      i++
-    }
-    return null
-
-  }
-
 }
-function checkInteger(plainWidth: number) {
-  throw new Error('Function not implemented.')
-}
-

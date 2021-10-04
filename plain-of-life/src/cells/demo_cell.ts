@@ -1,7 +1,16 @@
 import { Cell } from '../core/cell'
 
 export class DemoCell extends Cell {
-  executeTurn(input: Uint8Array, output: Uint8Array): void {}
+  standardOutput: Uint8Array | undefined
+  initSeedCell(recommendedOutput: Uint8Array): void {
+    this.standardOutput = recommendedOutput
+  }
+
+  executeTurn(input: Uint8Array, output: Uint8Array): void {
+    if (this.standardOutput) {
+      output[0] = 1
+    }
+  }
 
   makeChild(): DemoCell {
     return new DemoCell()
@@ -12,7 +21,16 @@ export class DemoCell extends Cell {
 }
 
 export class DemoCell2 extends Cell {
-  executeTurn(input: Uint8Array, output: Uint8Array): void {}
+  standardOutput: Uint8Array | undefined
+  initSeedCell(recommendedOutput: Uint8Array): void {
+    this.standardOutput = recommendedOutput
+  }
+
+  executeTurn(input: Uint8Array, output: Uint8Array): void {
+    if (this.standardOutput) {
+      output[0] = 1
+    }
+  }
 
   makeChild(): DemoCell {
     return new DemoCell()

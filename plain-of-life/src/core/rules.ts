@@ -1,173 +1,149 @@
-import { defaultToSerializable } from '../core/serializable_plain_of_life'
-import { CellContainers } from './cell_container'
+import { defaultFromSerializable, defaultToSerializable } from '../core/serializable_plain_of_life'
+import { CellContainers, ExtCellContainer } from './cell_container'
 import { ExtPlain } from './plain'
-import { ExtensionProvider } from './extension_provider'
+import { RuleExtensionFactory } from './rule_extension_factory'
+import { Indexer } from '../util/indexer'
 
 /**
+ * The abstract super class for all Plain of Life rules.
+ *
  * Implement your own Plain of Life rule set by deriving your rules class.
  */
-export abstract class Rules<E extends ExtensionProvider> implements ExtensionProvider {
+export abstract class Rules<E extends RuleExtensionFactory> implements RuleExtensionFactory {
+  /**
+   * Finalize the initialization of new rules after the plain and cell containers are initialized.
+   *
+   * Override if needed by your rules. An example could be a rule specific 'owner' property on plain field level that needs to
+   * be initialized with the container of the cell sitting on the plain field.
+   * @param plain The plain with all plain fields
+   * @param cellContainers The container list of all alive cells
+   */
+  /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
+  initNew(plain: ExtPlain<E>, cellContainers: CellContainers<E>): void {}
+  /* eslint-enable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
 
-  initNew(plain: ExtPlain<E>, cellContainers: CellContainers<E>): this {
-    return this
+  /**
+   * Init new rules from serializable rules as returned by {@link toSerializable}. Used during plain of life
+   * de-serialization.
+   *
+   * Override if {@link defaultFromSerializable} is not sufficient e.g. because of circular object references in your rules.
+   */
+  initFromSerializable(serializable: Record<string, unknown>): void {
+    Object.assign(this, defaultFromSerializable(serializable))
   }
 
-  initFromSerializable(serializable: Record<string, unknown>): this {
-    Object.assign( this, serializable )
-    return this
-  }
-
+  /**
+   * Convert the rules to a serializable format e.g. by flattening circular references (if there are any). Used during plain
+   * of life serialization.
+   *
+   * Override if {@link defaultToSerializable} is not sufficient e.g. because of circular object references in your rules
+   * @returns a serializable format of the rules as supported by {@link JSON.stringify}
+   */
   toSerializable(): Record<string, unknown> {
-    return defaultToSerializable( this )
+    return defaultToSerializable(this)
   }
-
-  // /**
-  //  * Get the plain to access the individual plain fields by x and y coordinates
-  //  */
-  // getPlain(): ExtPlain<E> {
-  //   return this.plain
-  // }
-
-  // /**
-  //  * Get the containers of all living cells on the plain for iterating
-  //  */
-  // getCellContainers(): CellContainers<E> | null {
-  //   // Remove leading dead cells
-  //   while (this.firstCellContainer.isDead) {
-  //     this.firstCellContainer = this.firstCellContainer.next
-
-  //     // Only one last dead cell remaining => game over
-  //     if (this.firstCellContainer.isDead && this.firstCellContainer === this.firstCellContainer.next) {
-  //       return null
-  //     }
-  //   }
-  //   return new CellContainers(this.firstCellContainer)
-  // }
 
   /**
    * The main method to implement your own Plain of Life rule set.
-   * @param plain to access all plain fields by x and y coordinates
-   * @param cellContainers to iterate over the containers of all alive cells on the pain
+   * @param plain The plain to access all plain fields by x and y coordinates
+   * @param cellContainers The container of all alive cells to iterate over the cells, prepare the input, call executeTurn of
+   * the cell and process the output
    */
   abstract executeTurn(plain: ExtPlain<E>, cellContainers: CellContainers<E>): void
 
   /**
-   * Provide an object with any property you want to add to all cell containers. The properties are e.g. accessible when
-   * iterating over {@link CellContainers}.
+   * Provide an object with all rule specific properties you want to add as cell record to all cell containers.
    *
-   * Typical examples might be cellEnergy: number, cellAge: number or any other attribute required by your rules for each cell.
+   * Typical examples might be cellEnergy: number, cellAge: number or any other attribute required by your rules for each cell
+   * to execute a turn.
    */
   abstract createNewCellRecord(): Record<string, unknown>
 
-  initCellRecordFromSerializable( toInit: ReturnType<E['createNewCellRecord']>, serializable: Record<string, unknown> ): void {
-    // for(let property in this.createNewCellRecord() ){
-    //   (toInit as Record<string, unknown>)[property] = initFrom[property]
-    // }
-    Object.assign( toInit, serializable )
-  }
+  /**
+   * If a seed call is added to a plain of life, this cell had no chance yet to 'learn' what's a good output according to your
+   * rules. So provide an output that ensures at least survival if constantly returned every turn at the beginning.
+   */
+  abstract getRecommendedSeedCellOutput(): Uint8Array
 
-  // plainFieldToSerializable( plainField: ReturnType<E['createNewPlainField']> ): Record<string, unknown> {
-  //   return defaultToSerializable( plainField ) 
- 
-
-
-  cellRecordToSerializable( cellRecord: ReturnType<E['createNewCellRecord']> ): Record<string, unknown> {
-    return defaultToSerializable( cellRecord )
-    // const serializable = {} as SerializablePlainOfLife['rules']['cellContainers'][number]  
-    // for(let property in this.createNewCellRecord() ){
-    //   (serializable as Record<string, unknown>)[property] = cellRecord[property]
-    // }
-
-    // return serializable
+  /**
+   * Init a cell record from a serializable cell record as returned by {@link cellRecordToSerializable}. Used during plain
+   * of life de-serialization.
+   *
+   * Override if {@link defaultFromSerializable} is not sufficient.
+   *
+   * @param toInit Cell record to init
+   * @param serializable Serializable cell record to init from
+   * @param cellContainerIndexer If the cell record contains cell container references: An indexer to get the cell
+   * container from the serialized index.
+   */
+  initCellRecordFromSerializable(
+    toInit: ReturnType<E['createNewCellRecord']>,
+    serializable: Record<string, unknown>,
+    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+  ): void {
+    Object.assign(toInit, defaultFromSerializable(serializable, cellContainerIndexer))
   }
 
   /**
-   * Provide an object with any property you want to add to all plain fields. The properties are e.g. accessible
-   * by the plan fields returned via {@link Plain.getAt}.
+   * Convert a cell record to a serializable format e.g. by flattening circular references (if there are any). Used during plain
+   * of life serialization.
    *
-   * Typical examples might be fieldTemperature: number, fieldFood: Food or any other attribute required by your rules
-   * at plain field level
+   * Override if {@link defaultToSerializable} is not sufficient.
+   *
+   * @param cellRecord The cell record to be converted
+   * @param cellContainerIndexer If the cell record contains cell container references: An indexer to get the index of the
+   * cell container for serialization.
+   * @returns a serializable format of the cell record as supported by {@link JSON.stringify}
    */
-  abstract createNewPlainField(): Record<string, unknown>
-
-  initPlainFieldFromSerializable( toInit: ReturnType<E['createNewPlainField']>, serializable: Record<string, unknown> ): void {
-    Object.assign( toInit, serializable )
-    // for(let property in this.getPlainFieldExtension() ){
-
-    //   if( initFrom.cellContainerProperties.find(_ => _ === property ) ){
-    //     const containerIndex = initFrom[property]
-    //     if( typeof containerIndex !== 'number' ){
-    //       throw new Error( 'Cell container properties must contain a number (the index of the referenced container)' )
-    //     }
-    //     let container = this.getCellContainer(containerIndex)
-    //     if(container === null){
-    //       throw new Error('Cell container with index ' + containerIndex + " doesn't exist" )
-    //     }
-    //     (toInit as Container<string, unknown>)[property] = container
-    //   } else {
-    //     (toInit as Container<string, unknown>)[property] = initFrom[property]
-    //   }
-    // }
+  cellRecordToSerializable(
+    cellRecord: ReturnType<E['createNewCellRecord']>,
+    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+  ): Record<string, unknown> {
+    return defaultToSerializable(cellRecord, cellContainerIndexer)
   }
 
-  plainFieldToSerializable( plainField: ReturnType<E['createNewPlainField']> ): Record<string, unknown> {
-    return defaultToSerializable( plainField ) 
-    // const serializable = {} as SerializablePlainOfLife<E>['rules']['plainFields'][number]
-    // for(let property in this.createNewPlainField() ){
-    //   serializable['cellContainerProperties'] = []
-    //   if( extension[property] && Object.getPrototypeOf(extension[property]).constructor ===  CellContainer  ){
-    //     serializable.cellContainerProperties.push( property )
-    //     let index = this.getCellContainerIndex(extension[property] as ExtCellContainer<E>);
-    //     if( index !== null ){
-    //       (serializable as Record<string, unknown>)[property] = index
-    //     } else {
-    //       throw new Error('PlainField.' + property + 'references a cell container not existing in plain of life any more. Forgot to remove reference to container of dead cell from plain field?')
-    //     }
-    //   } else {
-    //     (serializable as Record<string, unknown>)[property] = extension[property]
-    //   }
-    // }
-    // return serializable
+  /**
+   * Provide an object with all rule specific properties you want to add as field record to all plain fields.
+   *
+   * Typical examples might be fieldTemperature: number, fieldFood: Food or any other attribute required by your rules for each
+   * plain field to execute a turn.
+   */
+  abstract createNewFieldRecord(): Record<string, unknown>
+
+  /**
+   * Init a field record from a serializable field record as returned by {@link fieldRecordToSerializable}. Used during plain
+   * of life de-serialization.
+   *
+   * Override if {@link defaultFromSerializable} is not sufficient.
+   *
+   * @param toInit Field record to init
+   * @param serializable Serializable field record to init from
+   * @param cellContainerIndexer If the field record contains cell container references: An indexer to get the cell
+   * container from the serialized index.
+   */
+  initFieldRecordFromSerializable(
+    toInit: ReturnType<E['createNewFieldRecord']>,
+    serializable: Record<string, unknown>,
+    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+  ): void {
+    Object.assign(toInit, defaultFromSerializable(serializable, cellContainerIndexer))
   }
 
-  // /**
-  //  * Slow, only not performance critical usage
-  //  */
-  // private getCellContainer( index: number ): ExtCellContainer<E> | null {
-  //   let containers = this.getCellContainers()
-  //   if( containers === null ) {
-  //     return null
-  //   }
-    
-  //   let i=0
-  //   for(let container of containers ){
-  //     if(i++ === index){
-  //       return container
-  //     }
-  //   }
-  //   return null
-  // }
-
-  // /**
-  //  * Slow, only not performance critical usage
-  //  */
-  // private getCellContainerIndex( toFind: ExtCellContainer<E> ): number | null {
-  //   let containers = this.getCellContainers()
-  //   if( containers === null ) {
-  //     return null
-  //   }
-
-  //   let i=0
-  //   for(let container of containers ){
-  //     if(container === toFind){
-  //       return i
-  //     }
-  //     i++
-  //   }
-  //   return null
-
-  // }
+  /**
+   * Convert a field record to a serializable format e.g. by flattening circular references (if there are any). Used during plain
+   * of life serialization.
+   *
+   * Override if {@link defaultToSerializable} is not sufficient.
+   *
+   * @param fieldRecord The field record to be converted
+   * @param cellContainerIndexer If the field record contains cell container references: An indexer to get the index of the
+   * cell container for serialization.
+   * @returns a serializable format of the field record as supported by {@link JSON.stringify}
+   */
+  fieldRecordToSerializable(
+    fieldRecord: ReturnType<E['createNewFieldRecord']>,
+    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+  ): Record<string, unknown> {
+    return defaultToSerializable(fieldRecord, cellContainerIndexer)
+  }
 }
-
-
-

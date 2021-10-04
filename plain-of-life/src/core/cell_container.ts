@@ -1,170 +1,326 @@
-import { Cell } from './cell';
-import { SerializablePlainOfLife } from './serializable_plain_of_life';
-import { getCellTypeName } from '../cells/cell_names';
-import { ExtensionProvider } from "./extension_provider";
-import { Plain } from "./plain";
-import { checkInt, checkObject } from '../util/type_checks';
-
-// /**
-//  * The cell container for module internal usage including all properties returned by {@link Rules.getCellContainerExtension}
-//  */
-//  export type IntCellContainer<E extends ExtensionProvider> = CellContainer<E> & ReturnType<E['getCellContainerExtension']>
-
- /**
-  * A cell container that includes some standard properties plus all properties returned by {@link Rules.getCellContainerExtension}.
-  */
- /*
-  * External cell containers can be used safely outside this module by omitting critical properties that could break the
-  * internal structure when misused from outside
-  */
- export type ExtCellContainer<E extends ExtensionProvider> = Omit<CellContainer<E>, 'init' | 'next'>
- 
- /**
-  * An iterator to iterate on {@link ExtCellContainer}s
-  */
- export class CellContainers<E extends ExtensionProvider> {
-   constructor(private first: CellContainer<E>) {}
-   *[Symbol.iterator](): Iterator<ExtCellContainer<E>> {
-     let r
-     for (r = this.first; r.next !== this.first; r = r.next) {
-       yield r
-     }
-     yield r // don't forget the last container where next === first
-   }
- }
- 
+import { Cell } from './cell'
+import { SerializableCellContainer, SerializableCellContainers } from './serializable_plain_of_life'
+import { getCellConstructor, getCellTypeName } from '../cells/cell_names'
+import { RuleExtensionFactory } from './rule_extension_factory'
+import { Plain } from './plain'
+import { checkBoolean, checkInt, checkString } from '../util/type_checks'
+import { Indexer } from '../util/indexer'
 
 /**
- * The cell container - not for direct usage:
- *
- * Outside the module {@link ExtCellContainer} shall be used
- *
- * Cell containers form a cyclic list. Starting from a seed container {@link makeChild} inserts the child into the cycle, {@link die}
- * removes the child from the cycle. The removed child still points to it's former successor so that it's possible to re-enter
- * the cycle via .next from a removed child. That's important if you somewhere hold a cell container and this cell container dies.
+ * A cell container with standard cell related methods and properties plus all rule specific properties
+ * returned by {@link RuleExtensionFactory.createNewCellRecord}.
  */
-export class CellContainer<E extends ExtensionProvider> {
+/*
+ * External cell container exposes all properties and methods that make sense (and safely can be used) outside the
+ * POL core
+ */
+export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
+  CellContainer<E>,
+  'makeChild' | 'posX' | 'posY' | 'die' | 'isDead' | 'cellRecord' | 'toSerializable' | 'next'
+>
+
+/**
+ * An iterable iterator to iterate on all {@link ExtCellContainer}s of alive cells.
+ */
+export class CellContainers<E extends RuleExtensionFactory> {
+  constructor(private first: ExtCellContainer<E>) {}
+  *[Symbol.iterator](): Iterator<ExtCellContainer<E>> {
+    let container
+    for (container = this.first; container.next !== this.first; container = container.next) {
+      yield container
+    }
+    yield container // don't forget the last container where next === first
+  }
+}
+
+/**
+ * Cell containers are implemented as a cyclic list (where the last element points to the first). FirstCellContainer is the
+ * marker for the first container in the cycle and e.g. used as entry point for iterating the list
+ */
+export type FirstCellContainer<E extends RuleExtensionFactory> = { first: CellContainer<E> }
+
+/**
+ * The container for all cells - not for direct usage outside of the POL core: Outside {@link ExtCellContainer} shall be used
+ *
+ * Cell containers form a cyclic list of alive cells. Starting from a seed container {@link makeChild} inserts children into the
+ * cycle, {@link die} removes the cell container from the cycle.
+ *
+ * Note that the list of cell containers must never be empty and as exception in case of "game over" the last cell that died
+ * is kept as (only) dead cell in the list.
+ */
+export class CellContainer<E extends RuleExtensionFactory> {
   /** Predecessor in list */
-  private _prev!: CellContainer<E>;
+  private _prev!: CellContainer<E>
   /** Successor in list */
-  private _next!: CellContainer<E>;
-  private _posX!: number;
-  private _posY!: number;
-  private cell!: Cell;
-  public cellRecord!: ReturnType<E['createNewCellRecord']>;
-  private plain!: Plain<E>;
-  private _isDead = false;
+  private _next!: CellContainer<E>
+  /** The plain where the cell is located on */
+  private plain: Plain<E>
+  /** The extension provider to create cell records */
+  private extensionProvider: RuleExtensionFactory //E
+  /** X position of the cell on the plain */
+  private _posX!: number
+  /** Y position of the cell on the plain */
+  private _posY!: number
+  /** The cell this cell container holds */
+  private cell!: Cell
+  /** The cell record with rule specific extensions as returned by createNewCellRecord */
+  public cellRecord!: ReturnType<E['createNewCellRecord']>
+  /** Is the cell dead? */
+  private _isDead = false
+  /**
+   * Exactly one cell container in the cyclic list is marked as first container.
+   *
+   * Methods might have to shift the first container. For example if a child is added before the first container,
+   * this child has to become the new first container.
+   */
+  private firstCellContainer: FirstCellContainer<E> | undefined
   /**
    * Color of the cell container. With {@link makeChild} the color of the child is randomly changed slightly. Thus closely related
    * cell containers have a similar color whereas not related cell containers typically have a different color
    */
-  private _color = 0;
+  private _color = 0
 
   /**
-   * Constructor that creates a cell container instance and additionally assigns all properties returned by the extension provider
-   * to that instance so that it actually returns a {@link IntCellContainer}.
+   * Constructor of a cell container instance. Call {@link initSeedCellContainer} or {@link initFromSerializable} before using
+   * the instance.
    *
-   * Call {@link initSeedCellContainer} before using the instance.
+   * Note that rules must create new cells with containers using {@link makeChild}.
    *
-   * The constructor creates a seed cell container for a new plain of life. Within a plain new cells must be created via
-   * {@link makeChild}.
+   * @param extensionProvider
+   * @param plain The plain the new container belongs to
    */
-  constructor(private extensionProvider: ExtensionProvider) {
-
-    this.cellRecord = extensionProvider.createNewCellRecord() as ReturnType<E['createNewCellRecord']>;
+  constructor(extensionProvider: RuleExtensionFactory, plain: Plain<E>) {
+    this.extensionProvider = extensionProvider
+    this.cellRecord = extensionProvider.createNewCellRecord() as ReturnType<E['createNewCellRecord']>
+    this.plain = plain
   }
 
   /**
-   * Init a seed cell container. Normal cells are initialized by {@link makeChild}.
+   * Init a seed cell container when adding a first seed cell to a plain.
    */
-  initSeedCellContainer(plain: Plain<E>, cell: Cell, posX: number, posY: number) {
+  initSeedCellContainer(cell: Cell, posX: number, posY: number, firstCellContainer: FirstCellContainer<E>): void {
     // Start with a cyclic list of one (seed) container - the successor and predecessor of this container is the container itself
-    this._prev = this._next = this;
-    this.plain = plain;
-    this.cell = cell;
-    this._posX = Plain.modulo(posX, plain.width);
-    this._posY = Plain.modulo(posY, plain.height);
+    this._prev = this._next = this
+    this.cell = cell
+    this._posX = Plain.modulo(posX, this.plain.width)
+    this._posY = Plain.modulo(posY, this.plain.height)
+
+    // Mark this seed container as first container
+    this.firstCellContainer = firstCellContainer
+    firstCellContainer.first = this
+
+    // Don't forget to add the seed cell container to the plain
+    this.plain.getAtInt(posX, posY).addCellContainer(firstCellContainer.first)
   }
 
-  toSerializable(): SerializablePlainOfLife['cellContainers'][number] {
-    const serializable = {} as SerializablePlainOfLife['cellContainers'][number];
-    const cellTypeName = getCellTypeName(Object.getPrototypeOf(this.cell).constructor);
-    if (typeof cellTypeName === 'undefined') {
-      throw new Error('Unable to get cell type name from constructor. Forgot to register name for cell implementation?');
+  /**
+   * Init a cyclic list of cell containers from serializable containers starting with this container as first container.
+   * @param serializableContainers All serializable containers to init cell containers from
+   * @param firstCellContainer Marker for the first cell container
+   * @param cellContainerIndexer Indexer collecting all de-serialized cell containers in the order of serialization to enable de-serialization of indices pointing to containers
+   */
+  initFromSerializable(
+    serializableContainers: SerializableCellContainers,
+    firstCellContainer: FirstCellContainer<E>,
+    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+  ): void {
+    // Start with this as current, previous and recent container
+    /* eslint-disable @typescript-eslint/no-this-alias */
+    let currentAlive: CellContainer<E> = this // Current container of an alive cell in the list of all alive containers
+    let prev: CellContainer<E> = this // Previous container in the list of all alive containers
+    let current: CellContainer<E> = this // Current container of a dead or alive cell (dead cells are not included in the list)
+    /* eslint-enable @typescript-eslint/no-this-alias */
+
+    let isFirst = true
+
+    for (const serializable of serializableContainers) {
+      const posX = checkInt(serializable.posX, 0, current.plain.width)
+      const posY = checkInt(serializable.posY, 0, current.plain.height)
+      const isDead = checkBoolean(serializable.isDead)
+
+      // Init this as the first container
+      if (isFirst) {
+        this._prev = this._next = this // Cyclic list with just one element
+        // Mark this as first container
+        this.firstCellContainer = firstCellContainer
+        firstCellContainer.first = this
+        isFirst = false
+      } else {
+        current = new CellContainer<E>(this.extensionProvider, this.plain)
+        // Init container for dead cell
+        // Dead cells are not included in the cyclic list of all alive cells but form an isolated cyclic list of just
+        // the dead cell (prev = next = this)
+        if (isDead) {
+          current._prev = current._next = current
+          // Init container for alive cell
+        } else {
+          prev = currentAlive
+          currentAlive = current
+
+          // Add alive cell to cyclic list of all alive cells
+          prev._next = currentAlive
+          this._prev = currentAlive
+          currentAlive._prev = prev
+          currentAlive._next = this
+        }
+      }
+      cellContainerIndexer.getIndex(current) // Add all (dead or alive) cell containers to indexer
+      // cellRecord is de-serialized separately because cell records might hold cell container references and the indexer
+      // must contain all cell containers first
+
+      current._posX = posX
+      current._posY = posY
+      current._isDead = isDead
+
+      // Create and init the cell of the container
+      const cellConstructor = getCellConstructor(checkString(serializable.cellTypeName))
+      if (typeof cellConstructor === 'undefined') {
+        throw new Error(
+          'Unable to get constructor from cell type name ' +
+            serializable.cellTypeName +
+            '. Invalid name or forgot to register the constructor for this name?',
+        )
+      }
+      current.cell = new cellConstructor()
+      current.cell.initFromSerializable(serializable.cell)
+
+      if (!isDead) {
+        current.plain.getAtInt(posX, posY).addCellContainer(current)
+      }
     }
-    serializable.cellTypeName = cellTypeName;
-    serializable['cell'] = this.cell.toSerializable();
-    serializable.posX = this._posX;
-    serializable.posY = this._posY;
-    serializable.color = this._color;
-
-    return serializable;
   }
 
-  initFromSerializable(serializable: SerializablePlainOfLife['cellContainers'][number], plain: Plain<E>, predecessor: CellContainer<E>, successor: CellContainer<E>): void {
-    this._prev = predecessor;
-    this._next = successor;
-    predecessor._next = this;
-    successor._prev = this;
-    this.plain = plain;
+  /**
+   * Transform a cell container to a serializable format (e.g. without cyclic object references).
+   */
+  toSerializable(): SerializableCellContainer {
+    const serializable = {} as SerializableCellContainer
+    const cellTypeName = getCellTypeName(Object.getPrototypeOf(this.cell).constructor)
+    if (typeof cellTypeName === 'undefined') {
+      throw new Error('Unable to get cell type name from constructor. Forgot to register name for cell implementation?')
+    }
+    serializable.cellTypeName = cellTypeName
+    serializable.cell = this.cell.toSerializable()
+    serializable.isDead = this._isDead
+    serializable.posX = this._posX
+    serializable.posY = this._posY
+    serializable.color = this._color
 
-    this._posX = checkInt(serializable.posX,0,plain.width)
-    this._posY = checkInt(serializable.posY,0,plain.height)
+    // _next, _prev and plain are not serialized but reconstructed during de-serialization
 
-    this.plain.getAtInt(this._posX, this._posY).addCellContainer(this);
+    // cellRecord is serialized separately (technically because cell records might hold cell container
+    // references and we have to break the cyclic object references)
+
+    return serializable
   }
 
-  get next() {
-    return this._next;
+  /**
+   * Get the next cell container from the container list of alive cells.
+   *
+   * Note that the list forms a cyclic loop with the last container pointing to the first.
+   */
+  get next(): CellContainer<E> {
+    return this._next
   }
-  get posX() {
-    return this._posX;
+
+  /**
+   * Get the X position of the cell on the plain
+   */
+  get posX(): number {
+    return this._posX
   }
-  get posY() {
-    return this._posY;
+
+  /**
+   * Get the Y position of the cell on the plain
+   */
+  get posY(): number {
+    return this._posY
+  }
+
+  /**
+   * Is the cell in the container dead?
+   */
+  get isDead(): boolean {
+    return this._isDead
+  }
+
+  /**
+   * Get the color of the cell container. With {@link makeChild} the color of the child is randomly changed slightly. Thus
+   * closely related cell containers have a similar color whereas not related cell containers typically have a different color.
+   */
+  get color(): number {
+    return this._color
   }
 
   /**
    * Create a child.
    *
-   * The child is added before the parent to the cell containers. Thus when iterating over the cell containers, the just born child
+   * The child is added before the parent to the cell containers. Thus when iterating on the cell containers, the just born child
    * will not be included in the current iteration.
    * @param dX the delta to the parent's x position - e.g. 2 places the child 2 fields on the right of the parent
    * @param dY the delta to the parent's y position - e.g. -2 places the child 2 fields above the parent
    * @returns the child
    */
   makeChild(dX: number, dY: number): ExtCellContainer<E> {
-    const childContainer = new CellContainer<E>(this.extensionProvider);
+    checkInt(dX)
+    checkInt(dY)
+
+    const childContainer = new CellContainer<E>(this.extensionProvider, this.plain)
 
     // Init the child container
-    childContainer.plain = this.plain;
-    childContainer.cell = this.cell.makeChild();
-    childContainer._posX = Plain.modulo(this.posX + dX, this.plain.width);
-    childContainer._posY = Plain.modulo(this.posY + dY, this.plain.height);
+    childContainer.plain = this.plain
+    childContainer.cell = this.cell.makeChild()
+    childContainer._posX = Plain.modulo(this.posX + dX, this.plain.width)
+    childContainer._posY = Plain.modulo(this.posY + dY, this.plain.height)
 
-    childContainer._prev = this._prev;
-    childContainer._next = this;
-    this._prev._next = childContainer;
-    this._prev = childContainer;
+    // Insert child before parent
+    childContainer._prev = this._prev
+    childContainer._next = this
+    this._prev._next = childContainer
+    this._prev = childContainer
+
+    // If child is inserted before first, move first to child
+    if (this.firstCellContainer) {
+      this.firstCellContainer.first = this._prev
+      this._prev.firstCellContainer = this.firstCellContainer
+      delete this.firstCellContainer
+    }
 
     // Don't forget to add the child to the plain
-    this.plain.getAtInt(childContainer._posX, childContainer._posY).addCellContainer(childContainer);
+    this.plain.getAtInt(childContainer._posX, childContainer._posY).addCellContainer(childContainer)
 
-    return childContainer;
+    return childContainer
   }
 
-  die() {
-    this._prev._next = this._next;
-    this._next._prev = this._prev;
-    this._isDead = true;
+  /**
+   * Let the cell die.
+   *
+   * The cell container is automatically removed from the container list of alive cells and from the plain field.
+   *
+   * Rule specific cell records or field records still might hold references to the container of the dead cell.
+   * For example a grandpa reference from a cell record to a dead grandpa is totally valid
+   */
+  die(): void {
+    this._isDead = true
 
-    // Remove from plain or not???
-  }
+    // Remove dead cell from plain
+    this.plain.getAtInt(this._posX, this._posY).removeCellContainer(this)
 
-  get isDead() {
-    return this._isDead;
-  }
-  get color() {
-    return this._color;
+    // Game over: If the last cell dies it just stays dead (as first and only cell) in the cell list
+    if (this._next === this) {
+      return
+    }
+
+    // If the first cell dies, move first to next
+    if (this.firstCellContainer) {
+      this.firstCellContainer.first = this.next
+      this._next.firstCellContainer = this.firstCellContainer
+      delete this.firstCellContainer
+    }
+
+    // Remove dead cell from cell list
+    this._prev._next = this._next
+    this._next._prev = this._prev
+    this._prev = this._next = this // For a dead cell prev and next point to the cell itself
   }
 }

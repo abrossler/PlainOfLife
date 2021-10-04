@@ -1,66 +1,53 @@
-import { CellContainer, ExtCellContainer } from './cell_container';
-import { ExtensionProvider } from "./extension_provider";
-
-
-/**
- * The plain field for module internal usage with all properties returned by {@link Rules.getPlainFieldExtension}
- */
- export type IntPlainField<E extends ExtensionProvider> = PlainField<E> & ReturnType<E['createNewPlainField']>
-
- /**
-  * A plain field that includes some standard properties plus all properties returned by {@link Rules.getPlainFieldExtension}.
-  */
- /*
-  * External plain fields can be used safely outside this module by omitting critical properties that could break the
-  * internal structure when misused from outside
-  */
- export type ExtPlainField<E extends ExtensionProvider> = Omit<IntPlainField<E>, 'addCellContainer' | 'removeCellContainer'>
+import { ExtCellContainer } from './cell_container'
+import { RuleExtensionFactory } from './rule_extension_factory'
 
 /**
- * The plain field class - not for direct usage:
- *
- * Within the module {@link IntPlainField} shall be used
- *
- * Outside the module {@link ExtPlainField} shall be used
- *
- * Adding or removing cell containers, consistency with the cell container itself has to be ensured. For example
- * the cell container holds the x and y coordinated where it is located on the plain.
- *
+ * A field on the plain of life that provides access to the cells located on the field and all rule specific field properties
+ * returned by {@link RuleExtensionFactory.createNewFieldRecord}.
  */
-export class PlainField<E extends ExtensionProvider> {
-  private cellContainers: CellContainer<E>[] = [];
+/*
+ * External plain fields expose all properties and methods that make sense (and safely can be used) outside the
+ * POL core
+ */
+export type ExtPlainField<E extends RuleExtensionFactory> = Pick<PlainField<E>, 'fieldRecord' | 'getCellContainers'>
+
+/**
+ * The plain field class - not for direct usage outside of POL core: Outside the module {@link ExtPlainField} shall be used
+ */
+export class PlainField<E extends RuleExtensionFactory> {
+  private cellContainers: ExtCellContainer<E>[] = []
+  public fieldRecord: ReturnType<E['createNewFieldRecord']>
 
   /**
-   * Constructor that creates a plain field instance and additionally assigns all properties returned by the extension provider to that instance
-   * so that it actually returns a {@link IntPlainField}
+   * Constructor that creates a plain field instance
    */
-  constructor(extensionProvider: ExtensionProvider) {
-    Object.assign(this, extensionProvider.createNewPlainField());
+  constructor(extensionProvider: RuleExtensionFactory) {
+    this.fieldRecord = extensionProvider.createNewFieldRecord() as ReturnType<E['createNewFieldRecord']>
   }
 
   /**
-   * Add a cell container to the plain field.
+   * Add a cell container to the plain field. One plain field can hold 0 to n cell containers.
    *
-   * For module internal use only
+   * For POL core internal use only, doesn't ensure consistency with the cell container
    */
-  addCellContainer(toAdd: CellContainer<E>): void {
-    this.cellContainers.push(toAdd);
+  addCellContainer(toAdd: ExtCellContainer<E>): void {
+    this.cellContainers.push(toAdd)
   }
 
   /**
    * Remove a cell container from the plain field.
    *
-   * For module internal use only
+   * For POL core internal use only, doesn't ensure consistency with the cell container
    */
-  removeCellContainer(toRemove: CellContainer<E>): void {
-    this.cellContainers.splice(this.cellContainers.findIndex((cr) => cr === toRemove));
+  removeCellContainer(toRemove: ExtCellContainer<E>): void {
+    this.cellContainers.splice(this.cellContainers.findIndex((cr) => cr === toRemove))
   }
 
   /**
    * Get all cell containers located on the plain field
    */
+  // For usage outside of teh POL core, thus returning ExtCellContainer
   getCellContainers(): Readonly<ExtCellContainer<E>[]> {
-    // For usage outside the module, thus returning ExtCellContainer
-    return this.cellContainers;
+    return this.cellContainers
   }
 }

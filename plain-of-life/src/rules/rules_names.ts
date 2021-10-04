@@ -1,5 +1,6 @@
 import { DemoRules, DemoRules2 } from './demo_rules'
 import { Rules } from '../core/rules'
+import { RuleExtensionFactory } from '../core/rule_extension_factory'
 
 /**
  * Any class extending {@link Rules} most register a unique readable rule name mapped to the rule constructor here to work
@@ -14,7 +15,7 @@ const ruleNamesAndConstructors: [string, RuleConstructor][] = [
 
 const nameIndex = 0
 const constructorIndex = 1
-type RuleConstructor = new () => Rules<any>
+type RuleConstructor = new () => Rules<RuleExtensionFactory>
 
 /**
  * Get the names of all implemented Plain of Life rules

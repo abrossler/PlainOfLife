@@ -1,31 +1,30 @@
-import { ExtPlainField, IntPlainField, PlainField } from './plain_field';
-import { ExtensionProvider } from "./extension_provider";
-
+import { ExtPlainField, PlainField } from './plain_field'
+import { RuleExtensionFactory } from './rule_extension_factory'
 
 /**
  * A plain of plain fields that can be accessed by their x and y coordinates.
  */
 /*
- * The external plain can be used safely outside this module by omitting critical properties that could break the
- * internal structure when misused from outside
+ * The external plain exposes all properties and methods that make sense (and safely can be used) outside the
+ * POL core
  */
-export type ExtPlain<E extends ExtensionProvider> = Omit<Plain<E>, 'getAtInt' | 'init' | 'initFromSerializable' | 'toSerializable'>
+export type ExtPlain<E extends RuleExtensionFactory> = Pick<Plain<E>, 'getAt' | 'width' | 'height'>
 
 /**
- * A plain of plain fields with a torus topography for module internal use only ({@link ExtPlain} is for for external use).
+ * A plain of plain fields with a torus topography for POL core internal use only ({@link ExtPlain} is for for external use).
  */
+export class Plain<E extends RuleExtensionFactory> {
+  private readonly array: PlainField<E>[][]
 
-
-export class Plain<E extends ExtensionProvider> {
-  private readonly array: IntPlainField<E>[][];
-
-  constructor(extensionProvider: ExtensionProvider, private _width: number, private _height: number) {
-    if (_width < 2 || _height < 2) {
-      throw new Error('Width and height of a plain must be at least 2');
-    }
-    //    this.array = new Array(_width).fill(new Array(_height).fill(new PlainField<E>(extensionProvider)))
-    this.array = Array.from({ length: _width }, () => { return Array.from({ length: _height }, () => { return new PlainField<E>(extensionProvider) as IntPlainField<E>; }); });
-
+  /**
+   * Create a new plain of new plain fields with the size width x height
+   */
+  constructor(extensionProvider: RuleExtensionFactory, private _width: number, private _height: number) {
+    this.array = Array.from({ length: _width }, () => {
+      return Array.from({ length: _height }, () => {
+        return new PlainField<E>(extensionProvider)
+      })
+    })
   }
 
   /**
@@ -34,25 +33,28 @@ export class Plain<E extends ExtensionProvider> {
    * the left. The topography behaves accordingly when leaving to the left, top or bottom...
    */
   getAt(posX: number, posY: number): ExtPlainField<E> {
-    return this.getAtInt(posX, posY);
+    return this.getAtInt(posX, posY)
   }
 
-  getAtInt(posX: number, posY: number): IntPlainField<E> {
-    return this.array[Plain.modulo(posX, this._width)][Plain.modulo(posY, this._height)];
+  /**
+   * Get a plain field for POL core internal usage by it's x and y coordinates
+   */
+  getAtInt(posX: number, posY: number): PlainField<E> {
+    return this.array[Plain.modulo(posX, this._width)][Plain.modulo(posY, this._height)]
   }
 
   /**
    * Get the width of the plain
    */
-  get width() {
-    return this._width;
+  get width(): number {
+    return this._width
   }
 
   /**
    * Get the height of the plain
    */
-  get height() {
-    return this._height;
+  get height(): number {
+    return this._height
   }
 
   /**
@@ -62,8 +64,8 @@ export class Plain<E extends ExtensionProvider> {
    */
   static modulo(n: number, mod: number): number {
     while (n < 0) {
-      n += mod;
+      n += mod
     }
-    return n % mod;
+    return n % mod
   }
 }

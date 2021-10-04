@@ -1,59 +1,58 @@
 {
     "currentTurn": "1",
     "rulesName": "Demo Rules",
-    "rules": {
-        "plainWidth": 2,
-        "plainHeight": 2,
-        "plainFields": [
-            {
-                "cellContainerProperties": [
-                    "owner"
-                ],
-                "temperature": 25,
-                "owner": 0
+    "rules": {},
+    "familyTree": {},
+    "plainWidth": 2,
+    "plainHeight": 2,
+    "cellRecords": [
+        {
+            "energy": 0
+        },
+        {
+            "energy": 0
+        }
+    ],
+    "fieldRecords": [
+        {
+            "temperature": 25,
+            "owner": 1
+        },
+        {
+            "temperature": 25,
+            "owner": null
+        },
+        {
+            "temperature": 25,
+            "owner": null
+        },
+        {
+            "temperature": 25,
+            "owner": 1
+        }
+    ],
+    "cellContainers": [
+        {
+            "cellTypeName": "Demo Cell",
+            "cell": {
+                "testPublic": "Public",
+                "testPrivate": "Private"
             },
-            {
-                "cellContainerProperties": [],
-                "temperature": 25,
-                "owner": null
+            "isDead": false,
+            "posX": 0,
+            "posY": 0,
+            "color": 0
+        },
+        {
+            "cellTypeName": "Demo Cell",
+            "cell": {
+                "testPublic": "Public",
+                "testPrivate": "Private"
             },
-            {
-                "cellContainerProperties": [],
-                "temperature": 25,
-                "owner": null
-            },
-            {
-                "cellContainerProperties": [
-                    "owner"
-                ],
-                "temperature": 25,
-                "owner": 0
-            }
-        ],
-        "cellContainers": [
-            {
-                "energy": 0,
-                "cellTypeName": "Demo Cell",
-                "cell": {
-                    "testPublic": "Public",
-                    "testPrivate": "Private"
-                },
-                "posX": 1,
-                "posY": 1,
-                "color": 0
-            },
-            {
-                "energy": 0,
-                "cellTypeName": "Demo Cell",
-                "cell": {
-                    "testPublic": "Public",
-                    "testPrivate": "Private"
-                },
-                "posX": 0,
-                "posY": 0,
-                "color": 0
-            }
-        ]
-    },
-    "familyTree": {}
+            "isDead": false,
+            "posX": 1,
+            "posY": 1,
+            "color": 0
+        }
+    ]
 }
