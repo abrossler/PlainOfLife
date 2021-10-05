@@ -1,4 +1,3 @@
-import { Indexer } from '../util/indexer'
 import { checkInt } from '../util/type_checks'
 import { CellContainer, ExtCellContainer } from './cell_container'
 import { RuleExtensionFactory } from './rule_extension_factory'
@@ -41,21 +40,22 @@ export type SerializableFamilyTree = SerializablePlainOfLife['familyTree']
  *
  * Not supported are for example cyclic references or creation of class instances
  * @param toSerialize The object to be converted in an serializable format
- * @param cellContainerIndexer  If provided: An indexer that replaces cell container references by an index
+ * @param allCellContainers  If provided: An array of all cell containers (of alive and dead cells) to replace cell container 
+ * references in the serializable format by the index of the cell container in the array
  * @returns The serializable object
  */
 export function defaultToSerializable(
   toSerialize: any,
-  cellContainerIndexer?: Indexer<ExtCellContainer<RuleExtensionFactory>>,
+  allCellContainers?: ExtCellContainer<RuleExtensionFactory>[],
 ): Record<string, unknown> {
   // Replace cell containers by index
   const tmp: Record<string, unknown> = {}
-  if (cellContainerIndexer) {
+  if (allCellContainers) {
     for (const property in toSerialize) {
       if (toSerialize[property] instanceof CellContainer) {
         tmp[property] = toSerialize[property]
         delete toSerialize[property]
-        toSerialize[property + '__CellContainerIndex__'] = cellContainerIndexer.getIndex(toSerialize[property])
+        toSerialize[property + '__CellContainerIndex__'] = getIndexOrAdd(allCellContainers, toSerialize[property])
       }
     }
   }
@@ -76,21 +76,30 @@ export function defaultToSerializable(
  */
 export function defaultFromSerializable(
   serializable: Record<string, unknown>,
-  cellContainerIndexer?: Indexer<ExtCellContainer<RuleExtensionFactory>>,
+  allCellContainers?: ExtCellContainer<RuleExtensionFactory>[],
 ): Record<string, unknown> {
   // Make a deep copy
   const result = JSON.parse(JSON.stringify(serializable))
 
   // Replace index of cell container by cell container reference in the copy
-  if (cellContainerIndexer) {
+  if (allCellContainers) {
     for (const property in result) {
       if (property.endsWith('__CellContainerIndex__')) {
         delete result[property]
         serializable[property.substring(0, property.length - '__CellContainerIndex__'.length)] =
-          cellContainerIndexer.get(checkInt(result[property], 0))
+          allCellContainers[(checkInt(result[property], 0))]
       }
     }
   }
 
   return result
+}
+
+function getIndexOrAdd<T>(a:T[], t: T): number {
+  const i = a.indexOf(t)
+  if (i === -1) {
+    a.push(t)
+    return a.length - 1
+  }
+  return i
 }

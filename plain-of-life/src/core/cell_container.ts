@@ -4,7 +4,6 @@ import { getCellConstructor, getCellTypeName } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { Plain } from './plain'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
-import { Indexer } from '../util/indexer'
 
 /**
  * A cell container with standard cell related methods and properties plus all rule specific properties
@@ -117,13 +116,14 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * Init a cyclic list of cell containers from serializable containers starting with this container as first container.
    * @param serializableContainers All serializable containers to init cell containers from
    * @param firstCellContainer Marker for the first cell container
-   * @param cellContainerIndexer Indexer collecting all de-serialized cell containers in the order of serialization to enable de-serialization of indices pointing to containers
-   */
+   * @returns an array containing all cell containers (of alive AND dead cells) 
+  */
   initFromSerializable(
     serializableContainers: SerializableCellContainers,
     firstCellContainer: FirstCellContainer<E>,
-    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
-  ): void {
+  ): ExtCellContainer<E>[] {
+    const allCellContainers: ExtCellContainer<E>[] = []
+
     // Start with this as current, previous and recent container
     /* eslint-disable @typescript-eslint/no-this-alias */
     let currentAlive: CellContainer<E> = this // Current container of an alive cell in the list of all alive containers
@@ -164,9 +164,9 @@ export class CellContainer<E extends RuleExtensionFactory> {
           currentAlive._next = this
         }
       }
-      cellContainerIndexer.getIndex(current) // Add all (dead or alive) cell containers to indexer
-      // cellRecord is de-serialized separately because cell records might hold cell container references and the indexer
-      // must contain all cell containers first
+      allCellContainers.push(current) // Collect all (dead or alive) cell containers
+      // cellRecord is de-serialized separately because cell records might hold cell container references and we must
+      // collect all cell containers first
 
       current._posX = posX
       current._posY = posY
@@ -188,6 +188,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
         current.plain.getAtInt(posX, posY).addCellContainer(current)
       }
     }
+    return allCellContainers
   }
 
   /**

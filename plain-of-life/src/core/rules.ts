@@ -2,7 +2,6 @@ import { defaultFromSerializable, defaultToSerializable } from '../core/serializ
 import { CellContainers, ExtCellContainer } from './cell_container'
 import { ExtPlain } from './plain'
 import { RuleExtensionFactory } from './rule_extension_factory'
-import { Indexer } from '../util/indexer'
 
 /**
  * The abstract super class for all Plain of Life rules.
@@ -73,15 +72,15 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    *
    * @param toInit Cell record to init
    * @param serializable Serializable cell record to init from
-   * @param cellContainerIndexer If the cell record contains cell container references: An indexer to get the cell
+   * @param allCellContainers In case the cell record contains cell container references: All containers to get the referenced cell
    * container from the serialized index.
    */
   initCellRecordFromSerializable(
     toInit: ReturnType<E['createNewCellRecord']>,
     serializable: Record<string, unknown>,
-    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+    allCellContainers: ExtCellContainer<E>[],
   ): void {
-    Object.assign(toInit, defaultFromSerializable(serializable, cellContainerIndexer))
+    Object.assign(toInit, defaultFromSerializable(serializable, allCellContainers))
   }
 
   /**
@@ -91,15 +90,15 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    * Override if {@link defaultToSerializable} is not sufficient.
    *
    * @param cellRecord The cell record to be converted
-   * @param cellContainerIndexer If the cell record contains cell container references: An indexer to get the index of the
+   * @param allCellContainers If the cell record contains cell container references: All containers to find the index of the
    * cell container for serialization.
    * @returns a serializable format of the cell record as supported by {@link JSON.stringify}
    */
   cellRecordToSerializable(
     cellRecord: ReturnType<E['createNewCellRecord']>,
-    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+    allCellContainers: ExtCellContainer<E>[],
   ): Record<string, unknown> {
-    return defaultToSerializable(cellRecord, cellContainerIndexer)
+    return defaultToSerializable(cellRecord, allCellContainers)
   }
 
   /**
@@ -118,15 +117,15 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    *
    * @param toInit Field record to init
    * @param serializable Serializable field record to init from
-   * @param cellContainerIndexer If the field record contains cell container references: An indexer to get the cell
+   * @param allCellContainers In case the field record contains cell container references: All containers to get the cell
    * container from the serialized index.
    */
   initFieldRecordFromSerializable(
     toInit: ReturnType<E['createNewFieldRecord']>,
     serializable: Record<string, unknown>,
-    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+    allCellContainers: ExtCellContainer<E>[],
   ): void {
-    Object.assign(toInit, defaultFromSerializable(serializable, cellContainerIndexer))
+    Object.assign(toInit, defaultFromSerializable(serializable, allCellContainers))
   }
 
   /**
@@ -136,14 +135,14 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    * Override if {@link defaultToSerializable} is not sufficient.
    *
    * @param fieldRecord The field record to be converted
-   * @param cellContainerIndexer If the field record contains cell container references: An indexer to get the index of the
-   * cell container for serialization.
+   * @param allCellContainers In case the field record contains cell container references: All containers to find the index of 
+   * the cell container for serialization.
    * @returns a serializable format of the field record as supported by {@link JSON.stringify}
    */
   fieldRecordToSerializable(
     fieldRecord: ReturnType<E['createNewFieldRecord']>,
-    cellContainerIndexer: Indexer<ExtCellContainer<E>>,
+    allCellContainers: ExtCellContainer<E>[],
   ): Record<string, unknown> {
-    return defaultToSerializable(fieldRecord, cellContainerIndexer)
+    return defaultToSerializable(fieldRecord, allCellContainers)
   }
 }

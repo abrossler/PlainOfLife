@@ -7,7 +7,6 @@ import { Cell } from './cell'
 import { checkBigInt, checkInt, checkObject, checkString } from '../util/type_checks'
 import { CellContainer, CellContainers, ExtCellContainer, FirstCellContainer } from './cell_container'
 import { Plain } from './plain'
-import { Indexer } from '../util/indexer'
 
 const maxPlainSize = 10000000
 
@@ -133,21 +132,19 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       throw new Error('There must be at least one container in cell containers')
     }
     newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
-    const cellContainerIndexer = new Indexer<ExtCellContainer<E>>()
-    newPOL.firstCellContainer.first.initFromSerializable(
+    const allCellContainers = newPOL.firstCellContainer.first.initFromSerializable(
       serializable.cellContainers,
       newPOL.firstCellContainer,
-      cellContainerIndexer,
     )
 
     // Init the cell records in the cell containers and the field records in the plain fields after all containers are created
     // (as cell records and field records might hold references to containers)
     let i = 0
-    for (const container of cellContainerIndexer) {
+    for (const container of allCellContainers) {
       newPOL.rules.initCellRecordFromSerializable(
         container.cellRecord,
         serializable.cellRecords[i++],
-        cellContainerIndexer,
+        allCellContainers,
       )
     }
     i = 0
@@ -159,7 +156,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
         newPOL.rules.initFieldRecordFromSerializable(
           newPOL.plain.getAtInt(x, y).fieldRecord,
           serializable.fieldRecords[i++],
-          cellContainerIndexer,
+          allCellContainers,
         )
       }
     }
@@ -214,46 +211,49 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     // Add family tree
     serializable['familyTree'] = this.familyTree.toSerializable()
 
-    // Add cell containers from container list of all alive cells to indexer
-    const cellContainerIndexer = new Indexer<ExtCellContainer<E>>()
+    // Add cell containers of all alive cells to allCellContainers
+    // We will have to replace all references to cell containers by the index of the cell container as the same container
+    // might be referenced from multiple places. For this we collect allCellContainers...
+    let allCellContainers: ExtCellContainer<E>[] = [] // Containers of all (alive and dead) cells
     const containers = this.getCellContainers()
     if (containers) {
-      for (const container of containers) {
-        cellContainerIndexer.getIndex(container) // Add to indexer (we are not interested in the returned index here)
-      }
+      allCellContainers = [...containers]
     }
 
     // Add field records. The field records might hold cell container references that are replaced by the corresponding index
-    // from indexer.
-    // Note that the field records might hold references to the containers of dead cells that are not yet indexed.
+    // in allCellContainers.
+    // Note that the field records might hold references to the containers of dead cells that are not yet added to 
+    // allCellContainers and have to be added now.
     serializable['fieldRecords'] = []
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         serializable.fieldRecords.push(
-          this.rules.fieldRecordToSerializable(this.plain.getAtInt(x, y).fieldRecord, cellContainerIndexer),
+          this.rules.fieldRecordToSerializable(this.plain.getAtInt(x, y).fieldRecord, allCellContainers),
         )
       }
     }
 
-    // Add (rule specific) cell records. If the cell records hold cell container references, add those references to indexer.
-    // Note that the cell records might hold references to the containers of dead cells that are not yet indexed.
+    // Add (rule specific) cell records. If the cell records hold cell container references, replaced them by the corresponding
+    // index in allCellContainers.
+    // Note that the cell records might hold references to the containers of dead cells that are not yet added to
+    // allCellContainers and have to be added now.
     let fromIndex = 0
-    let toIndex = cellContainerIndexer.length
+    let toIndex = allCellContainers.length
     serializable['cellRecords'] = []
     while (fromIndex !== toIndex) {
-      // Deeply follow dead cells records pointing to dead cell containers not yet indexed
+      // Deeply follow dead cells records pointing to dead cell containers not yet included in allCellContainers
       for (let i = fromIndex; i < toIndex; i++) {
         serializable.cellRecords.push(
-          this.rules.cellRecordToSerializable(cellContainerIndexer.get(i).cellRecord, cellContainerIndexer),
+          this.rules.cellRecordToSerializable(allCellContainers[i].cellRecord, allCellContainers),
         )
       }
       fromIndex = toIndex
-      toIndex = cellContainerIndexer.length
+      toIndex = allCellContainers.length
     }
 
-    // Add all cell records (of alive and dead cells) from indexer to serializable plain of life
+    // Add all cell records (of alive and dead cells) to serializable plain of life
     serializable['cellContainers'] = []
-    for (const cellContainer of cellContainerIndexer) {
+    for (const cellContainer of allCellContainers) {
       serializable.cellContainers.push(cellContainer.toSerializable())
     }
 
