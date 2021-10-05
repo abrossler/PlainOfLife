@@ -68,7 +68,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     width: number,
     height: number,
     Rules: new () => Rules<E>,
-    Cell: new () => Cell,
+    Cell: new () => Cell
   ): ExtPlainOfLife<E> {
     // Create plain of life, rules and family tree
     const newPOL = new PlainOfLife<E>()
@@ -89,7 +89,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     // Init the rules with already initialized plain and cell containers
     newPOL.rules.initNew(
       newPOL.plain,
-      newPOL.getCellContainers() as CellContainers<E> /* must not be null as we just added a container */,
+      newPOL.getCellContainers() as CellContainers<E> /* must not be null as we just added a container */
     )
 
     return newPOL
@@ -111,7 +111,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       throw new Error(
         'Unable to get constructor from rules name ' +
           serializable.rulesName +
-          '. Invalid name or forgot to register the constructor for this name?',
+          '. Invalid name or forgot to register the constructor for this name?'
       )
     }
     newPOL.rules = new ruleConstructor()
@@ -134,7 +134,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
     const allCellContainers = newPOL.firstCellContainer.first.initFromSerializable(
       serializable.cellContainers,
-      newPOL.firstCellContainer,
+      newPOL.firstCellContainer
     )
 
     // Init the cell records in the cell containers and the field records in the plain fields after all containers are created
@@ -144,7 +144,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       newPOL.rules.initCellRecordFromSerializable(
         container.cellRecord,
         serializable.cellRecords[i++],
-        allCellContainers,
+        allCellContainers
       )
     }
     i = 0
@@ -156,7 +156,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
         newPOL.rules.initFieldRecordFromSerializable(
           newPOL.plain.getAtInt(x, y).fieldRecord,
           serializable.fieldRecords[i++],
-          allCellContainers,
+          allCellContainers
         )
       }
     }
@@ -222,13 +222,13 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
 
     // Add field records. The field records might hold cell container references that are replaced by the corresponding index
     // in allCellContainers.
-    // Note that the field records might hold references to the containers of dead cells that are not yet added to 
+    // Note that the field records might hold references to the containers of dead cells that are not yet added to
     // allCellContainers and have to be added now.
     serializable['fieldRecords'] = []
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         serializable.fieldRecords.push(
-          this.rules.fieldRecordToSerializable(this.plain.getAtInt(x, y).fieldRecord, allCellContainers),
+          this.rules.fieldRecordToSerializable(this.plain.getAtInt(x, y).fieldRecord, allCellContainers)
         )
       }
     }
@@ -244,7 +244,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       // Deeply follow dead cells records pointing to dead cell containers not yet included in allCellContainers
       for (let i = fromIndex; i < toIndex; i++) {
         serializable.cellRecords.push(
-          this.rules.cellRecordToSerializable(allCellContainers[i].cellRecord, allCellContainers),
+          this.rules.cellRecordToSerializable(allCellContainers[i].cellRecord, allCellContainers)
         )
       }
       fromIndex = toIndex
@@ -288,7 +288,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   /**
    * Get the containers of all living cells on the plain for iterating
    */
-  getCellContainers(): CellContainers<E> | null {
+  private getCellContainers(): CellContainers<E> | null {
     if (this.firstCellContainer.first.isDead) {
       return null // Game over - there is only one last dead cell
     }

@@ -40,16 +40,18 @@ export type SerializableFamilyTree = SerializablePlainOfLife['familyTree']
  *
  * Not supported are for example cyclic references or creation of class instances
  * @param toSerialize The object to be converted in an serializable format
- * @param allCellContainers  If provided: An array of all cell containers (of alive and dead cells) to replace cell container 
+ * @param allCellContainers  If provided: An array of all cell containers (of alive and dead cells) to replace cell container
  * references in the serializable format by the index of the cell container in the array
  * @returns The serializable object
  */
-export function defaultToSerializable(
-  toSerialize: any,
-  allCellContainers?: ExtCellContainer<RuleExtensionFactory>[],
+export function defaultToSerializable (
+  toSerialize: Record<string, unknown>,
+  allCellContainers?: ExtCellContainer<RuleExtensionFactory>[]
 ): Record<string, unknown> {
+
   // Replace cell containers by index
   const tmp: Record<string, unknown> = {}
+
   if (allCellContainers) {
     for (const property in toSerialize) {
       if (toSerialize[property] instanceof CellContainer) {
@@ -63,7 +65,7 @@ export function defaultToSerializable(
   // Make a deep copy
   const result = JSON.parse(JSON.stringify(toSerialize))
 
-  // Revert the original: Switch back from the index to the cell containers
+  //Revert the original: Switch back from the index to the cell containers
   for (const property in tmp) {
     toSerialize[property] = tmp[property]
   }
@@ -76,7 +78,7 @@ export function defaultToSerializable(
  */
 export function defaultFromSerializable(
   serializable: Record<string, unknown>,
-  allCellContainers?: ExtCellContainer<RuleExtensionFactory>[],
+  allCellContainers?: ExtCellContainer<RuleExtensionFactory>[]
 ): Record<string, unknown> {
   // Make a deep copy
   const result = JSON.parse(JSON.stringify(serializable))
@@ -87,7 +89,7 @@ export function defaultFromSerializable(
       if (property.endsWith('__CellContainerIndex__')) {
         delete result[property]
         serializable[property.substring(0, property.length - '__CellContainerIndex__'.length)] =
-          allCellContainers[(checkInt(result[property], 0))]
+          allCellContainers[checkInt(result[property], 0)]
       }
     }
   }
@@ -95,7 +97,7 @@ export function defaultFromSerializable(
   return result
 }
 
-function getIndexOrAdd<T>(a:T[], t: T): number {
+function getIndexOrAdd<T>(a: T[], t: T): number {
   const i = a.indexOf(t)
   if (i === -1) {
     a.push(t)

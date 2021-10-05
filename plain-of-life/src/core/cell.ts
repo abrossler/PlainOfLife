@@ -52,6 +52,6 @@ export abstract class Cell {
    * @returns a serializable format of the cell as supported by {@link JSON.stringify}
    */
   toSerializable(): Record<string, unknown> {
-    return defaultToSerializable(this)
+    return defaultToSerializable(this as Record<string, unknown>)
   }
 }

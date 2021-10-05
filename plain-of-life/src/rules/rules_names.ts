@@ -10,7 +10,7 @@ import { RuleExtensionFactory } from '../core/rule_extension_factory'
  */
 const ruleNamesAndConstructors: [string, RuleConstructor][] = [
   ['Demo Rules', DemoRules],
-  ['Demo Rules 2', DemoRules2],
+  ['Demo Rules 2', DemoRules2]
 ]
 
 const nameIndex = 0

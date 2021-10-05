@@ -116,11 +116,11 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * Init a cyclic list of cell containers from serializable containers starting with this container as first container.
    * @param serializableContainers All serializable containers to init cell containers from
    * @param firstCellContainer Marker for the first cell container
-   * @returns an array containing all cell containers (of alive AND dead cells) 
-  */
+   * @returns an array containing all cell containers (of alive AND dead cells)
+   */
   initFromSerializable(
     serializableContainers: SerializableCellContainers,
-    firstCellContainer: FirstCellContainer<E>,
+    firstCellContainer: FirstCellContainer<E>
   ): ExtCellContainer<E>[] {
     const allCellContainers: ExtCellContainer<E>[] = []
 
@@ -178,7 +178,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
         throw new Error(
           'Unable to get constructor from cell type name ' +
             serializable.cellTypeName +
-            '. Invalid name or forgot to register the constructor for this name?',
+            '. Invalid name or forgot to register the constructor for this name?'
         )
       }
       current.cell = new cellConstructor()

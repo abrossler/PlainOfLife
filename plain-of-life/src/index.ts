@@ -1,7 +1,6 @@
 import { PlainOfLife } from './core/plain_of_life'
 import { DemoRules } from './rules/demo_rules'
 import { DemoCell } from './cells/demo_cell'
-import { defaultToSerializable } from './core/serializable_plain_of_life'
 
 export function sayHello(): string {
   console.log('Hello')

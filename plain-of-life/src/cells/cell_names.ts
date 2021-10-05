@@ -9,7 +9,7 @@ import { Cell } from '../core/cell'
  */
 const cellNamesAndConstructors: [string, CellConstructor][] = [
   ['Demo Cell', DemoCell],
-  ['Demo Cell 2', DemoCell2],
+  ['Demo Cell 2', DemoCell2]
 ]
 
 const nameIndex = 0
