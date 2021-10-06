@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"{src,tests}/**/*.ts\"",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [],

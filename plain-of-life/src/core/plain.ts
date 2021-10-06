@@ -19,10 +19,10 @@ export class Plain<E extends RuleExtensionFactory> {
   /**
    * Create a new plain of new plain fields with the size width x height
    */
-  constructor(extensionProvider: RuleExtensionFactory, private _width: number, private _height: number) {
+  constructor(fieldRecordFactory: RuleExtensionFactory, private _width: number, private _height: number) {
     this.array = Array.from({ length: _width }, () => {
       return Array.from({ length: _height }, () => {
-        return new PlainField<E>(extensionProvider)
+        return new PlainField<E>(fieldRecordFactory)
       })
     })
   }

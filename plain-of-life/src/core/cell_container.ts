@@ -54,8 +54,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
   private _next!: CellContainer<E>
   /** The plain where the cell is located on */
   private plain: Plain<E>
-  /** The extension provider to create cell records */
-  private extensionProvider: RuleExtensionFactory //E
+  /** The factory to create rule specific cell records */
+  private cellRecordFactory: RuleExtensionFactory
   /** X position of the cell on the plain */
   private _posX!: number
   /** Y position of the cell on the plain */
@@ -85,12 +85,12 @@ export class CellContainer<E extends RuleExtensionFactory> {
    *
    * Note that rules must create new cells with containers using {@link makeChild}.
    *
-   * @param extensionProvider
+   * @param cellRecordFactory
    * @param plain The plain the new container belongs to
    */
-  constructor(extensionProvider: RuleExtensionFactory, plain: Plain<E>) {
-    this.extensionProvider = extensionProvider
-    this.cellRecord = extensionProvider.createNewCellRecord() as ReturnType<E['createNewCellRecord']>
+  constructor(cellRecordFactory: RuleExtensionFactory, plain: Plain<E>) {
+    this.cellRecordFactory = cellRecordFactory
+    this.cellRecord = cellRecordFactory.createNewCellRecord() as ReturnType<E['createNewCellRecord']>
     this.plain = plain
   }
 
@@ -146,7 +146,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
         firstCellContainer.first = this
         isFirst = false
       } else {
-        current = new CellContainer<E>(this.extensionProvider, this.plain)
+        current = new CellContainer<E>(this.cellRecordFactory, this.plain)
         // Init container for dead cell
         // Dead cells are not included in the cyclic list of all alive cells but form an isolated cyclic list of just
         // the dead cell (prev = next = this)
@@ -266,7 +266,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
     checkInt(dX)
     checkInt(dY)
 
-    const childContainer = new CellContainer<E>(this.extensionProvider, this.plain)
+    const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
 
     // Init the child container
     childContainer.plain = this.plain

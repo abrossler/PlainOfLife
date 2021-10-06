@@ -44,11 +44,10 @@ export type SerializableFamilyTree = SerializablePlainOfLife['familyTree']
  * references in the serializable format by the index of the cell container in the array
  * @returns The serializable object
  */
-export function defaultToSerializable (
+export function defaultToSerializable(
   toSerialize: Record<string, unknown>,
   allCellContainers?: ExtCellContainer<RuleExtensionFactory>[]
 ): Record<string, unknown> {
-
   // Replace cell containers by index
   const tmp: Record<string, unknown> = {}
 
@@ -56,8 +55,8 @@ export function defaultToSerializable (
     for (const property in toSerialize) {
       if (toSerialize[property] instanceof CellContainer) {
         tmp[property] = toSerialize[property]
+        toSerialize[property + getCellContainerSuffix()] = getIndexOrAdd(allCellContainers, toSerialize[property])
         delete toSerialize[property]
-        toSerialize[property + '__CellContainerIndex__'] = getIndexOrAdd(allCellContainers, toSerialize[property])
       }
     }
   }
@@ -68,6 +67,7 @@ export function defaultToSerializable (
   //Revert the original: Switch back from the index to the cell containers
   for (const property in tmp) {
     toSerialize[property] = tmp[property]
+    delete toSerialize[property + getCellContainerSuffix()]
   }
 
   return result
@@ -86,10 +86,10 @@ export function defaultFromSerializable(
   // Replace index of cell container by cell container reference in the copy
   if (allCellContainers) {
     for (const property in result) {
-      if (property.endsWith('__CellContainerIndex__')) {
+      if (property.endsWith(getCellContainerSuffix())) {
+        result[property.substring(0, property.length - getCellContainerSuffix().length)] =
+          allCellContainers[checkInt(result[property], 0, allCellContainers.length-1)]
         delete result[property]
-        serializable[property.substring(0, property.length - '__CellContainerIndex__'.length)] =
-          allCellContainers[checkInt(result[property], 0)]
       }
     }
   }
@@ -104,4 +104,12 @@ function getIndexOrAdd<T>(a: T[], t: T): number {
     return a.length - 1
   }
   return i
+}
+
+/**
+ * Get the suffix added to the property name of a cell container if the cell container object is replaced by the index of the
+ * cell container object.
+ */
+export function getCellContainerSuffix(): string {
+  return '__CellContainerIndex__'
 }

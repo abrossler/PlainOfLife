@@ -21,8 +21,8 @@ export class PlainField<E extends RuleExtensionFactory> {
   /**
    * Constructor that creates a plain field instance
    */
-  constructor(extensionProvider: RuleExtensionFactory) {
-    this.fieldRecord = extensionProvider.createNewFieldRecord() as ReturnType<E['createNewFieldRecord']>
+  constructor(fieldRecordFactory: RuleExtensionFactory) {
+    this.fieldRecord = fieldRecordFactory.createNewFieldRecord() as ReturnType<E['createNewFieldRecord']>
   }
 
   /**
