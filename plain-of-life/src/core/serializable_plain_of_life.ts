@@ -88,7 +88,7 @@ export function defaultFromSerializable(
     for (const property in result) {
       if (property.endsWith(getCellContainerSuffix())) {
         result[property.substring(0, property.length - getCellContainerSuffix().length)] =
-          allCellContainers[checkInt(result[property], 0, allCellContainers.length-1)]
+          allCellContainers[checkInt(result[property], 0, allCellContainers.length - 1)]
         delete result[property]
       }
     }

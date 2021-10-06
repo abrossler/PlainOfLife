@@ -74,7 +74,7 @@ describe('defaultToSerializable', () => {
   })
 
   test('does not change the object to serialize', () => {
-    let objectWithCellContainer2 = ruleExtensionFactory.createNewCellRecord()
+    const objectWithCellContainer2 = ruleExtensionFactory.createNewCellRecord()
     objectWithCellContainer.cellContainer1 = cellContainer1
     objectWithCellContainer2.cellContainer1 = cellContainer1
     defaultToSerializable(objectWithCellContainer, allCellContainers)
@@ -83,7 +83,6 @@ describe('defaultToSerializable', () => {
 })
 
 describe('defaultFromSerializable', () => {
-
   {
     const serializable = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
     const object = defaultFromSerializable(serializable)
@@ -95,27 +94,27 @@ describe('defaultFromSerializable', () => {
     })
 
     test('reverts defaultToSerializable', () => {
-        objectWithCellContainer.cellContainer1 = cellContainer1
-        objectWithCellContainer.cellContainer2 = cellContainer2
-        const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
-        const objectFromSerializable = defaultFromSerializable( serializable, allCellContainers)
-        expect(objectFromSerializable).toStrictEqual(objectWithCellContainer)
-      })
+      objectWithCellContainer.cellContainer1 = cellContainer1
+      objectWithCellContainer.cellContainer2 = cellContainer2
+      const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
+      const objectFromSerializable = defaultFromSerializable(serializable, allCellContainers)
+      expect(objectFromSerializable).toStrictEqual(objectWithCellContainer)
+    })
 
-      test('throws syntax error if cell container index is out of bounds', () => {
-        objectWithCellContainer.cellContainer1 = cellContainer1
-        objectWithCellContainer.cellContainer2 = cellContainer2
-        const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
-        allCellContainers.shift() // Invalidate allCellContainers so that we can't find one container
-        expect(() => defaultFromSerializable( serializable, allCellContainers)).toThrow(SyntaxError);
-      })
+    test('throws syntax error if cell container index is out of bounds', () => {
+      objectWithCellContainer.cellContainer1 = cellContainer1
+      objectWithCellContainer.cellContainer2 = cellContainer2
+      const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
+      allCellContainers.shift() // Invalidate allCellContainers so that we can't find one container
+      expect(() => defaultFromSerializable(serializable, allCellContainers)).toThrow(SyntaxError)
+    })
 
-      test('throws syntax error if cell container index is not an integer', () => {
-        objectWithCellContainer.cellContainer1 = cellContainer1
-        objectWithCellContainer.cellContainer2 = cellContainer2
-        const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
-        serializable['cellContainer2' + getCellContainerSuffix()] = 1.2
-        expect(() => defaultFromSerializable( serializable, allCellContainers)).toThrow(SyntaxError);
-      })
+    test('throws syntax error if cell container index is not an integer', () => {
+      objectWithCellContainer.cellContainer1 = cellContainer1
+      objectWithCellContainer.cellContainer2 = cellContainer2
+      const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
+      serializable['cellContainer2' + getCellContainerSuffix()] = 1.2
+      expect(() => defaultFromSerializable(serializable, allCellContainers)).toThrow(SyntaxError)
+    })
   }
 })
