@@ -5,6 +5,10 @@ import { RuleExtensionFactory } from './rule_extension_factory'
 import { Plain } from './plain'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
 
+// interface Plain<E extends RuleExtensionFactory>{
+
+// }
+
 /**
  * A cell container with standard cell related methods and properties plus all rule specific properties
  * returned by {@link RuleExtensionFactory.createNewCellRecord}.

@@ -1,5 +1,5 @@
-import { DemoCell, DemoCell2 } from './demo_cell'
 import { Cell } from '../core/cell'
+import { DemoCell, DemoCell2 } from './demo_cell'
 
 /**
  * Any class extending {@link Cell} most register a unique readable cell name mapped to the cell constructor here to work

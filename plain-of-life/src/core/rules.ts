@@ -1,4 +1,4 @@
-import { defaultFromSerializable, defaultToSerializable } from '../core/serializable_plain_of_life'
+import { defaultFromSerializable, defaultToSerializable } from '../core/default_serialization'
 import { CellContainers, ExtCellContainer } from './cell_container'
 import { ExtPlain } from './plain'
 import { RuleExtensionFactory } from './rule_extension_factory'

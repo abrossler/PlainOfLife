@@ -1,10 +1,6 @@
 import { CellContainer, ExtCellContainer } from '../../src/core/cell_container'
+import { defaultToSerializable, getCellContainerSuffix, defaultFromSerializable } from '../../src/core/default_serialization'
 import { Plain } from '../../src/core/plain'
-import {
-  defaultFromSerializable,
-  defaultToSerializable,
-  getCellContainerSuffix
-} from '../../src/core/serializable_plain_of_life'
 import { RecordWithCellContainer, RuleExtensionFactoryWithCellContainer } from '../stubs/rule_extension_factory'
 
 let ruleExtensionFactory: RuleExtensionFactoryWithCellContainer
@@ -29,11 +25,11 @@ describe('defaultToSerializable', () => {
   {
     const object = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
     const serializable = defaultToSerializable(object)
-    test('creates deep copy of object', () => {
+    test('creates copy of object', () => {
       expect(serializable).toStrictEqual(object)
     })
-    test('does not return identical object', () => {
-      expect(serializable).not.toBe(object)
+    test('copy of object is really deep', () => {
+      expect(serializable.b).not.toBe(object.b)
     })
   }
 
@@ -89,8 +85,8 @@ describe('defaultFromSerializable', () => {
     test('creates deep copy of serializable', () => {
       expect(object).toStrictEqual(serializable)
     })
-    test('does not return identical serializable', () => {
-      expect(object).not.toBe(serializable)
+    test('copy of serializable is really deep', () => {
+      expect(object.b).not.toBe(serializable.b)
     })
 
     test('reverts defaultToSerializable', () => {

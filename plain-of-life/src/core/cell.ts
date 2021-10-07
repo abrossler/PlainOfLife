@@ -1,5 +1,3 @@
-import { defaultFromSerializable, defaultToSerializable } from './serializable_plain_of_life'
-
 /**
  * Abstract super class for any cell living on a plain of life.
  *
@@ -41,7 +39,7 @@ export abstract class Cell {
    * Override if {@link defaultFromSerializable} is not sufficient e.g. because of circular object references in your cell
    */
   initFromSerializable(serializable: Record<string, unknown>): void {
-    Object.assign(this, defaultFromSerializable(serializable))
+    Object.assign(this, JSON.parse(JSON.stringify(serializable)))
   }
 
   /**
@@ -52,6 +50,7 @@ export abstract class Cell {
    * @returns a serializable format of the cell as supported by {@link JSON.stringify}
    */
   toSerializable(): Record<string, unknown> {
-    return defaultToSerializable(this as Record<string, unknown>)
+    // How to support typed arrays (Uint8Array...) https://gist.github.com/jonathanlurie/04fa6343e64f750d03072ac92584b5df
+    return JSON.parse(JSON.stringify(this))
   }
 }
