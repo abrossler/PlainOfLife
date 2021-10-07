@@ -2,12 +2,20 @@ import { Cell } from './cell'
 import { SerializableCellContainer, SerializableCellContainers } from './serializable_plain_of_life'
 import { getCellConstructor, getCellTypeName } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
-import { Plain } from './plain'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
+import { modulo } from '../util/modulo'
 
-// interface Plain<E extends RuleExtensionFactory>{
-
-// }
+/**
+ * Interface to add and remove cell containers from plain fields.
+ * 
+ * Use this interface and don't import Plain and PlainField to break cyclic dependency cell_containers -> plain -> plain_field ->
+ * cell_containers
+ */
+interface Plain<E extends RuleExtensionFactory>{
+  get width(): number
+  get height(): number
+  getAtInt(posX: number, posY: number): {addCellContainer(toAdd: ExtCellContainer<E>): void, removeCellContainer(toRemove: ExtCellContainer<E>): void}
+}
 
 /**
  * A cell container with standard cell related methods and properties plus all rule specific properties
@@ -105,8 +113,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Start with a cyclic list of one (seed) container - the successor and predecessor of this container is the container itself
     this._prev = this._next = this
     this.cell = cell
-    this._posX = Plain.modulo(posX, this.plain.width)
-    this._posY = Plain.modulo(posY, this.plain.height)
+    this._posX = modulo(posX, this.plain.width)
+    this._posY = modulo(posY, this.plain.height)
 
     // Mark this seed container as first container
     this.firstCellContainer = firstCellContainer
@@ -275,8 +283,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Init the child container
     childContainer.plain = this.plain
     childContainer.cell = this.cell.makeChild()
-    childContainer._posX = Plain.modulo(this.posX + dX, this.plain.width)
-    childContainer._posY = Plain.modulo(this.posY + dY, this.plain.height)
+    childContainer._posX = modulo(this.posX + dX, this.plain.width)
+    childContainer._posY = modulo(this.posY + dY, this.plain.height)
 
     // Insert child before parent
     childContainer._prev = this._prev

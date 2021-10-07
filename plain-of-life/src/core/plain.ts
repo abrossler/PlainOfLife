@@ -1,3 +1,4 @@
+import { modulo } from '../util/modulo'
 import { ExtPlainField, PlainField } from './plain_field'
 import { RuleExtensionFactory } from './rule_extension_factory'
 
@@ -40,7 +41,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * Get a plain field for POL core internal usage by it's x and y coordinates
    */
   getAtInt(posX: number, posY: number): PlainField<E> {
-    return this.array[Plain.modulo(posX, this._width)][Plain.modulo(posY, this._height)]
+    return this.array[modulo(posX, this._width)][modulo(posY, this._height)]
   }
 
   /**
@@ -55,17 +56,5 @@ export class Plain<E extends RuleExtensionFactory> {
    */
   get height(): number {
     return this._height
-  }
-
-  /**
-   * The modulo function working also for negative numbers as needed for a torus topography:
-   *
-   * ...-3%3=0  -2%3=1  -1%3=2  0%3=0  1%3=1  2%3=2  3%3=0  4%3=1...
-   */
-  static modulo(n: number, mod: number): number {
-    while (n < 0) {
-      n += mod
-    }
-    return n % mod
   }
 }
