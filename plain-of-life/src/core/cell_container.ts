@@ -1,20 +1,23 @@
 import { Cell } from './cell'
 import { SerializableCellContainer, SerializableCellContainers } from './serializable_plain_of_life'
-import { getCellConstructor, getCellTypeName } from '../cells/cell_names'
+import { CellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
 import { modulo } from '../util/modulo'
 
 /**
  * Interface to add and remove cell containers from plain fields.
- * 
+ *
  * Use this interface and don't import Plain and PlainField to break cyclic dependency cell_containers -> plain -> plain_field ->
  * cell_containers
  */
-interface Plain<E extends RuleExtensionFactory>{
+interface Plain<E extends RuleExtensionFactory> {
   get width(): number
   get height(): number
-  getAtInt(posX: number, posY: number): {addCellContainer(toAdd: ExtCellContainer<E>): void, removeCellContainer(toRemove: ExtCellContainer<E>): void}
+  getAtInt(
+    posX: number,
+    posY: number
+  ): { addCellContainer(toAdd: ExtCellContainer<E>): void; removeCellContainer(toRemove: ExtCellContainer<E>): void }
 }
 
 /**
@@ -149,6 +152,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       const posX = checkInt(serializable.posX, 0, current.plain.width)
       const posY = checkInt(serializable.posY, 0, current.plain.height)
       const isDead = checkBoolean(serializable.isDead)
+      const color = checkInt(serializable.color)
 
       // Init this as the first container
       if (isFirst) {
@@ -183,9 +187,10 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current._posX = posX
       current._posY = posY
       current._isDead = isDead
+      current._color = color
 
       // Create and init the cell of the container
-      const cellConstructor = getCellConstructor(checkString(serializable.cellTypeName))
+      const cellConstructor = CellNames.getCellConstructor(checkString(serializable.cellTypeName))
       if (typeof cellConstructor === 'undefined') {
         throw new Error(
           'Unable to get constructor from cell type name ' +
@@ -208,7 +213,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    */
   toSerializable(): SerializableCellContainer {
     const serializable = {} as SerializableCellContainer
-    const cellTypeName = getCellTypeName(Object.getPrototypeOf(this.cell).constructor)
+    const cellTypeName = CellNames.getCellTypeName(Object.getPrototypeOf(this.cell).constructor)
     if (typeof cellTypeName === 'undefined') {
       throw new Error('Unable to get cell type name from constructor. Forgot to register name for cell implementation?')
     }
@@ -335,5 +340,36 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this._prev._next = this._next
     this._next._prev = this._prev
     this._prev = this._next = this // For a dead cell prev and next point to the cell itself
+  }
+
+  /**
+   * Create a child.
+   *
+   * The child is added before the parent to the cell containers. Thus when iterating on the cell containers, the just born child
+   * will not be included in the current iteration.
+   * @param dX the delta to the parent's x position - e.g. 2 places the child 2 fields on the right of the parent
+   * @param dY the delta to the parent's y position - e.g. -2 places the child 2 fields above the parent
+   * @returns the child
+   */
+
+  /**
+   * Move a cell container on the plain.
+   * @param dX the delta to the current x position - e.g. 2 moves the container 2 fields to the right
+   * @param dY the delta to the current y position - e.g. -2 moves the container 2 fields up
+   */
+  move(dX: number, dY: number): void {
+    checkInt(dX)
+    checkInt(dY)
+
+    if (dX === 0 && dY === 0) {
+      return
+    }
+
+    this.plain.getAtInt(this._posX, this._posY).removeCellContainer(this)
+
+    this._posX = modulo(this.posX + dX, this.plain.width)
+    this._posY = modulo(this.posY + dY, this.plain.height)
+
+    this.plain.getAtInt(this._posX, this._posY).addCellContainer(this)
   }
 }

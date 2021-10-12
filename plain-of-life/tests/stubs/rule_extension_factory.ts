@@ -10,21 +10,35 @@ export type RecordWithCellContainer = {
 }
 
 export class RuleExtensionFactoryWithCellContainer implements RuleExtensionFactory {
+  
   createNewCellRecord(): RecordWithCellContainer {
     return this.createRecord()
   }
 
-  createNewFieldRecord(): RecordWithCellContainer {
+  createNewFieldRecord( ): RecordWithCellContainer {
     return this.createRecord()
   }
 
-  private createRecord(): RecordWithCellContainer {
+  private createRecord( ): RecordWithCellContainer {
     return {
       a: 'A',
       b: { ba: 'BA', bb: 'BB' },
       cellContainer1: null,
       cellContainer2: null,
-      c: 3
+      c: 1
     }
+  }
+}
+
+export class SimpleRuleExtensionFactory implements RuleExtensionFactory {
+  private static cellRecordId = 1
+  private static fieldRecordId = 1
+
+  createNewCellRecord(): { recordId: number } {
+    return { recordId: SimpleRuleExtensionFactory.cellRecordId++ }
+  }
+
+  createNewFieldRecord(): { recordId: number } {
+    return { recordId: SimpleRuleExtensionFactory.fieldRecordId++ }
   }
 }

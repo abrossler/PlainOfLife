@@ -1,5 +1,9 @@
 import { CellContainer, ExtCellContainer } from '../../src/core/cell_container'
-import { defaultToSerializable, getCellContainerSuffix, defaultFromSerializable } from '../../src/core/default_serialization'
+import {
+  defaultToSerializable,
+  getCellContainerSuffix,
+  defaultFromSerializable
+} from '../../src/core/default_serialization'
 import { Plain } from '../../src/core/plain'
 import { RecordWithCellContainer, RuleExtensionFactoryWithCellContainer } from '../stubs/rule_extension_factory'
 
@@ -19,39 +23,35 @@ beforeEach(() => {
   cellContainer3 = new CellContainer(ruleExtensionFactory, plain)
   allCellContainers = []
   objectWithCellContainer = ruleExtensionFactory.createNewCellRecord()
+  objectWithCellContainer.cellContainer1 = cellContainer1
+  objectWithCellContainer.cellContainer2 = cellContainer2
 })
 
 describe('defaultToSerializable', () => {
   {
     const object = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
     const serializable = defaultToSerializable(object)
-    test('creates copy of object', () => {
-      expect(serializable).toStrictEqual(object)
+    it('creates copy of object', () => {
+      expect(serializable).toEqual(object)
     })
-    test('copy of object is really deep', () => {
+    it('copy of object is really deep', () => {
       expect(serializable.b).not.toBe(object.b)
     })
   }
 
-  test('replaces cell containers with index', () => {
-    objectWithCellContainer.cellContainer1 = cellContainer1
-    objectWithCellContainer.cellContainer2 = cellContainer2
+  it('replaces cell containers with index', () => {
     const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
     expect(serializable['cellContainer1' + getCellContainerSuffix()]).toBe(0)
     expect(serializable['cellContainer2' + getCellContainerSuffix()]).toBe(1)
   })
 
-  test('adds new cell container to allCellContainers', () => {
-    objectWithCellContainer.cellContainer1 = cellContainer1
-    objectWithCellContainer.cellContainer2 = cellContainer2
+  it('adds new cell container to allCellContainers', () => {
     defaultToSerializable(objectWithCellContainer, allCellContainers)
     expect(allCellContainers[0]).toBe(cellContainer1)
     expect(allCellContainers[1]).toBe(cellContainer2)
   })
 
-  test('finds and uses existing cell container in all cell containers', () => {
-    objectWithCellContainer.cellContainer1 = cellContainer1
-    objectWithCellContainer.cellContainer2 = cellContainer2
+  it('finds and uses existing cell container in all cell containers', () => {
     allCellContainers.push(cellContainer1)
     allCellContainers.push(cellContainer2)
     allCellContainers.push(cellContainer3)
@@ -60,21 +60,19 @@ describe('defaultToSerializable', () => {
     expect(serializable['cellContainer2' + getCellContainerSuffix()]).toBe(1)
   })
 
-  test('does not append a cell container to all cell containers a second time', () => {
-    objectWithCellContainer.cellContainer1 = cellContainer1
-    objectWithCellContainer.cellContainer2 = cellContainer2
+  it('does not append a cell container to all cell containers a second time', () => {
     allCellContainers.push(cellContainer1)
     allCellContainers.push(cellContainer2)
     defaultToSerializable(objectWithCellContainer, allCellContainers)
     expect(allCellContainers.length).toBe(2)
   })
 
-  test('does not change the object to serialize', () => {
+  it('does not change the object to serialize', () => {
     const objectWithCellContainer2 = ruleExtensionFactory.createNewCellRecord()
-    objectWithCellContainer.cellContainer1 = cellContainer1
     objectWithCellContainer2.cellContainer1 = cellContainer1
+    objectWithCellContainer2.cellContainer2 = cellContainer2
     defaultToSerializable(objectWithCellContainer, allCellContainers)
-    expect(objectWithCellContainer).toStrictEqual(objectWithCellContainer2)
+    expect(objectWithCellContainer).toEqual(objectWithCellContainer2)
   })
 })
 
@@ -82,35 +80,35 @@ describe('defaultFromSerializable', () => {
   {
     const serializable = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
     const object = defaultFromSerializable(serializable)
-    test('creates deep copy of serializable', () => {
-      expect(object).toStrictEqual(serializable)
+    it('creates deep copy of serializable', () => {
+      expect(object).toEqual(serializable)
     })
-    test('copy of serializable is really deep', () => {
+    it('copy of serializable is really deep', () => {
       expect(object.b).not.toBe(serializable.b)
     })
 
-    test('reverts defaultToSerializable', () => {
+    it('reverts defaultToSerializable', () => {
       objectWithCellContainer.cellContainer1 = cellContainer1
       objectWithCellContainer.cellContainer2 = cellContainer2
       const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
       const objectFromSerializable = defaultFromSerializable(serializable, allCellContainers)
-      expect(objectFromSerializable).toStrictEqual(objectWithCellContainer)
+      expect(objectFromSerializable).toEqual(objectWithCellContainer)
     })
 
-    test('throws syntax error if cell container index is out of bounds', () => {
+    it('throws syntax error if cell container index is out of bounds', () => {
       objectWithCellContainer.cellContainer1 = cellContainer1
       objectWithCellContainer.cellContainer2 = cellContainer2
       const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
-      allCellContainers.shift() // Invalidate allCellContainers so that we can't find one container
-      expect(() => defaultFromSerializable(serializable, allCellContainers)).toThrow(SyntaxError)
+      allCellContainers.shift() // Invalidate allCellContainers so that we can't find one of the containers
+      expect(() => defaultFromSerializable(serializable, allCellContainers)).toThrowError(SyntaxError)
     })
 
-    test('throws syntax error if cell container index is not an integer', () => {
+    it('throws syntax error if cell container index is not an integer', () => {
       objectWithCellContainer.cellContainer1 = cellContainer1
       objectWithCellContainer.cellContainer2 = cellContainer2
       const serializable = defaultToSerializable(objectWithCellContainer, allCellContainers)
       serializable['cellContainer2' + getCellContainerSuffix()] = 1.2
-      expect(() => defaultFromSerializable(serializable, allCellContainers)).toThrow(SyntaxError)
+      expect(() => defaultFromSerializable(serializable, allCellContainers)).toThrowError(SyntaxError)
     })
   }
 })

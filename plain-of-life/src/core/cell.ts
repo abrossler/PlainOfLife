@@ -50,7 +50,6 @@ export abstract class Cell {
    * @returns a serializable format of the cell as supported by {@link JSON.stringify}
    */
   toSerializable(): Record<string, unknown> {
-    // How to support typed arrays (Uint8Array...) https://gist.github.com/jonathanlurie/04fa6343e64f750d03072ac92584b5df
     return JSON.parse(JSON.stringify(this))
   }
 }
