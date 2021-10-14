@@ -10,16 +10,15 @@ export type RecordWithCellContainer = {
 }
 
 export class RuleExtensionFactoryWithCellContainer implements RuleExtensionFactory {
-  
   createNewCellRecord(): RecordWithCellContainer {
     return this.createRecord()
   }
 
-  createNewFieldRecord( ): RecordWithCellContainer {
+  createNewFieldRecord(): RecordWithCellContainer {
     return this.createRecord()
   }
 
-  private createRecord( ): RecordWithCellContainer {
+  private createRecord(): RecordWithCellContainer {
     return {
       a: 'A',
       b: { ba: 'BA', bb: 'BB' },

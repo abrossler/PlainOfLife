@@ -212,7 +212,9 @@ describe('Cell Container', () => {
       let allSerializableCellContainers = [cellContainer.toSerializable()]
       let fromSerializable = new CellContainer(ruleExtensionFactory, new Plain(ruleExtensionFactory, 2, 2))
       // TestCell used for this test is not registered
-      expect(() => fromSerializable.initFromSerializable(allSerializableCellContainers, firstCellContainer)).toThrowError(Error)
+      expect(() =>
+        fromSerializable.initFromSerializable(allSerializableCellContainers, firstCellContainer)
+      ).toThrowError(Error)
     })
   })
 
@@ -221,17 +223,24 @@ describe('Cell Container', () => {
     let fromSerializable: CellContainer<SimpleRuleExtensionFactory>
     let fromSerializablePlain: Plain<SimpleRuleExtensionFactory>
     let allCellContainers: CellContainer<SimpleRuleExtensionFactory>[]
-  
+
     beforeEach(() => {
       child1Container = cellContainer.makeChild(1, 0) as CellContainer<SimpleRuleExtensionFactory>
       child2Container = cellContainer.makeChild(0, 1) as CellContainer<SimpleRuleExtensionFactory>
       child2Container.die()
       spyOn(CellNames, 'getCellTypeName').and.returnValue('TestCell')
-      allSerializableCellContainers = [cellContainer.toSerializable(), child1Container.toSerializable(), child2Container.toSerializable()]
+      allSerializableCellContainers = [
+        cellContainer.toSerializable(),
+        child1Container.toSerializable(),
+        child2Container.toSerializable()
+      ]
       fromSerializablePlain = new Plain(ruleExtensionFactory, 2, 2)
       fromSerializable = new CellContainer(ruleExtensionFactory, fromSerializablePlain)
       spyOn(CellNames, 'getCellConstructor').and.returnValue(TestCell)
-      allCellContainers = fromSerializable.initFromSerializable(allSerializableCellContainers, firstCellContainer) as CellContainer<SimpleRuleExtensionFactory>[]
+      allCellContainers = fromSerializable.initFromSerializable(
+        allSerializableCellContainers,
+        firstCellContainer
+      ) as CellContainer<SimpleRuleExtensionFactory>[]
     })
     it('processes all serializable containers and sets first cell container correctly', () => {
       expect(allCellContainers.length).toEqual(allSerializableCellContainers.length)
@@ -257,7 +266,9 @@ describe('Cell Container', () => {
     it('places cell containers of alive cells correctly on plain', () => {
       expect(fromSerializable.posX).toBe(cellContainer.posX)
       expect(fromSerializable.posY).toBe(cellContainer.posY)
-      expect(fromSerializablePlain.getAt(fromSerializable.posX, fromSerializable.posY).getCellContainers()[0]).toBe(fromSerializable)
+      expect(fromSerializablePlain.getAt(fromSerializable.posX, fromSerializable.posY).getCellContainers()[0]).toBe(
+        fromSerializable
+      )
       let next = fromSerializable.next
       expect(next.posX).toBe(child1Container.posX)
       expect(next.posY).toBe(child1Container.posY)

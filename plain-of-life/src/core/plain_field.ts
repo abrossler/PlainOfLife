@@ -40,7 +40,11 @@ export class PlainField<E extends RuleExtensionFactory> {
    * For POL core internal use only, doesn't ensure consistency with the cell container
    */
   removeCellContainer(toRemove: ExtCellContainer<E>): void {
-    this.cellContainers.splice(this.cellContainers.findIndex((cr) => cr === toRemove))
+    let index = this.cellContainers.findIndex((cr) => cr === toRemove)
+    if (index === -1) {
+      throw new Error('Trying to remove not existing cell container. This shall never happen.')
+    }
+    this.cellContainers.splice(index, 1)
   }
 
   /**

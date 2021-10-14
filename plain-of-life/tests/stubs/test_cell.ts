@@ -5,7 +5,6 @@ export class TestCell extends Cell {
   memory = [0, 1, 2, 3, 255]
   deepObject = { a: { b: 'B' } }
 
-
   private static idCounter = 1
   executeTurn(input: Uint8Array, output: Uint8Array): void {
     throw new Error('Method not implemented.')
