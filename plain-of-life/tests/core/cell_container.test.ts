@@ -1,33 +1,33 @@
-import { CellNames } from '../../src/cells/cell_names'
+import { cellNames } from '../../src/cells/cell_names'
 import { CellContainer } from '../../src/core/cell_container'
 import { Plain } from '../../src/core/plain'
 import { SerializableCellContainer } from '../../src/core/serializable_plain_of_life'
 import { SimpleRuleExtensionFactory } from '../stubs/rule_extension_factory'
 import { TestCell } from '../stubs/test_cell'
 
-const posXOutsidePlain = 3
-const posYOutsidePlain = -3
-const plainSize = 2
-const posXInPlain = 1
-const posYInPlain = 1
-const ruleExtensionFactory = new SimpleRuleExtensionFactory()
-let plain: Plain<SimpleRuleExtensionFactory>
-let cellContainer: CellContainer<SimpleRuleExtensionFactory>
-let seedCell: TestCell
-let firstCellContainer: { first: CellContainer<SimpleRuleExtensionFactory> }
-let serializable: SerializableCellContainer
-let child1Container: CellContainer<SimpleRuleExtensionFactory>
-let child2Container: CellContainer<SimpleRuleExtensionFactory>
-
-beforeEach(() => {
-  plain = new Plain(ruleExtensionFactory, plainSize, plainSize)
-  cellContainer = new CellContainer(ruleExtensionFactory, plain)
-  firstCellContainer = { first: cellContainer }
-  seedCell = new TestCell()
-  cellContainer.initSeedCellContainer(seedCell, posXOutsidePlain, posYOutsidePlain, firstCellContainer)
-})
-
 describe('Cell Container', () => {
+  const posXOutsidePlain = 3
+  const posYOutsidePlain = -3
+  const plainSize = 2
+  const posXInPlain = 1
+  const posYInPlain = 1
+  const ruleExtensionFactory = new SimpleRuleExtensionFactory()
+  let plain: Plain<SimpleRuleExtensionFactory>
+  let cellContainer: CellContainer<SimpleRuleExtensionFactory>
+  let seedCell: TestCell
+  let firstCellContainer: { first: CellContainer<SimpleRuleExtensionFactory> }
+  let serializable: SerializableCellContainer
+  let child1Container: CellContainer<SimpleRuleExtensionFactory>
+  let child2Container: CellContainer<SimpleRuleExtensionFactory>
+
+  beforeEach(() => {
+    plain = new Plain(ruleExtensionFactory, plainSize, plainSize)
+    cellContainer = new CellContainer(ruleExtensionFactory, plain)
+    firstCellContainer = { first: cellContainer }
+    seedCell = new TestCell()
+    cellContainer.initSeedCellContainer(seedCell, posXOutsidePlain, posYOutsidePlain, firstCellContainer)
+  })
+
   describe('construction', () => {
     it('fills properties correctly', () => {
       expect(cellContainer.isDead).toBeFalse()
@@ -188,7 +188,7 @@ describe('Cell Container', () => {
 
   describe('toSerializable', () => {
     beforeEach(() => {
-      spyOn(CellNames, 'getCellTypeName').and.returnValue('TestCell')
+      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
       serializable = cellContainer.toSerializable()
     })
 
@@ -208,7 +208,7 @@ describe('Cell Container', () => {
 
   describe('initFromSerializable', () => {
     it('throws an error if cell class is not registered', () => {
-      spyOn(CellNames, 'getCellTypeName').and.returnValue('TestCell') // Spy for toSerializable
+      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell') // Spy for toSerializable
       let allSerializableCellContainers = [cellContainer.toSerializable()]
       let fromSerializable = new CellContainer(ruleExtensionFactory, new Plain(ruleExtensionFactory, 2, 2))
       // TestCell used for this test is not registered
@@ -228,7 +228,7 @@ describe('Cell Container', () => {
       child1Container = cellContainer.makeChild(1, 0) as CellContainer<SimpleRuleExtensionFactory>
       child2Container = cellContainer.makeChild(0, 1) as CellContainer<SimpleRuleExtensionFactory>
       child2Container.die()
-      spyOn(CellNames, 'getCellTypeName').and.returnValue('TestCell')
+      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
       allSerializableCellContainers = [
         cellContainer.toSerializable(),
         child1Container.toSerializable(),
@@ -236,7 +236,7 @@ describe('Cell Container', () => {
       ]
       fromSerializablePlain = new Plain(ruleExtensionFactory, 2, 2)
       fromSerializable = new CellContainer(ruleExtensionFactory, fromSerializablePlain)
-      spyOn(CellNames, 'getCellConstructor').and.returnValue(TestCell)
+      spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)
       allCellContainers = fromSerializable.initFromSerializable(
         allSerializableCellContainers,
         firstCellContainer

@@ -8,8 +8,6 @@ import { checkBigInt, checkInt, checkObject, checkString } from '../util/type_ch
 import { CellContainer, CellContainers, ExtCellContainer, FirstCellContainer } from './cell_container'
 import { Plain } from './plain'
 
-const maxPlainSize = 10000000
-
 /**
  * The Plain of Life programming game:
  *
@@ -77,13 +75,12 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     newPOL.familyTree.initNew()
 
     // Create plain and add seed cell
-    PlainOfLife.checkSize(width, height)
-    const posX = width / 2
-    const posY = height / 2
     newPOL.plain = new Plain<E>(newPOL.rules, width, height)
     newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
     const seedCell = new Cell()
     seedCell.initSeedCell(newPOL.rules.getRecommendedSeedCellOutput())
+    const posX = Math.floor(width / 2)
+    const posY = Math.floor(height / 2)
     newPOL.firstCellContainer.first.initSeedCellContainer(seedCell, posX, posY, newPOL.firstCellContainer)
 
     // Init the rules with already initialized plain and cell containers
@@ -124,7 +121,6 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     // Create the plain
     const width = checkInt(serializable.plainWidth)
     const height = checkInt(serializable.plainHeight)
-    PlainOfLife.checkSize(width, height)
     newPOL.plain = new Plain<E>(newPOL.rules, width, height)
 
     // Create the cell containers
@@ -164,26 +160,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     return newPOL
   }
 
-  /**
-   * Check that the width and hight are in a valid range and throw an error if not...
-   */
-  private static checkSize(width: number, height: number) {
-    if (width < 2) {
-      throw new Error('The minimum width for a plain of life is 2 but got ' + width)
-    }
 
-    if (height < 2) {
-      throw new Error('The minimum height for a plain of life is 2 but got ' + height)
-    }
-
-    if (!Number.isInteger(width) || !Number.isInteger(height)) {
-      throw new Error('Width and height for a plain of life must be integer numbers')
-    }
-
-    if (width * height > maxPlainSize) {
-      throw new Error('Plain is too big - width * height must be <= ' + maxPlainSize)
-    }
-  }
 
   /**
    * Convert a plain of life (that has data structures optimized for turn execution) in a serializable format.
@@ -272,7 +249,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       return false // All cells are dead, game over
     }
 
-    this.rules.executeTurn(this.plain, cellContainers)
+    this.rules.executeTurn(this._currentTurn, this.plain, cellContainers)
     this.familyTree.update(cellContainers)
     this._currentTurn++
     return true

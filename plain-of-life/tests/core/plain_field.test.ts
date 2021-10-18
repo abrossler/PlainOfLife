@@ -3,28 +3,27 @@ import { Plain } from '../../src/core/plain'
 import { PlainField } from '../../src/core/plain_field'
 import { SimpleRuleExtensionFactory } from '../stubs/rule_extension_factory'
 
-const plainSize = 2
-const ruleExtensionFactory = new SimpleRuleExtensionFactory()
-let plain: Plain<SimpleRuleExtensionFactory>
-let cellContainers: CellContainer<SimpleRuleExtensionFactory>[]
-let initialPlainField: PlainField<SimpleRuleExtensionFactory>
-let plainFieldWithContainers: PlainField<SimpleRuleExtensionFactory>
-
-beforeEach(() => {
-  plain = new Plain(ruleExtensionFactory, plainSize, plainSize)
-  cellContainers = [
-    new CellContainer(ruleExtensionFactory, plain),
-    new CellContainer(ruleExtensionFactory, plain),
-    new CellContainer(ruleExtensionFactory, plain)
-  ]
-  initialPlainField = plain.getAtInt(0, 0)
-  plainFieldWithContainers = plain.getAtInt(1, 1)
-  plainFieldWithContainers.addCellContainer(cellContainers[0])
-  plainFieldWithContainers.addCellContainer(cellContainers[1])
-  plainFieldWithContainers.addCellContainer(cellContainers[2])
-})
-
 describe('Plain Field', () => {
+  const plainSize = 2
+  const ruleExtensionFactory = new SimpleRuleExtensionFactory()
+  let plain: Plain<SimpleRuleExtensionFactory>
+  let cellContainers: CellContainer<SimpleRuleExtensionFactory>[]
+  let initialPlainField: PlainField<SimpleRuleExtensionFactory>
+  let plainFieldWithContainers: PlainField<SimpleRuleExtensionFactory>
+
+  beforeEach(() => {
+    plain = new Plain(ruleExtensionFactory, plainSize, plainSize)
+    cellContainers = [
+      new CellContainer(ruleExtensionFactory, plain),
+      new CellContainer(ruleExtensionFactory, plain),
+      new CellContainer(ruleExtensionFactory, plain)
+    ]
+    initialPlainField = plain.getAtInt(0, 0)
+    plainFieldWithContainers = plain.getAtInt(1, 1)
+    plainFieldWithContainers.addCellContainer(cellContainers[0])
+    plainFieldWithContainers.addCellContainer(cellContainers[1])
+    plainFieldWithContainers.addCellContainer(cellContainers[2])
+  })
   it('construction inits properties correctly', () => {
     expect(initialPlainField.fieldRecord.recordId).toBeGreaterThan(0)
     expect(initialPlainField.getCellContainers().length).toBe(0)

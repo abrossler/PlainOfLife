@@ -24,7 +24,7 @@ export class RuleExtensionFactoryWithCellContainer implements RuleExtensionFacto
       b: { ba: 'BA', bb: 'BB' },
       cellContainer1: null,
       cellContainer2: null,
-      c: 1
+      c: 0
     }
   }
 }

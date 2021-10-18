@@ -1,6 +1,6 @@
 import { Cell } from './cell'
 import { SerializableCellContainer, SerializableCellContainers } from './serializable_plain_of_life'
-import { CellNames } from '../cells/cell_names'
+import { cellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
 import { modulo } from '../util/modulo'
@@ -30,7 +30,7 @@ interface Plain<E extends RuleExtensionFactory> {
  */
 export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
   CellContainer<E>,
-  'makeChild' | 'posX' | 'posY' | 'die' | 'isDead' | 'cellRecord' | 'toSerializable' | 'next'
+  'makeChild' | 'move' | 'posX' | 'posY' | 'die' | 'isDead' | 'cellRecord' | 'toSerializable' | 'next'
 >
 
 /**
@@ -190,7 +190,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current._color = color
 
       // Create and init the cell of the container
-      const cellConstructor = CellNames.getCellConstructor(checkString(serializable.cellTypeName))
+      const cellConstructor = cellNames.getCellConstructor(checkString(serializable.cellTypeName))
       if (typeof cellConstructor === 'undefined') {
         throw new Error(
           'Unable to get constructor from cell type name ' +
@@ -213,7 +213,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    */
   toSerializable(): SerializableCellContainer {
     const serializable = {} as SerializableCellContainer
-    const cellTypeName = CellNames.getCellTypeName(Object.getPrototypeOf(this.cell).constructor)
+    const cellTypeName = cellNames.getCellTypeName(Object.getPrototypeOf(this.cell).constructor)
     if (typeof cellTypeName === 'undefined') {
       throw new Error('Unable to get cell type name from constructor. Forgot to register name for cell implementation?')
     }
@@ -341,16 +341,6 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this._next._prev = this._prev
     this._prev = this._next = this // For a dead cell prev and next point to the cell itself
   }
-
-  /**
-   * Create a child.
-   *
-   * The child is added before the parent to the cell containers. Thus when iterating on the cell containers, the just born child
-   * will not be included in the current iteration.
-   * @param dX the delta to the parent's x position - e.g. 2 places the child 2 fields on the right of the parent
-   * @param dY the delta to the parent's y position - e.g. -2 places the child 2 fields above the parent
-   * @returns the child
-   */
 
   /**
    * Move a cell container on the plain.

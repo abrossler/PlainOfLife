@@ -2,6 +2,8 @@ import { modulo } from '../util/modulo'
 import { ExtPlainField, PlainField } from './plain_field'
 import { RuleExtensionFactory } from './rule_extension_factory'
 
+const maxPlainSize = 10000000
+
 /**
  * A plain of plain fields that can be accessed by their x and y coordinates.
  */
@@ -21,6 +23,22 @@ export class Plain<E extends RuleExtensionFactory> {
    * Create a new plain of new plain fields with the size width x height
    */
   constructor(fieldRecordFactory: RuleExtensionFactory, private _width: number, private _height: number) {
+    if (_width < 2) {
+      throw new Error('The minimum width for a plain of life is 2 but got ' + _width)
+    }
+
+    if (_height < 2) {
+      throw new Error('The minimum height for a plain of life is 2 but got ' + _height)
+    }
+
+    if (!Number.isInteger(_width) || !Number.isInteger(_height)) {
+      throw new Error('Width and height for a plain of life must be integer numbers')
+    }
+
+    if (_width * _height > maxPlainSize) {
+      throw new Error('Plain is too big - width * height must be <= ' + maxPlainSize)
+    }
+
     this.array = Array.from({ length: _width }, () => {
       return Array.from({ length: _height }, () => {
         return new PlainField<E>(fieldRecordFactory)
