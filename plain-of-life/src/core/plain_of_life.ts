@@ -2,7 +2,7 @@ import { FamilyTree } from './family_tree'
 import { Rules } from './rules'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { SerializablePlainOfLife } from '../core/serializable_plain_of_life'
-import { getRuleName, getRuleConstructor } from '../rules/rules_names'
+import { ruleNames } from '../rules/rules_names'
 import { Cell } from './cell'
 import { checkBigInt, checkInt, checkObject, checkString } from '../util/type_checks'
 import { CellContainer, CellContainers, ExtCellContainer, FirstCellContainer } from './cell_container'
@@ -32,7 +32,7 @@ import { Plain } from './plain'
  */
 export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   PlainOfLife<E>,
-  'executeTurn' | 'currentTurn' | 'toSerializable'
+  'executeTurn' | 'currentTurn' | 'toSerializable' | 'plainWidth' | 'plainHeight'
 >
 
 /**
@@ -103,7 +103,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     newPOL._currentTurn = checkBigInt(serializable.currentTurn, 0n)
 
     // Create the rules
-    const ruleConstructor = getRuleConstructor(checkString(serializable.rulesName))
+    const ruleConstructor = ruleNames.getRuleConstructor(checkString(serializable.rulesName))
     if (typeof ruleConstructor === 'undefined') {
       throw new Error(
         'Unable to get constructor from rules name ' +
@@ -160,8 +160,6 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     return newPOL
   }
 
-
-
   /**
    * Convert a plain of life (that has data structures optimized for turn execution) in a serializable format.
    * @returns a serializable format of the plain of life as supported by {@link JSON.stringify}
@@ -178,7 +176,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     serializable['plainHeight'] = height
 
     // Add rules
-    const rulesName = getRuleName(Object.getPrototypeOf(this.rules).constructor)
+    const rulesName = ruleNames.getRuleName(Object.getPrototypeOf(this.rules).constructor)
     if (typeof rulesName === 'undefined') {
       throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
     }
@@ -270,5 +268,19 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       return null // Game over - there is only one last dead cell
     }
     return new CellContainers(this.firstCellContainer.first)
+  }
+
+  /**
+   * Get the width of the plain
+   */
+  get plainWidth(): number {
+    return this.plain.width
+  }
+
+  /**
+   * Get the height of teh plain
+   */
+  get plainHeight(): number {
+    return this.plain.height
   }
 }

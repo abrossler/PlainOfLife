@@ -1,13 +1,13 @@
 import { Plain } from '../../src/core/plain'
 import { PlainField } from '../../src/core/plain_field'
-import { SimpleRuleExtensionFactory } from '../stubs/rule_extension_factory'
+import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 
 describe('Plain', () => {
   const plainWidth = 3
   const plainHeight = 2
 
-  const ruleExtensionFactory = new SimpleRuleExtensionFactory()
-  let plain: Plain<SimpleRuleExtensionFactory>
+  const ruleExtensionFactory = new TestRuleExtensionFactory()
+  let plain: Plain<TestRuleExtensionFactory>
 
   beforeEach(() => {
     plain = new Plain(ruleExtensionFactory, plainWidth, plainHeight)

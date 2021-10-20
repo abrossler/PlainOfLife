@@ -18,30 +18,35 @@ const constructorIndex = 1
 type RuleConstructor = new () => Rules<RuleExtensionFactory>
 
 /**
- * Get the names of all implemented Plain of Life rules
+ * Mapping of rule names to cell constructors
  */
-export function getRuleNames(): string[] {
-  return ruleNamesAndConstructors.map((_) => _[nameIndex])
-}
+export const ruleNames = {
+  /**
+   * Get the names of all implemented Plain of Life rules
+   */
+  getRuleNames(): string[] {
+    return ruleNamesAndConstructors.map((_) => _[nameIndex])
+  },
 
-/**
- * Get the constructor of a Plain of Life rule set by the rules name
- */
-export function getRuleConstructor(name: string): undefined | RuleConstructor {
-  const nameAndConstructor = ruleNamesAndConstructors.find((_) => _[nameIndex] === name)
-  if (nameAndConstructor) {
-    return nameAndConstructor[constructorIndex]
-  }
-  return undefined
-}
+  /**
+   * Get the constructor of a Plain of Life rule set by the rules name
+   */
+  getRuleConstructor(name: string): undefined | RuleConstructor {
+    const nameAndConstructor = ruleNamesAndConstructors.find((_) => _[nameIndex] === name)
+    if (nameAndConstructor) {
+      return nameAndConstructor[constructorIndex]
+    }
+    return undefined
+  },
 
-/**
- * Get the name of a Plain of Life rule set by the rules constructor
- */
-export function getRuleName(constructor: RuleConstructor): undefined | string {
-  const nameAndConstructor = ruleNamesAndConstructors.find((_) => _[constructorIndex] === constructor)
-  if (nameAndConstructor) {
-    return nameAndConstructor[nameIndex]
+  /**
+   * Get the name of a Plain of Life rule set by the rules constructor
+   */
+  getRuleName(constructor: RuleConstructor): undefined | string {
+    const nameAndConstructor = ruleNamesAndConstructors.find((_) => _[constructorIndex] === constructor)
+    if (nameAndConstructor) {
+      return nameAndConstructor[nameIndex]
+    }
+    return undefined
   }
-  return undefined
 }

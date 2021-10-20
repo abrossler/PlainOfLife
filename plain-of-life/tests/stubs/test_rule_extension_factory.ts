@@ -4,12 +4,12 @@ import { CellContainer } from '../../src/core/cell_container'
 export type RecordWithCellContainer = {
   a: string
   b: { ba: string; bb: string }
-  cellContainer1: null | CellContainer<RuleExtensionFactoryWithCellContainer>
-  cellContainer2: null | CellContainer<RuleExtensionFactoryWithCellContainer>
+  cellContainer1: null | CellContainer<TestRuleExtensionFactoryWithCellContainer>
+  cellContainer2: null | CellContainer<TestRuleExtensionFactoryWithCellContainer>
   c: number
 }
 
-export class RuleExtensionFactoryWithCellContainer implements RuleExtensionFactory {
+export class TestRuleExtensionFactoryWithCellContainer implements RuleExtensionFactory {
   createNewCellRecord(): RecordWithCellContainer {
     return this.createRecord()
   }
@@ -29,15 +29,15 @@ export class RuleExtensionFactoryWithCellContainer implements RuleExtensionFacto
   }
 }
 
-export class SimpleRuleExtensionFactory implements RuleExtensionFactory {
+export class TestRuleExtensionFactory implements RuleExtensionFactory {
   private static cellRecordId = 1
   private static fieldRecordId = 1
 
   createNewCellRecord(): { recordId: number } {
-    return { recordId: SimpleRuleExtensionFactory.cellRecordId++ }
+    return { recordId: TestRuleExtensionFactory.cellRecordId++ }
   }
 
   createNewFieldRecord(): { recordId: number } {
-    return { recordId: SimpleRuleExtensionFactory.fieldRecordId++ }
+    return { recordId: TestRuleExtensionFactory.fieldRecordId++ }
   }
 }

@@ -1,11 +1,10 @@
 import { ExtCellContainer } from '../../src/core/cell_container'
 import { defaultSerialization } from '../../src/core/default_serialization'
-import { RuleExtensionFactoryWithCellContainer } from '../stubs/rule_extension_factory'
 import { TestRules } from '../stubs/test_rules'
 
 let rules: TestRules
 let serializableRules: Record<string, unknown>
-let allCellContainers: ExtCellContainer<RuleExtensionFactoryWithCellContainer>[]
+let allCellContainers: ExtCellContainer<TestRules>[]
 
 describe('Rules', () => {
   beforeEach(() => {
@@ -29,14 +28,14 @@ describe('Rules', () => {
   describe('default implementation of cellRecordToSerializable', () => {
     {
       it('calls defaultToSerializable as expected', () => {
-        let cellRecord = new RuleExtensionFactoryWithCellContainer().createNewCellRecord()
+        let cellRecord = rules.createNewCellRecord()
         spyOn(defaultSerialization, 'toSerializable')
         rules.cellRecordToSerializable(cellRecord, allCellContainers)
         expect(defaultSerialization.toSerializable).toHaveBeenCalledWith(cellRecord, allCellContainers)
       })
 
       it('returns a result that is a copy with the expected properties', () => {
-        let cellRecord = new RuleExtensionFactoryWithCellContainer().createNewCellRecord()
+        let cellRecord = rules.createNewCellRecord()
         expect(rules.cellRecordToSerializable(cellRecord, allCellContainers)).not.toBe(cellRecord)
         expect(rules.cellRecordToSerializable(cellRecord, allCellContainers)).toEqual(cellRecord)
       })
@@ -46,16 +45,16 @@ describe('Rules', () => {
   describe('default implementation of fieldRecordToSerializable', () => {
     {
       it('calls defaultToSerializable as expected', () => {
-        let fieldRecord = new RuleExtensionFactoryWithCellContainer().createNewFieldRecord()
+        let fieldRecord = rules.createNewFieldRecord()
         spyOn(defaultSerialization, 'toSerializable')
-        rules.cellRecordToSerializable(fieldRecord, allCellContainers)
+        rules.fieldRecordToSerializable(fieldRecord, allCellContainers)
         expect(defaultSerialization.toSerializable).toHaveBeenCalledWith(fieldRecord, allCellContainers)
       })
 
       it('returns a result that is a copy with the expected properties', () => {
-        let fieldRecord = new RuleExtensionFactoryWithCellContainer().createNewFieldRecord()
-        expect(rules.cellRecordToSerializable(fieldRecord, allCellContainers)).not.toBe(fieldRecord)
-        expect(rules.cellRecordToSerializable(fieldRecord, allCellContainers)).toEqual(fieldRecord)
+        let fieldRecord = rules.createNewFieldRecord()
+        expect(rules.fieldRecordToSerializable(fieldRecord, allCellContainers)).not.toBe(fieldRecord)
+        expect(rules.fieldRecordToSerializable(fieldRecord, allCellContainers)).toEqual(fieldRecord)
       })
     }
   })
@@ -74,17 +73,17 @@ describe('Rules', () => {
   describe('default implementation of initCellRecordFromSerializable', () => {
     {
       it('calls defaultFromSerializable as expected', () => {
-        let cellRecord = new RuleExtensionFactoryWithCellContainer().createNewCellRecord()
-        let toInit = new RuleExtensionFactoryWithCellContainer().createNewCellRecord()
+        let cellRecord = rules.createNewCellRecord()
+        let toInit = rules.createNewCellRecord()
         let serializable = rules.cellRecordToSerializable(cellRecord, allCellContainers)
         spyOn(defaultSerialization, 'fromSerializable')
         rules.initCellRecordFromSerializable(toInit, serializable, allCellContainers)
         expect(defaultSerialization.fromSerializable).toHaveBeenCalledWith(serializable, allCellContainers)
       })
       it('reverts default implementation of cellRecordToSerializable', () => {
-        let cellRecord = new RuleExtensionFactoryWithCellContainer().createNewCellRecord()
-        cellRecord.a = 'AA'
-        let toInit = new RuleExtensionFactoryWithCellContainer().createNewCellRecord()
+        let cellRecord = rules.createNewCellRecord()
+        cellRecord.cellAge = 25
+        let toInit = rules.createNewCellRecord()
         let serializable = rules.cellRecordToSerializable(cellRecord, allCellContainers)
         rules.initCellRecordFromSerializable(toInit, serializable, allCellContainers)
         expect(toInit).toEqual(cellRecord)
@@ -95,17 +94,17 @@ describe('Rules', () => {
   describe('default implementation of initFieldRecordFromSerializable', () => {
     {
       it('calls defaultFromSerializable as expected', () => {
-        let fieldRecord = new RuleExtensionFactoryWithCellContainer().createNewFieldRecord()
-        let toInit = new RuleExtensionFactoryWithCellContainer().createNewFieldRecord()
+        let fieldRecord = rules.createNewFieldRecord()
+        let toInit = rules.createNewFieldRecord()
         let serializable = rules.fieldRecordToSerializable(fieldRecord, allCellContainers)
         spyOn(defaultSerialization, 'fromSerializable')
         rules.initFieldRecordFromSerializable(toInit, serializable, allCellContainers)
         expect(defaultSerialization.fromSerializable).toHaveBeenCalledWith(serializable, allCellContainers)
       })
       it('reverts default implementation of fieldRecordToSerializable', () => {
-        let fieldRecord = new RuleExtensionFactoryWithCellContainer().createNewFieldRecord()
-        fieldRecord.b.ba = 'Bb Aa'
-        let toInit = new RuleExtensionFactoryWithCellContainer().createNewFieldRecord()
+        let fieldRecord = rules.createNewFieldRecord()
+        fieldRecord.temperature = 31
+        let toInit = rules.createNewFieldRecord()
         let serializable = rules.fieldRecordToSerializable(fieldRecord, allCellContainers)
         rules.initFieldRecordFromSerializable(toInit, serializable, allCellContainers)
         expect(toInit).toEqual(fieldRecord)

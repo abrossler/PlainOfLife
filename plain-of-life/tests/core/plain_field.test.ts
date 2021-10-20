@@ -1,15 +1,15 @@
 import { CellContainer } from '../../src/core/cell_container'
 import { Plain } from '../../src/core/plain'
 import { PlainField } from '../../src/core/plain_field'
-import { SimpleRuleExtensionFactory } from '../stubs/rule_extension_factory'
+import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 
 describe('Plain Field', () => {
   const plainSize = 2
-  const ruleExtensionFactory = new SimpleRuleExtensionFactory()
-  let plain: Plain<SimpleRuleExtensionFactory>
-  let cellContainers: CellContainer<SimpleRuleExtensionFactory>[]
-  let initialPlainField: PlainField<SimpleRuleExtensionFactory>
-  let plainFieldWithContainers: PlainField<SimpleRuleExtensionFactory>
+  const ruleExtensionFactory = new TestRuleExtensionFactory()
+  let plain: Plain<TestRuleExtensionFactory>
+  let cellContainers: CellContainer<TestRuleExtensionFactory>[]
+  let initialPlainField: PlainField<TestRuleExtensionFactory>
+  let plainFieldWithContainers: PlainField<TestRuleExtensionFactory>
 
   beforeEach(() => {
     plain = new Plain(ruleExtensionFactory, plainSize, plainSize)

@@ -56,7 +56,7 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    * Typical examples might be cellEnergy: number, cellAge: number or any other attribute required by your rules for each cell
    * to execute a turn.
    */
-  abstract createNewCellRecord(): Record<string, unknown>
+  abstract createNewCellRecord(): ReturnType<E['createNewCellRecord']>
 
   /**
    * If a seed call is added to a plain of life, this cell had no chance yet to 'learn' what's a good output according to your
@@ -107,7 +107,7 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    * Typical examples might be fieldTemperature: number, fieldFood: Food or any other attribute required by your rules for each
    * plain field to execute a turn.
    */
-  abstract createNewFieldRecord(): Record<string, unknown>
+  abstract createNewFieldRecord(): ReturnType<E['createNewFieldRecord']>
 
   /**
    * Init a field record from a serializable field record as returned by {@link fieldRecordToSerializable}. Used during plain

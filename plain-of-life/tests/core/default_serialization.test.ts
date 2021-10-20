@@ -1,19 +1,19 @@
 import { CellContainer, ExtCellContainer } from '../../src/core/cell_container'
 import { defaultSerialization } from '../../src/core/default_serialization'
 import { Plain } from '../../src/core/plain'
-import { RecordWithCellContainer, RuleExtensionFactoryWithCellContainer } from '../stubs/rule_extension_factory'
+import { RecordWithCellContainer, TestRuleExtensionFactoryWithCellContainer } from '../stubs/test_rule_extension_factory'
 
 describe('Default serialization', () => {
-  let ruleExtensionFactory: RuleExtensionFactoryWithCellContainer
-  let plain: Plain<RuleExtensionFactoryWithCellContainer>
-  let cellContainer1: CellContainer<RuleExtensionFactoryWithCellContainer>
-  let cellContainer2: CellContainer<RuleExtensionFactoryWithCellContainer>
-  let cellContainer3: CellContainer<RuleExtensionFactoryWithCellContainer>
-  let allCellContainers: ExtCellContainer<RuleExtensionFactoryWithCellContainer>[]
+  let ruleExtensionFactory: TestRuleExtensionFactoryWithCellContainer
+  let plain: Plain<TestRuleExtensionFactoryWithCellContainer>
+  let cellContainer1: CellContainer<TestRuleExtensionFactoryWithCellContainer>
+  let cellContainer2: CellContainer<TestRuleExtensionFactoryWithCellContainer>
+  let cellContainer3: CellContainer<TestRuleExtensionFactoryWithCellContainer>
+  let allCellContainers: ExtCellContainer<TestRuleExtensionFactoryWithCellContainer>[]
   let objectWithCellContainer: RecordWithCellContainer
 
   beforeEach(() => {
-    ruleExtensionFactory = new RuleExtensionFactoryWithCellContainer()
+    ruleExtensionFactory = new TestRuleExtensionFactoryWithCellContainer()
     plain = new Plain(ruleExtensionFactory, 2, 2)
     cellContainer1 = new CellContainer(ruleExtensionFactory, plain)
     cellContainer2 = new CellContainer(ruleExtensionFactory, plain)

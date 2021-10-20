@@ -2,7 +2,7 @@ import { cellNames } from '../../src/cells/cell_names'
 import { CellContainer } from '../../src/core/cell_container'
 import { Plain } from '../../src/core/plain'
 import { SerializableCellContainer } from '../../src/core/serializable_plain_of_life'
-import { SimpleRuleExtensionFactory } from '../stubs/rule_extension_factory'
+import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 import { TestCell } from '../stubs/test_cell'
 
 describe('Cell Container', () => {
@@ -11,14 +11,14 @@ describe('Cell Container', () => {
   const plainSize = 2
   const posXInPlain = 1
   const posYInPlain = 1
-  const ruleExtensionFactory = new SimpleRuleExtensionFactory()
-  let plain: Plain<SimpleRuleExtensionFactory>
-  let cellContainer: CellContainer<SimpleRuleExtensionFactory>
+  const ruleExtensionFactory = new TestRuleExtensionFactory()
+  let plain: Plain<TestRuleExtensionFactory>
+  let cellContainer: CellContainer<TestRuleExtensionFactory>
   let seedCell: TestCell
-  let firstCellContainer: { first: CellContainer<SimpleRuleExtensionFactory> }
+  let firstCellContainer: { first: CellContainer<TestRuleExtensionFactory> }
   let serializable: SerializableCellContainer
-  let child1Container: CellContainer<SimpleRuleExtensionFactory>
-  let child2Container: CellContainer<SimpleRuleExtensionFactory>
+  let child1Container: CellContainer<TestRuleExtensionFactory>
+  let child2Container: CellContainer<TestRuleExtensionFactory>
 
   beforeEach(() => {
     plain = new Plain(ruleExtensionFactory, plainSize, plainSize)
@@ -50,16 +50,16 @@ describe('Cell Container', () => {
     })
     it('places cell container on plain', () => {
       expect(cellContainer).toBe(
-        plain.getAt(posXInPlain, posYInPlain).getCellContainers()[0] as CellContainer<SimpleRuleExtensionFactory>
+        plain.getAt(posXInPlain, posYInPlain).getCellContainers()[0] as CellContainer<TestRuleExtensionFactory>
       )
     })
   })
 
   describe('makeChild', () => {
-    let child1Container: CellContainer<SimpleRuleExtensionFactory>
+    let child1Container: CellContainer<TestRuleExtensionFactory>
 
     beforeEach(() => {
-      child1Container = cellContainer.makeChild(1, 1) as CellContainer<SimpleRuleExtensionFactory>
+      child1Container = cellContainer.makeChild(1, 1) as CellContainer<TestRuleExtensionFactory>
     })
     it('throws a syntax error if arguments dx or dy are no integer', () => {
       expect(() => cellContainer.makeChild(1.1, 1)).toThrowError(SyntaxError)
@@ -72,9 +72,9 @@ describe('Cell Container', () => {
 
     it('creates a child cell by calling cell.makeChild', () => {
       expect((child1Container as any).cell).toBeInstanceOf(TestCell)
-      spyOn(cellContainer, 'makeChild')
+      spyOn(seedCell, 'makeChild')
       cellContainer.makeChild(0, 1)
-      expect(cellContainer.makeChild).toHaveBeenCalledTimes(1)
+      expect(seedCell.makeChild).toHaveBeenCalledTimes(1)
     })
 
     it('places the child container on the plain', () => {
@@ -109,8 +109,8 @@ describe('Cell Container', () => {
 
   describe('die', () => {
     beforeEach(() => {
-      child1Container = cellContainer.makeChild(1, 1) as CellContainer<SimpleRuleExtensionFactory>
-      child2Container = cellContainer.makeChild(-1, 0) as CellContainer<SimpleRuleExtensionFactory>
+      child1Container = cellContainer.makeChild(1, 1) as CellContainer<TestRuleExtensionFactory>
+      child2Container = cellContainer.makeChild(-1, 0) as CellContainer<TestRuleExtensionFactory>
       child2Container.die()
     })
     it('marks the died container as dead', () => {
@@ -220,13 +220,13 @@ describe('Cell Container', () => {
 
   describe('initFromSerializable', () => {
     let allSerializableCellContainers: SerializableCellContainer[]
-    let fromSerializable: CellContainer<SimpleRuleExtensionFactory>
-    let fromSerializablePlain: Plain<SimpleRuleExtensionFactory>
-    let allCellContainers: CellContainer<SimpleRuleExtensionFactory>[]
+    let fromSerializable: CellContainer<TestRuleExtensionFactory>
+    let fromSerializablePlain: Plain<TestRuleExtensionFactory>
+    let allCellContainers: CellContainer<TestRuleExtensionFactory>[]
 
     beforeEach(() => {
-      child1Container = cellContainer.makeChild(1, 0) as CellContainer<SimpleRuleExtensionFactory>
-      child2Container = cellContainer.makeChild(0, 1) as CellContainer<SimpleRuleExtensionFactory>
+      child1Container = cellContainer.makeChild(1, 0) as CellContainer<TestRuleExtensionFactory>
+      child2Container = cellContainer.makeChild(0, 1) as CellContainer<TestRuleExtensionFactory>
       child2Container.die()
       spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
       allSerializableCellContainers = [
@@ -240,7 +240,7 @@ describe('Cell Container', () => {
       allCellContainers = fromSerializable.initFromSerializable(
         allSerializableCellContainers,
         firstCellContainer
-      ) as CellContainer<SimpleRuleExtensionFactory>[]
+      ) as CellContainer<TestRuleExtensionFactory>[]
     })
     it('processes all serializable containers and sets first cell container correctly', () => {
       expect(allCellContainers.length).toEqual(allSerializableCellContainers.length)
