@@ -21,6 +21,9 @@ describe('Plain of life', () => {
   let cellContainers: CellContainers<TestRules> | null
   let executeTurnResult: boolean
   let serializable: SerializablePlainOfLife
+  let fromSerializable: ExtPlainOfLife<TestRules>
+  let fromSerializableRules: TestRules
+  let fromSerializableFamilyTree: FamilyTree<TestRules>
 
   describe('createNew', () => {
     beforeAll(createPlainOfLife)
@@ -44,7 +47,7 @@ describe('Plain of life', () => {
     })
 
     it('creates family tree', () => {
-      expect((plainOfLife as any).familyTree).toBeInstanceOf(FamilyTree)
+      expect(familyTree).toBeInstanceOf(FamilyTree)
     })
 
     it('creates plain correctly', () => {
@@ -115,12 +118,7 @@ describe('Plain of life', () => {
   })
 
   describe('toSerializable()', () => {
-    beforeAll(() => {
-      createPlainOfLifeAndExecuteTurn(false)
-      spyOn(ruleNames, 'getRuleName').and.returnValue('TestRules')
-      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
-      serializable = plainOfLife.toSerializable()
-    })
+    beforeAll( plainOfLifeToSerializable)
 
     it('converts current turn to string', () => {
       expect(serializable.currentTurn).toBe(plainOfLife.currentTurn.toString())
@@ -144,17 +142,36 @@ describe('Plain of life', () => {
       expect(serializable.fieldRecords.length).toBe(plainWidth * plainHeight)
       expect(serializable.fieldRecords[0]).toEqual(rules.fieldRecordToSerializable(plain.getAtInt(0,0).fieldRecord, []))
     })
-    // serializable['fieldRecords'] = []
-    // for (let y = 0; y < height; y++) {
-    //   for (let x = 0; x < width; x++) {
-    //     serializable.fieldRecords.push(
-    //       this.rules.fieldRecordToSerializable(this.plain.getAtInt(x, y).fieldRecord, allCellContainers)
-    //     )
-    //   }
-    // }
 
+    it('converts all cell records', () => {
+      expect(serializable.cellRecords.length).toBe(2) // Seed cell + 1 child after first turn execution
+      expect(serializable.cellRecords[1]).toEqual(rules.cellRecordToSerializable(firstCellContainer.cellRecord, [])) // [1] as after executeTurn the child is the new first cell container and the parent has the index [1]
+    })
+  })
 
-    // ToDo continue here...
+  describe('createFromSerializable() with not registered rule constructor', () => {
+    it('throws an error', () => {
+      plainOfLifeToSerializable()
+      spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)
+      expect(() => PlainOfLife.createFromSerializable(serializable)).toThrowError(Error)
+    })
+  })
+
+  describe('createFromSerializable()', () => {
+    beforeAll( plainOfLifeFromSerializable)
+
+    it('fills current turn', () => {
+      expect(fromSerializable.currentTurn).toBe(plainOfLife.currentTurn)
+    })
+
+    it('inits rules', () => {
+      expect(fromSerializableRules).toBeInstanceOf(TestRules)
+      expect(fromSerializableRules.initFromSerializablePassed).toBeTrue()
+    })
+
+    it('creates family tree', () => {
+      expect(fromSerializableFamilyTree).toBeInstanceOf(FamilyTree)
+    })
   })
 
   function createPlainOfLife(): void {
@@ -176,8 +193,24 @@ describe('Plain of life', () => {
         container.die()
       }
     }
-    spyOn(rules, 'executeTurn')
+    spyOn(rules, 'executeTurn').and.callThrough()
     spyOn(familyTree, 'update')
     executeTurnResult = plainOfLife.executeTurn()
+  }
+
+  function plainOfLifeToSerializable(){
+    createPlainOfLifeAndExecuteTurn(false)
+    spyOn(ruleNames, 'getRuleName').and.returnValue('TestRules')
+    spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
+    serializable = plainOfLife.toSerializable()
+  }
+
+  function plainOfLifeFromSerializable(){
+    plainOfLifeToSerializable()
+    spyOn(ruleNames, 'getRuleConstructor').and.returnValue(TestRules)
+    spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)
+    fromSerializable = PlainOfLife.createFromSerializable(serializable)
+    fromSerializableRules = (fromSerializable as unknown as { rules: TestRules }).rules
+    fromSerializableFamilyTree = (fromSerializable as unknown as { familyTree: FamilyTree<TestRules> }).familyTree
   }
 })

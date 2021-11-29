@@ -19,16 +19,16 @@ export abstract class Cell {
    *
    * This random change might be an advantage according to the {@link Rules} so that the child (and it's children) have
    * a better chance to survive and reproduce. Or it might be a disadvantage and the child's branch in the family tree will
-   * die out
-   * @returns a child cell. The child is expected to be a new instance of the same class as the parent cell
+   * die out.
+   * @returns a child cell. The child is expected to be a new instance of the same class as the parent cell.
    */
   abstract makeChild(): Cell
 
   /**
    * Init a seed cell after creation. A seed cell is a cell that is added initially to a new plain of life and that is not
-   * created by {@link makeChild}
+   * created by {@link makeChild}.
    *
-   * @param recommendedOutput as the initial {@link executeTurn} output recommended by the rules for a seed cell to survive
+   * @param recommendedOutput as the initial {@link executeTurn} output recommended by the rules for a seed cell to survive.
    */
   abstract initSeedCell(recommendedOutput: Uint8Array): void
 
@@ -36,7 +36,7 @@ export abstract class Cell {
    * Init a new cell from a serializable cell as returned by {@link toSerializable}. Used during plain of life
    * de-serialization.
    *
-   * Override if {@link defaultFromSerializable} is not sufficient e.g. because of circular object references in your cell
+   * Override if defaultSerialization.fromSerializable is not sufficient e.g. because of circular object references in your cell.
    */
   initFromSerializable(serializable: Record<string, unknown>): void {
     Object.assign(this, JSON.parse(JSON.stringify(serializable)))
@@ -46,7 +46,7 @@ export abstract class Cell {
    * Convert a cell to a serializable format e.g. by flattening circular references (if there are any). Used during plain
    * of life serialization
    *
-   * Override if {@link defaultToSerializable} is not sufficient e.g. because of circular object references in your cell
+   * Override if defaultSerialization.toSerializable is not sufficient e.g. because of circular object references in your cell
    * @returns a serializable format of the cell as supported by {@link JSON.stringify}
    */
   toSerializable(): Record<string, unknown> {

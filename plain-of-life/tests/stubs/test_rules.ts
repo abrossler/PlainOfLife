@@ -1,4 +1,4 @@
-import { CellContainer, CellContainers } from '../../src/core/cell_container'
+import { CellContainer, CellContainers, ExtCellContainer } from '../../src/core/cell_container'
 import { ExtPlain } from '../../src/core/plain'
 import { Rules } from '../../src/core/rules'
 
@@ -8,6 +8,7 @@ export class TestRules extends Rules<TestRules> {
   initNewPassed = false
   initWithPlain: ExtPlain<TestRules> | null = null
   initWithCellContainers: CellContainers<TestRules> | null = null
+  initFromSerializablePassed = false
 
   executeTurn(
     currentTurn: bigint,
@@ -21,21 +22,23 @@ export class TestRules extends Rules<TestRules> {
         continue
       }
       if (currentTurn === 0n) {
-        cellContainer.makeChild(1, 0)
+        this.makeChild(cellContainer, plain, 1, 0)
       }
       if (currentTurn === 1n) {
-        cellContainer.makeChild(0, 1)
+        this.makeChild(cellContainer, plain, 0, 1)
       }
       if (currentTurn === 2n) {
-        cellContainer.move(0, 1)
+        this.move(cellContainer, plain, 0, 1)
       }
     }
   }
   createNewCellRecord(): {
-    cellAge: number
+    cellAge: number,
+    parent: ExtCellContainer<TestRules> | null
   } {
     return {
-      cellAge: 0
+      cellAge: 0,
+      parent: null
     }
   }
   getRecommendedSeedCellOutput(): Uint8Array {
@@ -43,7 +46,7 @@ export class TestRules extends Rules<TestRules> {
   }
 
   createNewFieldRecord(): {
-    owner: CellContainer<TestRules> | null
+    owner: ExtCellContainer<TestRules> | null
     temperature: number
   } {
     return {
@@ -56,10 +59,15 @@ export class TestRules extends Rules<TestRules> {
     plain: ExtPlain<TestRules>,
     cellContainers: CellContainers<TestRules>
   ): void {
+    super.initNew(plain, cellContainers)
     this.initNewPassed = true
     this.initWithPlain = plain
     this.initWithCellContainers = cellContainers
-    super.initNew(plain, cellContainers)
+  }
+
+  initFromSerializable(serializable: Record<string, unknown>): void {
+    super.initFromSerializable(serializable)
+    this.initFromSerializablePassed = true
   }
 
   toSerializable(): Record<string, unknown> {
@@ -67,5 +75,16 @@ export class TestRules extends Rules<TestRules> {
     this.initWithCellContainers = null
 
     return super.toSerializable()
+  }
+
+  private makeChild(cellContainer:ExtCellContainer<TestRules>,plain: ExtPlain<TestRules>, dX:number, dY: number ): void{
+    let child = cellContainer.makeChild(dX, dY)
+    child.cellRecord.parent = cellContainer
+    plain.getAt(child.posX, child.posY).fieldRecord.owner = child
+  }
+
+  private move(cellContainer:ExtCellContainer<TestRules>,plain: ExtPlain<TestRules>, dX:number, dY: number): void{
+    cellContainer.move(dX, dY)
+    plain.getAt(cellContainer.posX, cellContainer.posY).fieldRecord.owner = cellContainer
   }
 }
