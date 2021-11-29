@@ -9,7 +9,7 @@ export class TestCell extends Cell {
   initSeedCellPassed = false
 
   executeTurn(input: Uint8Array, output: Uint8Array): void {
-    let length = Math.min(output.length, this.recommendedOutput.length)
+    const length = Math.min(output.length, this.recommendedOutput.length)
     for (let i = 0; i < length; i++) {
       output[i] = this.recommendedOutput[i]
     }

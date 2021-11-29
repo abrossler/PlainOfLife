@@ -1,7 +1,10 @@
 import { CellContainer, ExtCellContainer } from '../../src/core/cell_container'
 import { defaultSerialization } from '../../src/core/default_serialization'
 import { Plain } from '../../src/core/plain'
-import { RecordWithCellContainer, TestRuleExtensionFactoryWithCellContainer } from '../stubs/test_rule_extension_factory'
+import {
+  RecordWithCellContainer,
+  TestRuleExtensionFactoryWithCellContainer
+} from '../stubs/test_rule_extension_factory'
 
 describe('Default serialization', () => {
   let ruleExtensionFactory: TestRuleExtensionFactoryWithCellContainer

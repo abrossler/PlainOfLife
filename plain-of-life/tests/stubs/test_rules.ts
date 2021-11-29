@@ -1,4 +1,4 @@
-import { CellContainer, CellContainers, ExtCellContainer } from '../../src/core/cell_container'
+import { CellContainers, ExtCellContainer } from '../../src/core/cell_container'
 import { ExtPlain } from '../../src/core/plain'
 import { Rules } from '../../src/core/rules'
 
@@ -10,11 +10,7 @@ export class TestRules extends Rules<TestRules> {
   initWithCellContainers: CellContainers<TestRules> | null = null
   initFromSerializablePassed = false
 
-  executeTurn(
-    currentTurn: bigint,
-    plain: ExtPlain<TestRules>,
-    cellContainers: CellContainers<TestRules>
-  ): void {
+  executeTurn(currentTurn: bigint, plain: ExtPlain<TestRules>, cellContainers: CellContainers<TestRules>): void {
     for (const cellContainer of cellContainers) {
       cellContainer.cellRecord.cellAge++
       if (cellContainer.cellRecord.cellAge > 2) {
@@ -33,7 +29,7 @@ export class TestRules extends Rules<TestRules> {
     }
   }
   createNewCellRecord(): {
-    cellAge: number,
+    cellAge: number
     parent: ExtCellContainer<TestRules> | null
   } {
     return {
@@ -55,10 +51,7 @@ export class TestRules extends Rules<TestRules> {
     }
   }
 
-  initNew(
-    plain: ExtPlain<TestRules>,
-    cellContainers: CellContainers<TestRules>
-  ): void {
+  initNew(plain: ExtPlain<TestRules>, cellContainers: CellContainers<TestRules>): void {
     super.initNew(plain, cellContainers)
     this.initNewPassed = true
     this.initWithPlain = plain
@@ -77,13 +70,18 @@ export class TestRules extends Rules<TestRules> {
     return super.toSerializable()
   }
 
-  private makeChild(cellContainer:ExtCellContainer<TestRules>,plain: ExtPlain<TestRules>, dX:number, dY: number ): void{
-    let child = cellContainer.makeChild(dX, dY)
+  private makeChild(
+    cellContainer: ExtCellContainer<TestRules>,
+    plain: ExtPlain<TestRules>,
+    dX: number,
+    dY: number
+  ): void {
+    const child = cellContainer.makeChild(dX, dY)
     child.cellRecord.parent = cellContainer
     plain.getAt(child.posX, child.posY).fieldRecord.owner = child
   }
 
-  private move(cellContainer:ExtCellContainer<TestRules>,plain: ExtPlain<TestRules>, dX:number, dY: number): void{
+  private move(cellContainer: ExtCellContainer<TestRules>, plain: ExtPlain<TestRules>, dX: number, dY: number): void {
     cellContainer.move(dX, dY)
     plain.getAt(cellContainer.posX, cellContainer.posY).fieldRecord.owner = cellContainer
   }

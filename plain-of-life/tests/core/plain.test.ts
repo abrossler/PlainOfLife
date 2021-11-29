@@ -2,6 +2,8 @@ import { Plain } from '../../src/core/plain'
 import { PlainField } from '../../src/core/plain_field'
 import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 
+/* eslint-disable @typescript-eslint/no-explicit-any*/
+
 describe('Plain', () => {
   const plainWidth = 3
   const plainHeight = 2

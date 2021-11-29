@@ -100,7 +100,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   static createFromSerializable<E extends RuleExtensionFactory>(serializable: SerializablePlainOfLife): PlainOfLife<E> {
     // Create the plain of life
     const newPOL = new PlainOfLife<E>()
-    newPOL._currentTurn = checkBigInt(BigInt(checkString(serializable.currentTurn)),0n)
+    newPOL._currentTurn = checkBigInt(BigInt(checkString(serializable.currentTurn)), 0n)
 
     // Create the rules
     const ruleConstructor = ruleNames.getRuleConstructor(checkString(serializable.rulesName))

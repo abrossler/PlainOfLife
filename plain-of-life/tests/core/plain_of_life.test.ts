@@ -39,7 +39,7 @@ describe('Plain of life', () => {
       expect(rules.initWithPlain).toBe(plain)
       // inits rules with all cell containers holding the one and only container of a new plain of life
       let count = 0
-      for (let container of rules.initWithCellContainers as unknown as CellContainers<TestRules>) {
+      for (const container of rules.initWithCellContainers as unknown as CellContainers<TestRules>) {
         count++
         expect(container as unknown as CellContainer<TestRules>).toBe(firstCellContainer)
       }
@@ -61,8 +61,10 @@ describe('Plain of life', () => {
       expect(firstCellContainer).toBeInstanceOf(CellContainer)
       expect(seedCell).toBeInstanceOf(TestCell)
       expect(seedCell.initSeedCellPassed).toBeTrue()
+      /* eslint-disable @typescript-eslint/no-explicit-any*/
       expect(plain).toBe((firstCellContainer as any).plain)
       expect(rules).toBe((firstCellContainer as any).cellRecordFactory)
+      /* eslint-enable @typescript-eslint/no-explicit-any*/
       expect(firstCellContainer.next).toBe(firstCellContainer)
     })
 
@@ -118,7 +120,7 @@ describe('Plain of life', () => {
   })
 
   describe('toSerializable()', () => {
-    beforeAll( plainOfLifeToSerializable)
+    beforeAll(plainOfLifeToSerializable)
 
     it('converts current turn to string', () => {
       expect(serializable.currentTurn).toBe(plainOfLife.currentTurn.toString())
@@ -140,7 +142,9 @@ describe('Plain of life', () => {
 
     it('converts all field records', () => {
       expect(serializable.fieldRecords.length).toBe(plainWidth * plainHeight)
-      expect(serializable.fieldRecords[0]).toEqual(rules.fieldRecordToSerializable(plain.getAtInt(0,0).fieldRecord, []))
+      expect(serializable.fieldRecords[0]).toEqual(
+        rules.fieldRecordToSerializable(plain.getAtInt(0, 0).fieldRecord, [])
+      )
     })
 
     it('converts all cell records', () => {
@@ -158,7 +162,7 @@ describe('Plain of life', () => {
   })
 
   describe('createFromSerializable()', () => {
-    beforeAll( plainOfLifeFromSerializable)
+    beforeAll(plainOfLifeFromSerializable)
 
     it('fills current turn', () => {
       expect(fromSerializable.currentTurn).toBe(plainOfLife.currentTurn)
@@ -176,11 +180,13 @@ describe('Plain of life', () => {
 
   function createPlainOfLife(): void {
     plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, TestRules, TestCell)
+    /* eslint-disable @typescript-eslint/no-explicit-any*/
     firstCellContainer = (plainOfLife as any).firstCellContainer.first
     seedCell = (firstCellContainer as any).cell
-    rules = (plainOfLife as unknown as { rules: TestRules }).rules
-    plain = (plainOfLife as unknown as { plain: Plain<TestRules> }).plain
-    familyTree = (plainOfLife as unknown as { familyTree: FamilyTree<TestRules> }).familyTree
+    rules = (plainOfLife as any).rules
+    plain = (plainOfLife as any).plain
+    familyTree = (plainOfLife as any).familyTree
+    /* eslint-enable @typescript-eslint/no-explicit-any*/
   }
 
   function createPlainOfLifeAndExecuteTurn(enforceGameOver: boolean): void {
@@ -189,7 +195,7 @@ describe('Plain of life', () => {
       plainOfLife as unknown as { getCellContainers(): CellContainers<TestRules> | null }
     ).getCellContainers()
     if (enforceGameOver) {
-      for (let container of cellContainers as CellContainers<TestRules>) {
+      for (const container of cellContainers as CellContainers<TestRules>) {
         container.die()
       }
     }
@@ -198,14 +204,14 @@ describe('Plain of life', () => {
     executeTurnResult = plainOfLife.executeTurn()
   }
 
-  function plainOfLifeToSerializable(){
+  function plainOfLifeToSerializable() {
     createPlainOfLifeAndExecuteTurn(false)
     spyOn(ruleNames, 'getRuleName').and.returnValue('TestRules')
     spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
     serializable = plainOfLife.toSerializable()
   }
 
-  function plainOfLifeFromSerializable(){
+  function plainOfLifeFromSerializable() {
     plainOfLifeToSerializable()
     spyOn(ruleNames, 'getRuleConstructor').and.returnValue(TestRules)
     spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)

@@ -7,7 +7,7 @@ import { RuleExtensionFactory } from './rule_extension_factory'
  * The abstract super class for all Plain of Life rules.
  *
  * Implement your own Plain of Life rule set by deriving your rules class. Typically use your class as RuleExtensionFactory:
- * 
+ *
  * class MyRules extends Rules\<MyRules\>
  */
 export abstract class Rules<E extends RuleExtensionFactory> implements RuleExtensionFactory {

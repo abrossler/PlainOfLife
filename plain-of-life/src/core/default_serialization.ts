@@ -79,6 +79,9 @@ export const defaultSerialization = {
   }
 }
 
+/**
+ * Helper to get the index of t in an array a adding t to the array if not yet in...
+ */
 function getIndexOrAdd<T>(a: T[], t: T): number {
   const i = a.indexOf(t)
   if (i === -1) {

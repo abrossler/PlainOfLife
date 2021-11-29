@@ -5,6 +5,8 @@ import { SerializableCellContainer } from '../../src/core/serializable_plain_of_
 import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 import { TestCell } from '../stubs/test_cell'
 
+/* eslint-disable @typescript-eslint/no-explicit-any*/
+
 describe('Cell Container', () => {
   const posXOutsidePlain = 3
   const posYOutsidePlain = -3
@@ -37,7 +39,7 @@ describe('Cell Container', () => {
       expect((cellContainer as any).cell).toBe(seedCell)
     })
     it('creates a correct cyclic list of one cell container', () => {
-      expect((cellContainer as any).next === cellContainer).toBeTrue()
+      expect(cellContainer.next === cellContainer).toBeTrue()
       expect((cellContainer as any)._prev === cellContainer).toBeTrue()
     })
     it('sets up first cell container correctly', () => {
@@ -96,7 +98,7 @@ describe('Cell Container', () => {
     })
 
     it('adds a child before the parent container', () => {
-      let child2Container = cellContainer.makeChild(0, 1)
+      const child2Container = cellContainer.makeChild(0, 1)
       expect((cellContainer as any)._prev).toBe(child2Container)
     })
 
@@ -209,8 +211,8 @@ describe('Cell Container', () => {
   describe('initFromSerializable', () => {
     it('throws an error if cell class is not registered', () => {
       spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell') // Spy for toSerializable
-      let allSerializableCellContainers = [cellContainer.toSerializable()]
-      let fromSerializable = new CellContainer(ruleExtensionFactory, new Plain(ruleExtensionFactory, 2, 2))
+      const allSerializableCellContainers = [cellContainer.toSerializable()]
+      const fromSerializable = new CellContainer(ruleExtensionFactory, new Plain(ruleExtensionFactory, 2, 2))
       // TestCell used for this test is not registered
       expect(() =>
         fromSerializable.initFromSerializable(allSerializableCellContainers, firstCellContainer)
@@ -257,7 +259,7 @@ describe('Cell Container', () => {
     })
 
     it('handles dead cells correctly', () => {
-      let dead = allCellContainers[2]
+      const dead = allCellContainers[2]
       expect(dead.isDead).toBeTrue()
       expect(dead.next).toBe(dead)
       expect((dead as any)._prev).toBe(dead)
@@ -269,14 +271,14 @@ describe('Cell Container', () => {
       expect(fromSerializablePlain.getAt(fromSerializable.posX, fromSerializable.posY).getCellContainers()[0]).toBe(
         fromSerializable
       )
-      let next = fromSerializable.next
+      const next = fromSerializable.next
       expect(next.posX).toBe(child1Container.posX)
       expect(next.posY).toBe(child1Container.posY)
       expect(fromSerializablePlain.getAt(next.posX, next.posY).getCellContainers()[0]).toBe(next)
     })
 
     it('does not place containers of dead cells on plain but fills position of container', () => {
-      let dead = allCellContainers[2]
+      const dead = allCellContainers[2]
       expect(dead.posX).toBe(child2Container.posX)
       expect(dead.posY).toBe(child2Container.posY)
       expect(fromSerializablePlain.getAt(dead.posX, dead.posY).getCellContainers().length).toBe(0)
