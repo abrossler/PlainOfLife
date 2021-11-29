@@ -126,7 +126,7 @@ describe('Plain of life', () => {
       expect(serializable.currentTurn).toBe(plainOfLife.currentTurn.toString())
     })
 
-    it('copies plain width and hide', () => {
+    it('copies plain width and height', () => {
       expect(serializable.plainWidth).toBe(plainOfLife.plainWidth)
       expect(serializable.plainHeight).toBe(plainOfLife.plainHeight)
     })
@@ -156,7 +156,7 @@ describe('Plain of life', () => {
   describe('createFromSerializable() with not registered rule constructor', () => {
     it('throws an error', () => {
       plainOfLifeToSerializable()
-      spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)
+      spyOn(cellNames, 'getConstructor').and.returnValue(TestCell)
       expect(() => PlainOfLife.createFromSerializable(serializable)).toThrowError(Error)
     })
   })
@@ -206,15 +206,15 @@ describe('Plain of life', () => {
 
   function plainOfLifeToSerializable() {
     createPlainOfLifeAndExecuteTurn(false)
-    spyOn(ruleNames, 'getRuleName').and.returnValue('TestRules')
-    spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
+    spyOn(ruleNames, 'getName').and.returnValue('TestRules')
+    spyOn(cellNames, 'getName').and.returnValue('TestCell')
     serializable = plainOfLife.toSerializable()
   }
 
   function plainOfLifeFromSerializable() {
     plainOfLifeToSerializable()
-    spyOn(ruleNames, 'getRuleConstructor').and.returnValue(TestRules)
-    spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)
+    spyOn(ruleNames, 'getConstructor').and.returnValue(TestRules)
+    spyOn(cellNames, 'getConstructor').and.returnValue(TestCell)
     fromSerializable = PlainOfLife.createFromSerializable(serializable)
     fromSerializableRules = (fromSerializable as unknown as { rules: TestRules }).rules
     fromSerializableFamilyTree = (fromSerializable as unknown as { familyTree: FamilyTree<TestRules> }).familyTree

@@ -190,7 +190,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current._color = color
 
       // Create and init the cell of the container
-      const cellConstructor = cellNames.getCellConstructor(checkString(serializable.cellTypeName))
+      const cellConstructor = cellNames.getConstructor(checkString(serializable.cellTypeName))
       if (typeof cellConstructor === 'undefined') {
         throw new Error(
           'Unable to get constructor from cell type name ' +
@@ -213,7 +213,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    */
   toSerializable(): SerializableCellContainer {
     const serializable = {} as SerializableCellContainer
-    const cellTypeName = cellNames.getCellTypeName(Object.getPrototypeOf(this.cell).constructor)
+    const cellTypeName = cellNames.getName(Object.getPrototypeOf(this.cell).constructor)
     if (typeof cellTypeName === 'undefined') {
       throw new Error('Unable to get cell type name from constructor. Forgot to register name for cell implementation?')
     }

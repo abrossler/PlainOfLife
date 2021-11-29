@@ -103,7 +103,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     newPOL._currentTurn = checkBigInt(BigInt(checkString(serializable.currentTurn)), 0n)
 
     // Create the rules
-    const ruleConstructor = ruleNames.getRuleConstructor(checkString(serializable.rulesName))
+    const ruleConstructor = ruleNames.getConstructor(checkString(serializable.rulesName))
     if (typeof ruleConstructor === 'undefined') {
       throw new Error(
         'Unable to get constructor from rules name ' +
@@ -176,7 +176,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     serializable['plainHeight'] = height
 
     // Add rules
-    const rulesName = ruleNames.getRuleName(Object.getPrototypeOf(this.rules).constructor)
+    const rulesName = ruleNames.getName(Object.getPrototypeOf(this.rules).constructor)
     if (typeof rulesName === 'undefined') {
       throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
     }

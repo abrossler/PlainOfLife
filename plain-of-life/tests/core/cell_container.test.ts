@@ -190,7 +190,7 @@ describe('Cell Container', () => {
 
   describe('toSerializable', () => {
     beforeEach(() => {
-      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
+      spyOn(cellNames, 'getName').and.returnValue('TestCell')
       serializable = cellContainer.toSerializable()
     })
 
@@ -210,7 +210,7 @@ describe('Cell Container', () => {
 
   describe('initFromSerializable', () => {
     it('throws an error if cell class is not registered', () => {
-      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell') // Spy for toSerializable
+      spyOn(cellNames, 'getName').and.returnValue('TestCell') // Spy for toSerializable
       const allSerializableCellContainers = [cellContainer.toSerializable()]
       const fromSerializable = new CellContainer(ruleExtensionFactory, new Plain(ruleExtensionFactory, 2, 2))
       // TestCell used for this test is not registered
@@ -230,7 +230,7 @@ describe('Cell Container', () => {
       child1Container = cellContainer.makeChild(1, 0) as CellContainer<TestRuleExtensionFactory>
       child2Container = cellContainer.makeChild(0, 1) as CellContainer<TestRuleExtensionFactory>
       child2Container.die()
-      spyOn(cellNames, 'getCellTypeName').and.returnValue('TestCell')
+      spyOn(cellNames, 'getName').and.returnValue('TestCell')
       allSerializableCellContainers = [
         cellContainer.toSerializable(),
         child1Container.toSerializable(),
@@ -238,7 +238,7 @@ describe('Cell Container', () => {
       ]
       fromSerializablePlain = new Plain(ruleExtensionFactory, 2, 2)
       fromSerializable = new CellContainer(ruleExtensionFactory, fromSerializablePlain)
-      spyOn(cellNames, 'getCellConstructor').and.returnValue(TestCell)
+      spyOn(cellNames, 'getConstructor').and.returnValue(TestCell)
       allCellContainers = fromSerializable.initFromSerializable(
         allSerializableCellContainers,
         firstCellContainer
