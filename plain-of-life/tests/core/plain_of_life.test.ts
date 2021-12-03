@@ -154,8 +154,9 @@ describe('Plain of life', () => {
   })
 
   describe('createFromSerializable() with not registered rule constructor', () => {
+    beforeAll(plainOfLifeToSerializable)
+
     it('throws an error', () => {
-      plainOfLifeToSerializable()
       spyOn(cellNames, 'getConstructor').and.returnValue(TestCell)
       expect(() => PlainOfLife.createFromSerializable(serializable)).toThrowError(Error)
     })
@@ -178,6 +179,9 @@ describe('Plain of life', () => {
     })
   })
 
+  /**
+   * Create a plain of life and get the most common (private) properties
+   */
   function createPlainOfLife(): void {
     plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, TestRules, TestCell)
     /* eslint-disable @typescript-eslint/no-explicit-any*/
@@ -189,6 +193,10 @@ describe('Plain of life', () => {
     /* eslint-enable @typescript-eslint/no-explicit-any*/
   }
 
+  /**
+   * Create a plain of life and execute the first turn
+   * @param enforceGameOver enforces the game to end if set by letting all cells die before executing the turn
+   */
   function createPlainOfLifeAndExecuteTurn(enforceGameOver: boolean): void {
     createPlainOfLife()
     cellContainers = (
@@ -200,10 +208,13 @@ describe('Plain of life', () => {
       }
     }
     spyOn(rules, 'executeTurn').and.callThrough()
-    spyOn(familyTree, 'update')
+    spyOn(familyTree, 'update').and.callThrough()
     executeTurnResult = plainOfLife.executeTurn()
   }
 
+  /**
+   * Create a serializable plain of life from a plain after executing one turn
+   */
   function plainOfLifeToSerializable() {
     createPlainOfLifeAndExecuteTurn(false)
     spyOn(ruleNames, 'getName').and.returnValue('TestRules')
@@ -211,6 +222,9 @@ describe('Plain of life', () => {
     serializable = plainOfLife.toSerializable()
   }
 
+  /**
+   * Create a plain of life from a previously created serializable plain of life
+   */
   function plainOfLifeFromSerializable() {
     plainOfLifeToSerializable()
     spyOn(ruleNames, 'getConstructor').and.returnValue(TestRules)

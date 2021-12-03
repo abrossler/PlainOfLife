@@ -47,19 +47,19 @@ describe('Plain', () => {
     expect(plain.getAt(2 + 3 * plainWidth, 1)).toBe(plain.getAt(2, 1)) // Multiples of plainWidth shall have no impact...
 
     // Exit to the left => enter from the right
-    expect(plain.getAt(-1, 1)).toBe(plain.getAt(plainWidth-1, 1))
-    expect(plain.getAt(-1 - 2 * plainWidth, 1)).toBe(plain.getAt(plainWidth-1, 1)) // Multiples of plainWidth shall have no impact...
-    expect(plain.getAt(-2, 1)).toBe(plain.getAt(plainWidth-2, 1))
-    expect(plain.getAt(-3, 1)).toBe(plain.getAt(plainWidth-3, 1))
-  
+    expect(plain.getAt(-1, 1)).toBe(plain.getAt(plainWidth - 1, 1))
+    expect(plain.getAt(-1 - 2 * plainWidth, 1)).toBe(plain.getAt(plainWidth - 1, 1)) // Multiples of plainWidth shall have no impact...
+    expect(plain.getAt(-2, 1)).toBe(plain.getAt(plainWidth - 2, 1))
+    expect(plain.getAt(-3, 1)).toBe(plain.getAt(plainWidth - 3, 1))
+
     // Exit at the bottom => enter from the top
     expect(plain.getAt(0, 0 + plainHeight)).toBe(plain.getAt(0, 0))
     expect(plain.getAt(0, 1 + plainHeight)).toBe(plain.getAt(0, 1))
     expect(plain.getAt(0, 1 + 2 * plainHeight)).toBe(plain.getAt(0, 1)) // Multiples of plainHeight shall have no impact...
 
     // Exit at the top => enter from the bottom
-    expect(plain.getAt(0, -1 )).toBe(plain.getAt(0, plainHeight -1))
-    expect(plain.getAt(0, -2 )).toBe(plain.getAt(0, plainHeight -2))
-    expect(plain.getAt(0, -2 - 2 * plainHeight)).toBe(plain.getAt(0, plainHeight -2)) // Multiples of plainHeight shall have no impact...
+    expect(plain.getAt(0, -1)).toBe(plain.getAt(0, plainHeight - 1))
+    expect(plain.getAt(0, -2)).toBe(plain.getAt(0, plainHeight - 2))
+    expect(plain.getAt(0, -2 - 2 * plainHeight)).toBe(plain.getAt(0, plainHeight - 2)) // Multiples of plainHeight shall have no impact...
   })
 })
