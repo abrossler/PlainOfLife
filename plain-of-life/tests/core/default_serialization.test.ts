@@ -15,17 +15,21 @@ describe('Default serialization', () => {
   let allCellContainers: ExtCellContainer<TestRuleExtensionFactoryWithCellContainer>[]
   let objectWithCellContainer: RecordWithCellContainer
 
-  beforeEach(() => {
+  beforeAll(() => {
     ruleExtensionFactory = new TestRuleExtensionFactoryWithCellContainer()
     plain = new Plain(ruleExtensionFactory, 2, 2)
     cellContainer1 = new CellContainer(ruleExtensionFactory, plain)
     cellContainer2 = new CellContainer(ruleExtensionFactory, plain)
     cellContainer3 = new CellContainer(ruleExtensionFactory, plain)
+  })
+
+  beforeEach(() => {
     allCellContainers = []
     objectWithCellContainer = ruleExtensionFactory.createNewCellRecord()
     objectWithCellContainer.cellContainer1 = cellContainer1
     objectWithCellContainer.cellContainer2 = cellContainer2
   })
+
   describe('toSerializable', () => {
     {
       const object = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
@@ -34,6 +38,7 @@ describe('Default serialization', () => {
         expect(serializable).toEqual(object)
       })
       it('copy of object is really deep', () => {
+        expect(serializable).not.toBe(object)
         expect(serializable.b).not.toBe(object.b)
       })
     }
@@ -52,18 +57,18 @@ describe('Default serialization', () => {
 
     it('finds and uses existing cell container in all cell containers', () => {
       allCellContainers.push(cellContainer1)
-      allCellContainers.push(cellContainer2)
       allCellContainers.push(cellContainer3)
+      allCellContainers.push(cellContainer2)
       const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
       expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBe(0)
-      expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(1)
+      expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(2) // Not 1 as at index 1 cellContainer3 was inserted
     })
 
     it('does not append a cell container to all cell containers a second time', () => {
-      allCellContainers.push(cellContainer1)
       allCellContainers.push(cellContainer2)
-      defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(allCellContainers.length).toBe(2)
+      const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
+      expect(allCellContainers.length).toBe(2) // Container2 was already pushed to all containers and Container 1 was added by defaultSerialization
+      expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBe(1) // 1 (and not 0) as Container1 was added after Container2
     })
 
     it('does not change the object to serialize', () => {
@@ -83,28 +88,23 @@ describe('Default serialization', () => {
         expect(object).toEqual(serializable)
       })
       it('copy of serializable is really deep', () => {
+        expect(object).not.toBe(serializable)
         expect(object.b).not.toBe(serializable.b)
       })
 
       it('reverts defaultToSerializable', () => {
-        objectWithCellContainer.cellContainer1 = cellContainer1
-        objectWithCellContainer.cellContainer2 = cellContainer2
         const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
         const objectFromSerializable = defaultSerialization.fromSerializable(serializable, allCellContainers)
         expect(objectFromSerializable).toEqual(objectWithCellContainer)
       })
 
       it('throws syntax error if cell container index is out of bounds', () => {
-        objectWithCellContainer.cellContainer1 = cellContainer1
-        objectWithCellContainer.cellContainer2 = cellContainer2
         const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
         allCellContainers.shift() // Invalidate allCellContainers so that we can't find one of the containers
         expect(() => defaultSerialization.fromSerializable(serializable, allCellContainers)).toThrowError(SyntaxError)
       })
 
       it('throws syntax error if cell container index is not an integer', () => {
-        objectWithCellContainer.cellContainer1 = cellContainer1
-        objectWithCellContainer.cellContainer2 = cellContainer2
         const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
         serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()] = 1.2
         expect(() => defaultSerialization.fromSerializable(serializable, allCellContainers)).toThrowError(SyntaxError)
