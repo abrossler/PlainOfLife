@@ -23,6 +23,7 @@ describe('Cell', () => {
   describe('default implementation initFromSerializable', () => {
     {
       const testCell = new TestCell()
+      testCell.deepObject.a.b = 'bbb'
       const fromSerializable = new TestCell()
       fromSerializable.initFromSerializable(testCell.toSerializable())
       it('reverts default implementation of toSerializable', () => {
