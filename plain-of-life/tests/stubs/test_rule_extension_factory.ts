@@ -1,6 +1,25 @@
 import { RuleExtensionFactory } from '../../src/core/rule_extension_factory'
 import { CellContainer } from '../../src/core/cell_container'
 
+/**
+ * A super simplistic rule extension factory for test automates.
+ */
+export class TestRuleExtensionFactory implements RuleExtensionFactory {
+  private static cellRecordId = 1 // Just to easily distinguish cell record instances when debugging
+  private static fieldRecordId = 1 // Just to easily distinguish field record instances when debugging
+
+  createNewCellRecord(): { recordId: number } {
+    return { recordId: TestRuleExtensionFactory.cellRecordId++ }
+  }
+
+  createNewFieldRecord(): { recordId: number } {
+    return { recordId: TestRuleExtensionFactory.fieldRecordId++ }
+  }
+}
+
+/**
+ * A cell or field record with deep structure and cell containers
+ */
 export type RecordWithCellContainer = {
   a: string
   b: { ba: string; bb: string }
@@ -9,6 +28,9 @@ export type RecordWithCellContainer = {
   c: number
 }
 
+/**
+ * A rule extension factory for test automates with a deep field and cell record structure including cell containers
+ */
 export class TestRuleExtensionFactoryWithCellContainer implements RuleExtensionFactory {
   createNewCellRecord(): RecordWithCellContainer {
     return this.createRecord()
@@ -26,18 +48,5 @@ export class TestRuleExtensionFactoryWithCellContainer implements RuleExtensionF
       cellContainer2: null,
       c: 0
     }
-  }
-}
-
-export class TestRuleExtensionFactory implements RuleExtensionFactory {
-  private static cellRecordId = 1
-  private static fieldRecordId = 1
-
-  createNewCellRecord(): { recordId: number } {
-    return { recordId: TestRuleExtensionFactory.cellRecordId++ }
-  }
-
-  createNewFieldRecord(): { recordId: number } {
-    return { recordId: TestRuleExtensionFactory.fieldRecordId++ }
   }
 }

@@ -49,6 +49,13 @@ describe('Default serialization', () => {
       expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(1)
     })
 
+    it('ignores cell containers that are null', () => {
+      objectWithCellContainer.cellContainer1 = null
+      const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
+      expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBeUndefined()
+      expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(0)
+    })
+
     it('adds new cell container to allCellContainers', () => {
       defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
       expect(allCellContainers[0]).toBe(cellContainer1)

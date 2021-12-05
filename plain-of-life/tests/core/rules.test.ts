@@ -66,7 +66,6 @@ describe('Rules', () => {
       it('reverts default implementation of toSerializable', () => {
         const testRules = new TestRules()
         testRules.initFromSerializable(serializableRules)
-        testRules.initFromSerializablePassed = false // OK, have to set this to false, otherwise test would obviously fail
         expect(testRules).toEqual(rules)
       })
     }

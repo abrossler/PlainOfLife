@@ -1,5 +1,3 @@
-// Test
-
 import { TestRules } from '../stubs/test_rules'
 import { ExtPlainOfLife, PlainOfLife } from '../../src/core/plain_of_life'
 import { TestCell } from '../stubs/test_cell'
@@ -36,16 +34,8 @@ describe('Plain of life', () => {
     })
     it('creates and inits rules', () => {
       expect(rules).toBeInstanceOf(TestRules)
-      expect(rules.initNewPassed).toBeTrue()
-      // inits rules with correct plain
-      expect(rules.initWithPlain).toBe(plain)
-      // inits rules with all cell containers holding the one and only container of a new plain of life
-      let count = 0
-      for (const container of rules.initWithCellContainers as unknown as CellContainers<TestRules>) {
-        count++
-        expect(container as unknown as CellContainer<TestRules>).toBe(firstCellContainer)
-      }
-      expect(count).toBe(1)
+      // Check that initNew of the rules was called correctly. The initNew implementation of TestRules sets the field record owner...
+      expect(plain.getAt(2, 1).fieldRecord.owner).toBe(firstCellContainer)
     })
 
     it('creates family tree', () => {
@@ -62,7 +52,8 @@ describe('Plain of life', () => {
     it('sets up first cell container correctly with seed cell', () => {
       expect(firstCellContainer).toBeInstanceOf(CellContainer)
       expect(seedCell).toBeInstanceOf(TestCell)
-      expect(seedCell.initSeedCellPassed).toBeTrue()
+      // Check that initSeedCell was called correctly by checking if recommendedOutput was initialized
+      expect(seedCell.recommendedOutput.length).toBeGreaterThan(0)
       /* eslint-disable @typescript-eslint/no-explicit-any*/
       expect(plain).toBe((firstCellContainer as any).plain)
       expect(rules).toBe((firstCellContainer as any).cellRecordFactory)
@@ -173,7 +164,8 @@ describe('Plain of life', () => {
 
     it('inits rules', () => {
       expect(fromSerializableRules).toBeInstanceOf(TestRules)
-      expect(fromSerializableRules.initFromSerializablePassed).toBeTrue()
+      // Check that initFromSerializable was called for the rules: If called, initial season 'Summer' shall be replaced by season 'Winter' from serialized rules
+      expect(fromSerializableRules.season).toBe('Winter')
     })
 
     it('creates family tree', () => {
