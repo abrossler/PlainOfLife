@@ -1,3 +1,5 @@
+// Test
+
 import { TestRules } from '../stubs/test_rules'
 import { ExtPlainOfLife, PlainOfLife } from '../../src/core/plain_of_life'
 import { TestCell } from '../stubs/test_cell'
