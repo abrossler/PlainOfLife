@@ -22,8 +22,8 @@ export class FloodFill<T> {
 
   /**
    * @param plainToFill A 2D array of an arbitrary type T to be flood filled. Each line of the array is expected to have the same length
-   * @param isEqual An optional custom comparison function - with {@link defaultIsEqual} as default
-   * @param replace An optional custom replacement function - with {@link defaultReplace} as default
+   * @param isEqual An optional custom comparison function - with {@link defaultIsEqual} as default (just comparing with ===)
+   * @param replace An optional custom replacement function - with {@link defaultReplace} as default (just assigning with =)
    */
   constructor(
     plainToFill: T[][],

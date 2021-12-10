@@ -23,6 +23,44 @@ describe('FloodFill', () => {
     }
   })
 
+  it('fills 0 fields correctly', () => {
+    const plainToFill = [
+      [1, 1, 1],
+      [0, 1, 0],
+      [1, 1, 1]
+    ]
+    const fF = new FloodFill(plainToFill)
+    const filled = fF.fill(1, 1, 1)
+    const filledPlain = [
+      [1, 1, 1],
+      [0, 1, 0],
+      [1, 1, 1]
+    ]
+    expect(filled).toEqual(0)
+    for (let i = 0; i < plainToFill.length; i++) {
+      expect(plainToFill[i]).toEqual(filledPlain[i])
+    }
+  })
+
+  it('fills 1 field correctly', () => {
+    const plainToFill = [
+      [1, 0, 1],
+      [0, 1, 0],
+      [1, 0, 1]
+    ]
+    const fF = new FloodFill(plainToFill)
+    const filled = fF.fill(9, 1, 1)
+    const filledPlain = [
+      [1, 0, 1],
+      [0, 9, 0],
+      [1, 0, 1]
+    ]
+    expect(filled).toEqual(1)
+    for (let i = 0; i < plainToFill.length; i++) {
+      expect(plainToFill[i]).toEqual(filledPlain[i])
+    }
+  })
+
   it('supports custom isEqual comparator correctly', () => {
     const plainToFill = [
       [4, 4, 4, 4, 4, 4, 4],
@@ -123,7 +161,7 @@ describe('FloodFill', () => {
     }
   })
 
-  it('fills complex shape correctly', () => {
+  it('fills complex shape correctly and counts filled points correctly', () => {
     const plainToFill = [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0],
@@ -145,7 +183,7 @@ describe('FloodFill', () => {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]
     const fF = new FloodFill(plainToFill)
-    fF.fill(9, 2, 2)
+    const filled = fF.fill(9, 2, 2)
     const filledPlain = [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 9, 9, 9, 9, 9, 9, 9, 9, 9, 0, 0, 9, 0],
@@ -166,6 +204,7 @@ describe('FloodFill', () => {
       [0, 0, 9, 9, 9, 9, 9, 9, 0, 9, 0, 0, 9, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]
+    expect(filled).toEqual(93) // 93 times 9 in the filled plain...
     for (let i = 0; i < plainToFill.length; i++) {
       expect(plainToFill[i]).toEqual(filledPlain[i])
     }
