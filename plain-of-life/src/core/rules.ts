@@ -61,10 +61,13 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
   abstract createNewCellRecord(): ReturnType<E['createNewCellRecord']>
 
   /**
-   * If a seed call is added to a plain of life, this cell had no chance yet to 'learn' what's a good output according to your
+   * If a seed cell is added to a plain of life, this cell had no chance yet to 'learn' what's a good output according to your
    * rules. So provide an output that ensures at least survival if constantly returned every turn at the beginning.
+   *
+   * Additionally it's very useful for the cell to know the length of the input upfront. The cell can expect the length
+   * to be constant - so it must not change between turns...
    */
-  abstract getRecommendedSeedCellOutput(): Uint8Array
+  abstract getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array }
 
   /**
    * Init a cell record from a serializable cell record as returned by {@link cellRecordToSerializable}. Used during plain

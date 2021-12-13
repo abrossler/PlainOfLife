@@ -24,7 +24,7 @@ export class TestCell extends Cell {
   }
 
   // Simple initSeedCell just keeping the recommendedOutput
-  initSeedCell(recommendedOutput: Uint8Array): void {
+  initSeedCell(inputLength: number, recommendedOutput: Uint8Array): void {
     this.recommendedOutput = [...recommendedOutput]
   }
 }

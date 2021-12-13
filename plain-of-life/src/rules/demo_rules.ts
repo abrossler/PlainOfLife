@@ -3,9 +3,14 @@ import { ExtPlain } from '../core/plain'
 import { CellContainers, ExtCellContainer } from '../core/cell_container'
 
 export class DemoRules extends Rules<DemoRules> {
-  getRecommendedSeedCellOutput(): Uint8Array {
-    return new Uint8Array([0, 0, 0])
+  getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
+    return {
+      inputLength: 3,
+      recommendedSeedCellOutput: new Uint8Array([0, 0, 0])
+    }
   }
+
+  // inputLength: number, outputLength: number, recommendedSeedCellOutput: Uint8Array}
 
   executeTurn(currentTurn: bigint, plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): void {
     for (const container of cellContainers) {
@@ -32,8 +37,11 @@ export class DemoRules extends Rules<DemoRules> {
 }
 
 export class DemoRules2 extends Rules<DemoRules> {
-  getRecommendedSeedCellOutput(): Uint8Array {
-    return new Uint8Array([0, 0, 0])
+  getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
+    return {
+      inputLength: 3,
+      recommendedSeedCellOutput: new Uint8Array([0, 0, 0])
+    }
   }
 
   executeTurn(currentTurn: bigint, plain: ExtPlain<DemoRules2>, cellContainers: CellContainers<DemoRules2>): void {

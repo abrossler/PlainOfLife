@@ -43,8 +43,11 @@ export class TestRules extends Rules<TestRules> {
   /**
    * Return arbitrary recommended seed cell output
    */
-  getRecommendedSeedCellOutput(): Uint8Array {
-    return new Uint8Array([1, 2, 3])
+  getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
+    return {
+      inputLength: 3,
+      recommendedSeedCellOutput: new Uint8Array([1, 2, 3])
+    }
   }
 
   /**

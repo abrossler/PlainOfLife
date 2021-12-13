@@ -2,7 +2,7 @@ import { Cell } from '../core/cell'
 
 export class DemoCell extends Cell {
   standardOutput: Uint8Array | undefined
-  initSeedCell(recommendedOutput: Uint8Array): void {
+  initSeedCell(inputLength: number, recommendedOutput: Uint8Array): void {
     this.standardOutput = recommendedOutput
   }
 
@@ -22,7 +22,7 @@ export class DemoCell extends Cell {
 
 export class DemoCell2 extends Cell {
   standardOutput: Uint8Array | undefined
-  initSeedCell(recommendedOutput: Uint8Array): void {
+  initSeedCell(inputLength: number, recommendedOutput: Uint8Array): void {
     this.standardOutput = recommendedOutput
   }
 

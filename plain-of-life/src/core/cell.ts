@@ -28,9 +28,10 @@ export abstract class Cell {
    * Init a seed cell after creation. A seed cell is a cell that is added initially to a new plain of life and that is not
    * created by {@link makeChild}.
    *
+   * @param inputLength the length of the input the cell (and all future children) can expect with every executeTurn call
    * @param recommendedOutput as the initial {@link executeTurn} output recommended by the rules for a seed cell to survive.
    */
-  abstract initSeedCell(recommendedOutput: Uint8Array): void
+  abstract initSeedCell(inputLength: number, recommendedOutput: Uint8Array): void
 
   /**
    * Init a new cell from a serializable cell as returned by {@link toSerializable}. Used during plain of life

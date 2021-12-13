@@ -286,7 +286,6 @@ export class CellContainer<E extends RuleExtensionFactory> {
     const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
 
     // Init the child container
-    childContainer.plain = this.plain
     childContainer.cell = this.cell.makeChild()
     childContainer._posX = modulo(this.posX + dX, this.plain.width)
     childContainer._posY = modulo(this.posY + dY, this.plain.height)
