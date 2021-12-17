@@ -181,6 +181,15 @@ describe('Cell Container', () => {
     })
   })
 
+  describe('executeTurn', () => {
+    it('calls executeTurn of the hosted cell', () => {
+      const cell = (cellContainer as any).cell
+      spyOn(cell, 'executeTurn').and.callThrough()
+      cellContainer.executeTurn(new Uint8Array(3), new Uint8Array(3))
+      expect(cell.executeTurn).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('toSerializable', () => {
     it('throws an error if cell class is not registered', () => {
       // TestCell used for this test is not registered

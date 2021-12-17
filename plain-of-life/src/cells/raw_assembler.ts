@@ -128,7 +128,7 @@ export class RawAssembler extends Cell {
         }
 
         default: {
-          throw new Error( 'Unknown operator' )
+          throw new Error('Unknown operator')
         }
       }
     }

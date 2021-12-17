@@ -75,4 +75,26 @@ export class Plain<E extends RuleExtensionFactory> {
   get height(): number {
     return this._height
   }
+
+  // Most likely to be removed
+  // /**
+  //  * Flood fill an arbitrary property of the field records on the plain with a value.
+  //  *
+  //  * It fills all direct neighbors where the property has the same value as at the starting point.
+  //  * @param property The name of the field record property to be filled
+  //  * @param fillWith The value to fill the field record property with
+  //  * @param x X-position to start flood filling
+  //  * @param y Y-position to start flood filling
+  //  * @returns The number of field records that was filled
+  //  */
+  // floodFillFieldRecords(property: string, fillWith: any, x: number, y: number): number {
+  //   let floodFill = new FloodFill(
+  //     this.array,
+  //     (t1, t2) => t1.fieldRecord[property] === t2.fieldRecord[property],
+  //     (plainToFill, replaceWith, x, y) => {
+  //       ;(plainToFill[y][x].fieldRecord[property] as any) = replaceWith
+  //     }
+  //   )
+  //   return floodFill.fill(fillWith, x, y)
+  // }
 }

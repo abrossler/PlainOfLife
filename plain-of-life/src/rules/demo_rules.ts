@@ -10,8 +10,6 @@ export class DemoRules extends Rules<DemoRules> {
     }
   }
 
-  // inputLength: number, outputLength: number, recommendedSeedCellOutput: Uint8Array}
-
   executeTurn(currentTurn: bigint, plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): void {
     for (const container of cellContainers) {
       container.makeChild(1, 1)

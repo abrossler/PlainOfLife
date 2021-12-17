@@ -30,7 +30,7 @@ interface Plain<E extends RuleExtensionFactory> {
  */
 export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
   CellContainer<E>,
-  'makeChild' | 'move' | 'posX' | 'posY' | 'die' | 'isDead' | 'cellRecord' | 'toSerializable' | 'next'
+  'makeChild' | 'move' | 'executeTurn' | 'posX' | 'posY' | 'die' | 'isDead' | 'cellRecord' | 'toSerializable' | 'next'
 >
 
 /**
@@ -360,5 +360,13 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this._posY = modulo(this.posY + dY, this.plain.height)
 
     this.plain.getAtInt(this._posX, this._posY).addCellContainer(this)
+  }
+
+  /**
+   * Execute a turn for the cell hosted by the container: Provide the cell a rule specific input to calculate an output.
+   * The rules interpret the output and perform actions like moving the cell based on the output.
+   */
+  executeTurn(input: Uint8Array, output: Uint8Array): void {
+    this.cell.executeTurn(input, output)
   }
 }
