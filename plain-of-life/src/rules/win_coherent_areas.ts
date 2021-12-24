@@ -1,8 +1,8 @@
 import { Rules } from '../core/rules'
 import { ExtPlain } from '../core/plain'
 import { CellContainers, ExtCellContainer } from '../core/cell_container'
-
-type Heading = 'UP' | 'DOWN' | 'RIGHT' | 'LEFT'
+import { CoherentAreasManager } from '../core/coherent_areas_manager'
+import { Direction, get4Neighbors, turnLeft, turnRight } from '../util/direction'
 
 const maxCellLifeTime = 30
 const minIrradiance = 10
@@ -10,6 +10,7 @@ const maxIrradiance = 1000
 
 export class WinCoherentAreas extends Rules<WinCoherentAreas> {
   irradiance: number[] = []
+  areas!: CoherentAreasManager
 
   getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
     return {
@@ -26,6 +27,9 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
     const input = new Uint8Array(4)
     const output = new Uint8Array(1)
     for (const container of cellContainers) {
+      //const mC = new CoherentAreasManager()
+      // mC.f(container, plain.getAt(0,0))
+
       const record = container.cellRecord
       const x = container.posX
       const y = container.posY
@@ -40,7 +44,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
       record.remainingLifeTime--
 
       // Get depending on the cell heading the relative positions of the neighbors
-      const [xAhead, yAhead, xBehind, yBehind, xAtLeft, yAtLeft, xAtRight, yAtRight] = getNeighborPositions(
+      const [xAhead, yAhead, xBehind, yBehind, xAtLeft, yAtLeft, xAtRight, yAtRight] = get4Neighbors(
         x,
         y,
         record.heading
@@ -85,7 +89,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
     }
   }
 
-  createNewCellRecord(): { heading: Heading; energy: number; remainingLifeTime: number; ownedFieldsCount: number } {
+  createNewCellRecord(): { heading: Direction; energy: number; remainingLifeTime: number; ownedFieldsCount: number } {
     return { heading: 'UP', energy: 0, remainingLifeTime: maxCellLifeTime, ownedFieldsCount: 1 }
   }
 
@@ -107,6 +111,8 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
     for (const container of cellContainers) {
       plain.getAt(container.posX, container.posY).fieldRecord.owner = container
     }
+
+    this.areas = new CoherentAreasManager(plain)
 
     return this
   }
@@ -153,53 +159,6 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         input[i] = 0b10110101 // A cell with less energy is owner and occupied (by this cell)
       }
     }
-  }
-}
-
-function getNeighborPositions(
-  x: number,
-  y: number,
-  heading: Heading
-): [number, number, number, number, number, number, number, number] {
-  switch (heading) {
-    case 'UP': {
-      return [x, y - 1, x, y + 1, x - 1, y, x + 1, y]
-    }
-    case 'DOWN': {
-      return [x, y + 1, x, y - 1, x + 1, y, x - 1, y]
-    }
-    case 'RIGHT': {
-      return [x + 1, y, x - 1, y, x, y - 1, x, y + 1]
-    }
-    case 'LEFT': {
-      return [x - 1, y, x + 1, y, x, y + 1, x, y - 1]
-    }
-  }
-}
-
-function turnLeft(heading: Heading): Heading {
-  switch (heading) {
-    case 'UP':
-      return 'LEFT'
-    case 'LEFT':
-      return 'DOWN'
-    case 'DOWN':
-      return 'RIGHT'
-    case 'RIGHT':
-      return 'UP'
-  }
-}
-
-function turnRight(heading: Heading): Heading {
-  switch (heading) {
-    case 'UP':
-      return 'RIGHT'
-    case 'RIGHT':
-      return 'DOWN'
-    case 'DOWN':
-      return 'LEFT'
-    case 'LEFT':
-      return 'UP'
   }
 }
 

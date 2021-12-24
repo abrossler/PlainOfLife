@@ -38,6 +38,10 @@ describe('Plain', () => {
     expect(plain.getAtInt(0, 1)).toBe((plain as any).array[0][1])
   })
 
+  // it('getArray gets array of plain fields', () => {
+  //   expect(plain.getArray()[0][1]).toBe(plain.getAtInt(0, 1))
+  // })
+
   it('has expected torus topography', () => {
     // Exit to the right => enter from the left
     expect(plain.getAt(0 + plainWidth, 1)).toBe(plain.getAt(0, 1))
@@ -63,10 +67,4 @@ describe('Plain', () => {
     expect(plain.getAt(0, -2 - 2 * plainHeight)).toBe(plain.getAt(0, plainHeight - 2)) // Multiples of plainHeight shall have no impact...
   })
 
-  // Most likely to be removed
-  // it('fillFieldRecord fills a given property of a field record as expected', () => {
-  //   const count = plain.floodFillFieldRecords('recordId', 99, 0, 0)
-  //   expect(count).toBe(1)
-  //   expect(plain.getAtInt(0, 0).fieldRecord.recordId).toBe(99)
-  // })
 })

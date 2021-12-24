@@ -1,4 +1,4 @@
-import { FloodFill } from '../../src/util/flood_fill'
+import { FloodFill, Point } from '../../src/util/flood_fill'
 
 describe('FloodFill', () => {
   it('fills simple shape correctly', () => {
@@ -131,7 +131,7 @@ describe('FloodFill', () => {
     }
   })
 
-  it('fills spiral correctly', () => {
+  it('fills spiral correctly and returns filled points correctly', () => {
     const plainToFill = [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
@@ -144,7 +144,11 @@ describe('FloodFill', () => {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]
     const fF = new FloodFill(plainToFill)
-    fF.fill(9, 1, 1)
+    const filledPoints: Point[] = []
+    fF.fill(8, 1, 1, filledPoints) // Fill with 8
+    for (let p of filledPoints) {
+      plainToFill[p.y][p.x] = 9 // Replace all filled points with 9
+    }
     const filledPlain = [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 9, 0, 9, 9, 9, 9, 9, 9, 9, 9, 0],

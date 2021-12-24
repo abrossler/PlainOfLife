@@ -50,7 +50,7 @@ export class PlainField<E extends RuleExtensionFactory> {
   /**
    * Get all cell containers located on the plain field
    */
-  // For usage outside of teh POL core, thus returning ExtCellContainer
+  // For usage outside of the POL core, thus returning ExtCellContainer
   getCellContainers(): Readonly<ExtCellContainer<E>[]> {
     return this.cellContainers
   }
