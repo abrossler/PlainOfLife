@@ -146,7 +146,7 @@ describe('FloodFill', () => {
     const fF = new FloodFill(plainToFill)
     const filledPoints: Point[] = []
     fF.fill(8, 1, 1, filledPoints) // Fill with 8
-    for (let p of filledPoints) {
+    for (const p of filledPoints) {
       plainToFill[p.y][p.x] = 9 // Replace all filled points with 9
     }
     const filledPlain = [

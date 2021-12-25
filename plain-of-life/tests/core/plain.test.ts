@@ -66,5 +66,4 @@ describe('Plain', () => {
     expect(plain.getAt(0, -2)).toBe(plain.getAt(0, plainHeight - 2))
     expect(plain.getAt(0, -2 - 2 * plainHeight)).toBe(plain.getAt(0, plainHeight - 2)) // Multiples of plainHeight shall have no impact...
   })
-
 })

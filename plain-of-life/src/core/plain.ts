@@ -11,7 +11,7 @@ const maxPlainSize = 10000000
  * The external plain exposes all properties and methods that make sense (and safely can be used) outside the
  * POL core
  */
-export type ExtPlain<E extends RuleExtensionFactory> = Pick<Plain<E>, 'getAt' | 'width' | 'height' >
+export type ExtPlain<E extends RuleExtensionFactory> = Pick<Plain<E>, 'getAt' | 'width' | 'height'>
 
 /**
  * A plain of plain fields with a torus topography for POL core internal use only ({@link ExtPlain} is for for external use).
@@ -84,5 +84,4 @@ export class Plain<E extends RuleExtensionFactory> {
   get height(): number {
     return this._height
   }
-
 }

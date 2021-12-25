@@ -1,7 +1,7 @@
 import { Rules } from '../core/rules'
 import { ExtPlain } from '../core/plain'
 import { CellContainers, ExtCellContainer } from '../core/cell_container'
-import { CoherentAreasManager } from '../core/coherent_areas_manager'
+import { CoherentAreasManager } from '../ownership_managers/coherent_areas_manager'
 import { Direction, get4Neighbors, turnLeft, turnRight } from '../util/direction'
 
 const maxCellLifeTime = 30
