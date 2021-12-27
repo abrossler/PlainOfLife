@@ -1,6 +1,7 @@
 import { modulo } from '../util/modulo'
 import { ExtPlainField, PlainField } from './plain_field'
 import { RuleExtensionFactory } from './rule_extension_factory'
+import { ExtCellContainer } from './cell_container'
 
 const maxPlainSize = 10000000
 
@@ -62,15 +63,6 @@ export class Plain<E extends RuleExtensionFactory> {
     return this.array[modulo(posX, this._width)][modulo(posY, this._height)]
   }
 
-  // /**
-  //  * Get the two-dimensional array of the plain fields forming the plain.
-  //  *
-  //  * Don't change the size of the array!
-  //  */
-  // getArray(): ExtPlainField<E>[][] {
-  //   return this.array
-  // }
-
   /**
    * Get the width of the plain
    */
@@ -83,5 +75,77 @@ export class Plain<E extends RuleExtensionFactory> {
    */
   get height(): number {
     return this._height
+  }
+
+  /**
+   * Adjust the position of a cell on the plain when moved and do callbacks before.
+   * @returns the position (x and y) of the cell after the move
+   */
+  onCellMove(cellContainer: ExtCellContainer<E>, dX: number, dY: number): [number, number] {
+    this.array[cellContainer.posX][cellContainer.posY].removeCellContainer(cellContainer)
+
+    const newX = modulo(cellContainer.posX + dX, this.width)
+    const newY = modulo(cellContainer.posY + dY, this.height)
+
+    this.array[newX][newY].addCellContainer(cellContainer)
+    return [newX, newY]
+  }
+
+  /**
+   * If a cell died, remove the container of the cell from the plain and do callbacks before
+   */
+  onCellDeath(cellContainer: ExtCellContainer<E>): void {
+    this.array[cellContainer.posX][cellContainer.posY].removeCellContainer(cellContainer)
+  }
+
+  /**
+   * If a cell made a child, add the container of the child to the plain and do callbacks before
+   * @returns the position (x and y) of the child
+   */
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): [number, number] {
+    return this.addCellContainer(child, parent.posX + dX, parent.posY + dY)
+  }
+
+  /**
+   * If a cell divided, remove the container of the parent and add the containers of the two children and do callbacks before.
+   * @returns the positions (x1, y1, x2, y2) of the two children
+   */
+  onCellDivide(
+    parent: ExtCellContainer<E>,
+    child1: ExtCellContainer<E>,
+    dX1: number,
+    dY1: number,
+    child2: ExtCellContainer<E>,
+    dX2: number,
+    dY2: number
+  ): [number, number, number, number] {
+    const parentX = parent.posX
+    const parentY = parent.posY
+
+    this.array[parentX][parent.posY].removeCellContainer(parent)
+    return [
+      ...this.addCellContainer(child1, parentX + dX1, parentY + dY1),
+      ...this.addCellContainer(child2, parentX + dX2, parentY + dY2)
+    ]
+  }
+
+  /**
+   * If a seed cell is added, add the container of the seed cell to the plain and do callbacks before
+   * @returns the position (x and y) of the seed cell modulo the size of the plain
+   */
+  onSeedCellAdd(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number] {
+    return this.addCellContainer(cellContainer, posX, posY)
+  }
+
+  /**
+   * Add a cell container to the plain at a given position
+   * @returns the position (x and y) of the added container modulo the size of the plain
+   */
+  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number] {
+    posX = modulo(posX, this.width)
+    posY = modulo(posY, this.height)
+
+    this.array[posX][posY].addCellContainer(cellContainer)
+    return [posX, posY]
   }
 }

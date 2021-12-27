@@ -3,7 +3,6 @@ import { SerializableCellContainer, SerializableCellContainers } from './seriali
 import { cellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
-import { modulo } from '../util/modulo'
 
 /**
  * Interface to add and remove cell containers from plain fields.
@@ -14,10 +13,20 @@ import { modulo } from '../util/modulo'
 interface Plain<E extends RuleExtensionFactory> {
   get width(): number
   get height(): number
-  getAtInt(
-    posX: number,
-    posY: number
-  ): { addCellContainer(toAdd: ExtCellContainer<E>): void; removeCellContainer(toRemove: ExtCellContainer<E>): void }
+  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number]
+  onSeedCellAdd(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number]
+  onCellMove(cellContainer: ExtCellContainer<E>, dX: number, dY: number): [number, number]
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): [number, number]
+  onCellDivide(
+    parent: ExtCellContainer<E>,
+    child1: ExtCellContainer<E>,
+    dX1: number,
+    dY1: number,
+    child2: ExtCellContainer<E>,
+    dX2: number,
+    dY2: number
+  ): [number, number, number, number]
+  onCellDeath(cellContainer: ExtCellContainer<E>): void
 }
 
 /**
@@ -116,15 +125,13 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Start with a cyclic list of one (seed) container - the successor and predecessor of this container is the container itself
     this._prev = this._next = this
     this.cell = cell
-    this._posX = modulo(posX, this.plain.width)
-    this._posY = modulo(posY, this.plain.height)
 
     // Mark this seed container as first container
     this.firstCellContainer = firstCellContainer
     firstCellContainer.first = this
 
-    // Don't forget to add the seed cell container to the plain
-    this.plain.getAtInt(posX, posY).addCellContainer(firstCellContainer.first)
+    // Don't forget to add the seed cell container to the plain and set the position of the container
+    ;[this._posX, this._posY] = this.plain.onSeedCellAdd(firstCellContainer.first, posX, posY)
   }
 
   /**
@@ -202,7 +209,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current.cell.initFromSerializable(serializable.cell)
 
       if (!isDead) {
-        current.plain.getAtInt(posX, posY).addCellContainer(current)
+        current.plain.addCellContainer(current, posX, posY)
       }
     }
     return allCellContainers
@@ -271,24 +278,58 @@ export class CellContainer<E extends RuleExtensionFactory> {
   }
 
   /**
-   * Create a child.
+   * Let a cell make a child.
    *
    * The child is added before the parent to the cell containers. Thus when iterating on the cell containers, the just born child
    * will not be included in the current iteration.
    * @param dX the delta to the parent's x position - e.g. 2 places the child 2 fields on the right of the parent
    * @param dY the delta to the parent's y position - e.g. -2 places the child 2 fields above the parent
-   * @returns the child
+   * @returns the cell container of the child
    */
   makeChild(dX: number, dY: number): ExtCellContainer<E> {
     checkInt(dX)
     checkInt(dY)
 
-    const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
+    const childContainer = this.createChildContainer()
+    ;[childContainer._posX, childContainer._posY] = this.plain.onCellMakeChild(this, childContainer, dX, dY)
 
-    // Init the child container
-    childContainer.cell = this.cell.makeChild()
-    childContainer._posX = modulo(this.posX + dX, this.plain.width)
-    childContainer._posY = modulo(this.posY + dY, this.plain.height)
+    return childContainer
+  }
+
+  /**
+   * Let a  cell divide in two children.
+   *
+   * The parent cell dies. The two children are added before the parent to the cell containers. Thus when iterating on the cell
+   * containers, the just created children will not be included in the current iteration.
+   * @param dX1 the delta of child 1 to the parent's x position
+   * @param dY1 the delta of child 1 to the parent's y position
+   * @param dX2 the delta of child 2 to the parent's x position
+   * @param dY2 the delta of child 2 to the parent's y position
+   * @returns the cell containers of the two children
+   */
+  divide(dX1: number, dY1: number, dX2: number, dY2: number): [ExtCellContainer<E>, ExtCellContainer<E>] {
+    checkInt(dX1)
+    checkInt(dY1)
+    checkInt(dX2)
+    checkInt(dY2)
+
+    const childContainer1 = this.createChildContainer()
+    const childContainer2 = this.createChildContainer()
+
+    this._isDead = true
+    this.removeDead()
+    ;[childContainer1._posX, childContainer1._posY, childContainer2._posX, childContainer2._posY] =
+      this.plain.onCellDivide(this, childContainer1, dX1, dY1, childContainer2, dX2, dY2)
+
+    return [childContainer1, childContainer2]
+  }
+
+  /**
+   * Create and init the cell container of a new child
+   * @returns the cell container
+   */
+  private createChildContainer(): CellContainer<E> {
+    const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
 
     // Insert child before parent
     childContainer._prev = this._prev
@@ -303,8 +344,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
       delete this.firstCellContainer
     }
 
-    // Don't forget to add the child to the plain
-    this.plain.getAtInt(childContainer._posX, childContainer._posY).addCellContainer(childContainer)
+    // Create the child cell
+    childContainer.cell = this.cell.makeChild()
 
     return childContainer
   }
@@ -312,16 +353,13 @@ export class CellContainer<E extends RuleExtensionFactory> {
   /**
    * Let the cell die.
    *
-   * The cell container is automatically removed from the container list of alive cells and from the plain field.
+   * The cell container is removed from the container list of alive cells and from the plain field.
    *
    * Rule specific cell records or field records still might hold references to the container of the dead cell.
    * For example a grandpa reference from a cell record to a dead grandpa is totally valid
    */
   die(): void {
     this._isDead = true
-
-    // Remove dead cell from plain
-    this.plain.getAtInt(this._posX, this._posY).removeCellContainer(this)
 
     // Game over: If the last cell dies it just stays dead (as first and only cell) in the cell list
     if (this._next === this) {
@@ -336,13 +374,26 @@ export class CellContainer<E extends RuleExtensionFactory> {
     }
 
     // Remove dead cell from cell list
+    this.removeDead()
+
+    // Remove cell from plain
+    this.plain.onCellDeath(this)
+  }
+
+  /**
+   * Remove the container of a dead cell from the list of all alive cells.
+   *
+   * Some reusable parts only - e.g. logic to handle removal of first cell and for game over missing...
+   */
+  private removeDead() {
+    // Remove dead cell from cell list
     this._prev._next = this._next
     this._next._prev = this._prev
     this._prev = this._next = this // For a dead cell prev and next point to the cell itself
   }
 
   /**
-   * Move a cell container on the plain.
+   * Let a cell move on the plain.
    * @param dX the delta to the current x position - e.g. 2 moves the container 2 fields to the right
    * @param dY the delta to the current y position - e.g. -2 moves the container 2 fields up
    */
@@ -354,12 +405,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       return
     }
 
-    this.plain.getAtInt(this._posX, this._posY).removeCellContainer(this)
-
-    this._posX = modulo(this.posX + dX, this.plain.width)
-    this._posY = modulo(this.posY + dY, this.plain.height)
-
-    this.plain.getAtInt(this._posX, this._posY).addCellContainer(this)
+    ;[this._posX, this._posY] = this.plain.onCellMove(this, dX, dY)
   }
 
   /**

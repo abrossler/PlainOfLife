@@ -109,6 +109,49 @@ describe('Cell Container', () => {
     })
   })
 
+  describe('divide', () => {
+    let child1Container: CellContainer<TestRuleExtensionFactory>
+    let child2Container: CellContainer<TestRuleExtensionFactory>
+
+    beforeEach(() => {
+      ;[child1Container, child2Container] = cellContainer.divide(-1, 0, 0, -1) as [
+        CellContainer<TestRuleExtensionFactory>,
+        CellContainer<TestRuleExtensionFactory>
+      ]
+    })
+    it('throws a syntax error if arguments for dx or dy are no integer', () => {
+      expect(() => cellContainer.divide(1.1, 1, 1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divide(1, 1.1, 1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divide(1, 1, 1.1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divide(1, 1, 1, 1.1)).toThrowError(SyntaxError)
+    })
+
+    it('creates the two child containers', () => {
+      expect(child1Container).toBeInstanceOf(CellContainer)
+      expect(child2Container).toBeInstanceOf(CellContainer)
+    })
+
+    it('lets the parent die', () => {
+      expect(cellContainer.isDead).toBe(true)
+      expect(cellContainer.next).toBe(cellContainer) // Dead container removed from list of alive containers...
+    })
+
+    it('places the child containers on the plain', () => {
+      expect(child1Container.posX).toBe(0)
+      expect(child1Container.posY).toBe(1)
+      expect(plain.getAt(0, 1).getCellContainers()[0]).toBe(child1Container)
+
+      expect(child2Container.posX).toBe(1)
+      expect(child2Container.posY).toBe(0)
+      expect(plain.getAt(1, 0).getCellContainers()[0]).toBe(child2Container)
+    })
+
+    it('creates a cyclic list of parent and children', () => {
+      expect(child1Container.next).toBe(child2Container)
+      expect(child2Container.next).toBe(child1Container)
+    })
+  })
+
   describe('die', () => {
     beforeEach(() => {
       child1Container = cellContainer.makeChild(1, 1) as CellContainer<TestRuleExtensionFactory>
