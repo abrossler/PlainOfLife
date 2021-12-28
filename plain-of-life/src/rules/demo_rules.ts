@@ -24,14 +24,6 @@ export class DemoRules extends Rules<DemoRules> {
   createNewFieldRecord(): { temperature: number; owner: ExtCellContainer<DemoRules> | null } {
     return { temperature: 25, owner: null }
   }
-
-  initNew(plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): this {
-    for (const container of cellContainers) {
-      plain.getAt(container.posX, container.posY).fieldRecord.owner = container
-    }
-
-    return this
-  }
 }
 
 export class DemoRules2 extends Rules<DemoRules> {
@@ -58,11 +50,4 @@ export class DemoRules2 extends Rules<DemoRules> {
     return { temperature: 25, owner: null }
   }
 
-  initNew(plain: ExtPlain<DemoRules2>, cellContainers: CellContainers<DemoRules2>): this {
-    for (const container of cellContainers) {
-      plain.getAt(container.posX, container.posY).fieldRecord.owner = container
-    }
-
-    return this
-  }
 }

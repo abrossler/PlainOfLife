@@ -77,14 +77,11 @@ export class TestRules extends Rules<TestRules> {
   }
 
   /**
-   * Init the rules for a new plain of life for initial cell containers with seed cells.
-   * This means actually to set the owner of the plain fields to the seed cell containers
+   * Init the rules for a new plain of life and set the temperature of a field record.
    */
-  initNew(plain: ExtPlain<TestRules>, cellContainers: CellContainers<TestRules>): void {
-    super.initNew(plain, cellContainers)
-    for (const cellContainer of cellContainers) {
-      plain.getAt(cellContainer.posX, cellContainer.posY).fieldRecord.owner = cellContainer
-    }
+  initNew(plain: ExtPlain<TestRules>): void {
+    super.initNew(plain)
+    plain.getAt(1,1).fieldRecord.temperature = 99
   }
 
   /**

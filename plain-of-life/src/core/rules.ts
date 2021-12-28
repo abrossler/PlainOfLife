@@ -11,16 +11,15 @@ import { RuleExtensionFactory } from './rule_extension_factory'
  * class MyRules extends Rules\<MyRules\>
  */
 export abstract class Rules<E extends RuleExtensionFactory> implements RuleExtensionFactory {
+
   /**
-   * Finalize the initialization of new rules after the plain and cell containers are initialized.
+   * Initialize the new rules after the plain was initialized.
    *
-   * Override if needed by your rules. An example could be a rule specific 'owner' property on plain field level that needs to
-   * be initialized with the container of the cell sitting on the plain field.
+   * Override if needed by your rules. For example you might register for the plain listeners to cell events here...
    * @param plain The plain with all plain fields
-   * @param cellContainers The container list of all alive cells
    */
   /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
-  initNew(plain: ExtPlain<E>, cellContainers: CellContainers<E>): void {}
+  initNew(plain: ExtPlain<E>): void {}
   /* eslint-enable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
 
   /**

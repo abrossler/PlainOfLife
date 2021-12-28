@@ -97,7 +97,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
     return { owner: null }
   }
 
-  initNew(plain: ExtPlain<WinCoherentAreas>, cellContainers: CellContainers<WinCoherentAreas>): this {
+  initNew(plain: ExtPlain<WinCoherentAreas>): void {
     for (let i = 0; i < plain.height; i++) {
       // Calculate irradiance depending on the y position on plain:
       // Start from minIrradiance at the North Pole (y=0) and grow with a shifted and scaled sinus function up to maxIrradiance
@@ -108,13 +108,11 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
       )
     }
 
-    for (const container of cellContainers) {
-      plain.getAt(container.posX, container.posY).fieldRecord.owner = container
-    }
+    // for (const container of cellContainers) {
+    //   plain.getAt(container.posX, container.posY).fieldRecord.owner = container
+    // }
 
     this.areas = new CoherentAreasManager(plain)
-
-    return this
   }
   /**
    * Prepares the input that is passed to a cell when executing a turn. The input is provided to the cell for the 4 neighbor

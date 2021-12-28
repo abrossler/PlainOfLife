@@ -34,8 +34,8 @@ describe('Plain of life', () => {
     })
     it('creates and inits rules', () => {
       expect(rules).toBeInstanceOf(TestRules)
-      // Check that initNew of the rules was called correctly. The initNew implementation of TestRules sets the field record owner...
-      expect(plain.getAt(2, 1).fieldRecord.owner).toBe(firstCellContainer)
+      // Check that initNew of the rules was called correctly. The initNew implementation of TestRules sets the temperature to 99...
+      expect(plain.getAt(1, 1).fieldRecord.temperature).toBe(99)
     })
 
     it('creates family tree', () => {
