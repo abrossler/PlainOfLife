@@ -2,6 +2,7 @@ import { modulo } from '../util/modulo'
 import { ExtPlainField, PlainField } from './plain_field'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { ExtCellContainer } from './cell_container'
+import { removeFromArray } from '../util/array_helper'
 
 const maxPlainSize = 10000000
 
@@ -12,13 +13,117 @@ const maxPlainSize = 10000000
  * The external plain exposes all properties and methods that make sense (and safely can be used) outside the
  * POL core
  */
-export type ExtPlain<E extends RuleExtensionFactory> = Pick<Plain<E>, 'getAt' | 'width' | 'height'>
+export type ExtPlain<E extends RuleExtensionFactory> = Pick<
+  Plain<E>,
+  | 'getAt'
+  | 'width'
+  | 'height'
+  | 'addSeedCellAddListener'
+  | 'removeSeedCellAddListener'
+  | 'addCellMoveListener'
+  | 'removeCellMoveListener'
+  | 'addCellMakeChildListener'
+  | 'removeCellMakeChildListener'
+  | 'addCellDivideListener'
+  | 'removeCellDivideListener'
+  | 'addCellDeathListener'
+  | 'removeCellDeathListener'
+>
+
+/**
+ * Listener on added seed cells
+ */
+export interface SeedCellAddListener<E extends RuleExtensionFactory> {
+  /**
+   * Method called for registered listeners after a seed cell was added to the plain.
+   * @param cellContainer of the added seed cell
+   */
+  onSeedCellAdd(cellContainer: ExtCellContainer<E>): void
+}
+
+/**
+ * Listener on cells moved
+ */
+export interface CellMoveListener<E extends RuleExtensionFactory> {
+  /**
+   * Method called for registered listeners after a cell was moved.
+   *
+   * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
+   * @param cellContainer of the moved cell
+   * @param oldX position of the cell before the move
+   * @param oldY position of the cell before the move
+   * @param dX delta, distance moved in x- direction
+   * @param dY delta, distance moved in y- direction
+   */
+  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void
+}
+
+/**
+ * Listener on cells making a child
+ */
+export interface CellMakeChildListener<E extends RuleExtensionFactory> {
+  /**
+   * Method called for registered listeners after a cell made a child
+   *
+   * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
+   * @param parent container of the parent cell
+   * @param child container of the child cell
+   * @param dX delta, distance from parent to child in x- direction
+   * @param dY delta, distance from parent to child in y- direction
+   */
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void
+}
+
+/**
+ * Listener on cells dividing in two children
+ */
+export interface CellDivideListener<E extends RuleExtensionFactory> {
+  /**
+   * Method called for registered listeners after a parent cell divided in two children. Note that the parent dies when dividing.
+   *
+   * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
+   * @param parent container of the (dead) parent cell
+   * @param child1 container of the first child
+   * @param dX1 delta, distance from parent to child1 in x- direction
+   * @param dY1 delta, distance from parent to child1 in y- direction
+   * @param child2 container of the second child
+   * @param dX2 delta, distance from parent to child2 in x- direction
+   * @param dY2 delta, distance from parent to child2 in y- direction
+   */
+  onCellDivide(
+    parent: ExtCellContainer<E>,
+    child1: ExtCellContainer<E>,
+    dX1: number,
+    dY1: number,
+    child2: ExtCellContainer<E>,
+    dX2: number,
+    dY2: number
+  ): void
+}
+
+/**
+ * Listener on the death of cells
+ */
+export interface CellDeathListener<E extends RuleExtensionFactory> {
+  /**
+   * Method called for registered listeners after a cell died
+   * @param cellContainer of the cell that died
+   */
+  onCellDeath(cellContainer: ExtCellContainer<E>): void
+}
 
 /**
  * A plain of plain fields with a torus topography for POL core internal use only ({@link ExtPlain} is for for external use).
  */
 export class Plain<E extends RuleExtensionFactory> {
   private readonly array: PlainField<E>[][]
+
+  // All registered listeners for cell events
+  private seedCellAddListeners: SeedCellAddListener<E>[] = []
+  private cellMoveListeners: CellMoveListener<E>[] = []
+  private cellMakeChildListeners: CellMakeChildListener<E>[] = []
+  private cellDivideListeners: CellDivideListener<E>[] = []
+  private cellDeathListeners: CellDeathListener<E>[] = []
 
   /**
    * Create a new plain of new plain fields with the size width x height
@@ -78,37 +183,94 @@ export class Plain<E extends RuleExtensionFactory> {
   }
 
   /**
-   * Adjust the position of a cell on the plain when moved and do callbacks before.
-   * @returns the position (x and y) of the cell after the move
+   * Add a cell container to the plain at a given position
    */
-  onCellMove(cellContainer: ExtCellContainer<E>, dX: number, dY: number): [number, number] {
-    this.array[cellContainer.posX][cellContainer.posY].removeCellContainer(cellContainer)
-
-    const newX = modulo(cellContainer.posX + dX, this.width)
-    const newY = modulo(cellContainer.posY + dY, this.height)
-
-    this.array[newX][newY].addCellContainer(cellContainer)
-    return [newX, newY]
+  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): void {
+    this.array[posX][posY].addCellContainer(cellContainer)
   }
 
   /**
-   * If a cell died, remove the container of the cell from the plain and do callbacks before
+   * If a seed cell is added, add the container of the seed cell to the plain and notify registered listeners
    */
-  onCellDeath(cellContainer: ExtCellContainer<E>): void {
-    this.array[cellContainer.posX][cellContainer.posY].removeCellContainer(cellContainer)
+  onSeedCellAdd(cellContainer: ExtCellContainer<E>): void {
+    this.array[cellContainer.posX][cellContainer.posY].addCellContainer(cellContainer)
+
+    this.seedCellAddListeners.forEach((listener) => {
+      listener.onSeedCellAdd(cellContainer)
+    })
   }
 
   /**
-   * If a cell made a child, add the container of the child to the plain and do callbacks before
-   * @returns the position (x and y) of the child
+   * Add a listener that is notified when a seed cell is added to the plain
    */
-  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): [number, number] {
-    return this.addCellContainer(child, parent.posX + dX, parent.posY + dY)
+  addSeedCellAddListener(toAdd: SeedCellAddListener<E>): void {
+    this.seedCellAddListeners.push(toAdd)
   }
 
   /**
-   * If a cell divided, remove the container of the parent and add the containers of the two children and do callbacks before.
-   * @returns the positions (x1, y1, x2, y2) of the two children
+   * Remove a previously added SeedCellAddListener
+   * @returns the number of removed listeners
+   */
+  removeSeedCellAddListener(toRemove: SeedCellAddListener<E>): number {
+    return removeFromArray(toRemove, this.seedCellAddListeners)
+  }
+
+  /**
+   * If a cell is moved, adjust the position of the cell container on the plain and notify registered listeners.
+   */
+  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void {
+    this.array[oldX][oldY].removeCellContainer(cellContainer)
+    this.array[cellContainer.posX][cellContainer.posY].addCellContainer(cellContainer)
+
+    this.cellMoveListeners.forEach((listener) => {
+      listener.onCellMove(cellContainer, oldX, oldY, dX, dY)
+    })
+  }
+
+  /**
+   * Add a listener that is notified when a cell is moved on the plain
+   */
+  addCellMoveListener(toAdd: CellMoveListener<E>): void {
+    this.cellMoveListeners.push(toAdd)
+  }
+
+  /**
+   * Remove a previously added CellMoveListener
+   * @returns the number of removed listeners
+   */
+  removeCellMoveListener(toRemove: CellMoveListener<E>): number {
+    return removeFromArray(toRemove, this.cellMoveListeners)
+  }
+
+  /**
+   * If a cell made a child, add the container of the child to the plain and notify registered listeners.
+   */
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void {
+    this.array[child.posX][child.posY].addCellContainer(child)
+
+    this.cellMakeChildListeners.forEach((listener) => {
+      listener.onCellMakeChild(parent, child, dX, dY)
+    })
+  }
+
+  /**
+   * Add a listener that is notified when a cell makes a child
+   */
+  addCellMakeChildListener(toAdd: CellMakeChildListener<E>): void {
+    this.cellMakeChildListeners.push(toAdd)
+  }
+
+  /**
+   * Remove a previously added CellMakeChildListener
+   * @returns the number of removed listeners
+   */
+  removeCellMakeChildListener(toRemove: CellMakeChildListener<E>): number {
+    return removeFromArray(toRemove, this.cellMakeChildListeners)
+  }
+
+  /**
+   * If a cell divided, remove the container of the parent and add the containers of the two children to the plain.
+   * Then notify registered listeners.
    */
   onCellDivide(
     parent: ExtCellContainer<E>,
@@ -118,34 +280,54 @@ export class Plain<E extends RuleExtensionFactory> {
     child2: ExtCellContainer<E>,
     dX2: number,
     dY2: number
-  ): [number, number, number, number] {
-    const parentX = parent.posX
-    const parentY = parent.posY
+  ): void {
+    this.array[parent.posX][parent.posY].removeCellContainer(parent)
+    this.array[child1.posX][child1.posY].addCellContainer(child1)
+    this.array[child2.posX][child2.posY].addCellContainer(child2)
 
-    this.array[parentX][parent.posY].removeCellContainer(parent)
-    return [
-      ...this.addCellContainer(child1, parentX + dX1, parentY + dY1),
-      ...this.addCellContainer(child2, parentX + dX2, parentY + dY2)
-    ]
+    this.cellDivideListeners.forEach((listener) => {
+      listener.onCellDivide(parent, child1, dX1, dY1, child2, dX2, dY2)
+    })
   }
 
   /**
-   * If a seed cell is added, add the container of the seed cell to the plain and do callbacks before
-   * @returns the position (x and y) of the seed cell modulo the size of the plain
+   * Add a listener that is notified when a cell is divided in two children
    */
-  onSeedCellAdd(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number] {
-    return this.addCellContainer(cellContainer, posX, posY)
+  addCellDivideListener(toAdd: CellDivideListener<E>): void {
+    this.cellDivideListeners.push(toAdd)
   }
 
   /**
-   * Add a cell container to the plain at a given position
-   * @returns the position (x and y) of the added container modulo the size of the plain
+   * Remove a previously added CellDivideListener
+   * @returns the number of removed listeners
    */
-  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number] {
-    posX = modulo(posX, this.width)
-    posY = modulo(posY, this.height)
+  removeCellDivideListener(toRemove: CellDivideListener<E>): number {
+    return removeFromArray(toRemove, this.cellDivideListeners)
+  }
 
-    this.array[posX][posY].addCellContainer(cellContainer)
-    return [posX, posY]
+  /**
+   * If a cell died, remove the container of the cell from the plain and notify registered listeners.
+   */
+  onCellDeath(cellContainer: ExtCellContainer<E>): void {
+    this.array[cellContainer.posX][cellContainer.posY].removeCellContainer(cellContainer)
+
+    this.cellDeathListeners.forEach((listener) => {
+      listener.onCellDeath(cellContainer)
+    })
+  }
+
+  /**
+   * Add a listener that is notified when a cell died
+   */
+  addCellDeathListener(toAdd: CellDeathListener<E>): void {
+    this.cellDeathListeners.push(toAdd)
+  }
+
+  /**
+   * Remove a previously added CellDeathListener
+   * @returns the number of removed listeners
+   */
+  removeCellDeathListener(toRemove: CellDeathListener<E>): number {
+    return removeFromArray(toRemove, this.cellDeathListeners)
   }
 }

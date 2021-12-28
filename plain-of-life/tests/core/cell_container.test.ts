@@ -107,6 +107,11 @@ describe('Cell Container', () => {
       expect((cellContainer as any).next.next.next).toBe(cellContainer)
       expect((cellContainer as any)._prev._prev._prev).toBe(cellContainer)
     })
+
+    it('considers the torus topography when making a child', () => {
+      expect(cellContainer.makeChild(0, 1).posY).toBe(0)
+      expect(cellContainer.makeChild(1, 0).posX).toBe(0)
+    })
   })
 
   describe('divide', () => {
@@ -149,6 +154,14 @@ describe('Cell Container', () => {
     it('creates a cyclic list of parent and children', () => {
       expect(child1Container.next).toBe(child2Container)
       expect(child2Container.next).toBe(child1Container)
+    })
+
+    it('considers the torus topography for both children when dividing', () => {
+      const grandChildren = child1Container.divide(-2, 1, 2, -3)
+      expect(grandChildren[0].posX).toBe(0)
+      expect(grandChildren[0].posY).toBe(0)
+      expect(grandChildren[1].posX).toBe(0)
+      expect(grandChildren[1].posY).toBe(0)
     })
   })
 
@@ -201,9 +214,10 @@ describe('Cell Container', () => {
       expect(cellContainer).toBe(firstCellContainer.first)
     })
   })
+
   describe('move', () => {
     beforeEach(() => {
-      cellContainer.move(1, -1)
+      cellContainer.move(-1, -1)
     })
 
     it('throws a syntax error if arguments dx or dy are no integer', () => {
@@ -221,6 +235,17 @@ describe('Cell Container', () => {
       expect(plain.getAt(0, 1).getCellContainers().length).toBe(0)
       expect(plain.getAt(1, 0).getCellContainers().length).toBe(0)
       expect(plain.getAt(1, 1).getCellContainers().length).toBe(0)
+    })
+
+    it('considers the torus topography when moving', () => {
+      cellContainer.move(-3, 0)
+      expect(cellContainer.posX).toBe(1)
+      cellContainer.move(0, -3)
+      expect(cellContainer.posY).toBe(1)
+      cellContainer.move(3, 0)
+      expect(cellContainer.posX).toBe(0)
+      cellContainer.move(0, 3)
+      expect(cellContainer.posY).toBe(0)
     })
   })
 

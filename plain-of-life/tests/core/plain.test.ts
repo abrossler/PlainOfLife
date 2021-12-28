@@ -2,6 +2,13 @@ import { CellContainer } from '../../src/core/cell_container'
 import { Plain } from '../../src/core/plain'
 import { PlainField } from '../../src/core/plain_field'
 import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
+import {
+  MyCellDeathListener,
+  MyCellDivideListener,
+  MyCellMakeChildListener,
+  MyCellMoveListener,
+  MySeedCellAddListener
+} from '../stubs/plain_listeners'
 
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 
@@ -40,98 +47,155 @@ describe('Plain', () => {
     expect(plain.getAtInt(0, 1)).toBe((plain as any).array[0][1])
   })
 
-  describe('on cell events', () => {
+  describe('event listeners', () => {
     let cellContainer: CellContainer<TestRuleExtensionFactory>
+    let child1: CellContainer<TestRuleExtensionFactory>
+    let child2: CellContainer<TestRuleExtensionFactory>
     {
       beforeEach(() => {
         cellContainer = new CellContainer(ruleExtensionFactory, plain)
-        ;(cellContainer as unknown as { _posX: number })._posX = 0
+        ;(cellContainer as unknown as { _posX: number })._posX = 1
         ;(cellContainer as unknown as { _posY: number })._posY = 1
-        plain.getAtInt(0, 1).addCellContainer(cellContainer)
+
+        child1 = new CellContainer(ruleExtensionFactory, plain)
+        ;(child1 as unknown as { _posX: number })._posX = 1
+        ;(child1 as unknown as { _posY: number })._posY = 0
+
+        child2 = new CellContainer(ruleExtensionFactory, plain)
+        ;(child2 as unknown as { _posX: number })._posX = 0
+        ;(child2 as unknown as { _posY: number })._posY = 1
       })
     }
-
-    describe('onSeedCellAdd', () => {
-      it('places seed cell on plain considering torus topography', () => {
-        const pos = plain.onSeedCellAdd(cellContainer, -1, -1)
-        expect(plain.getAt(2, 1).getCellContainers()[0]).toBe(cellContainer)
-        expect(pos).toEqual([2, 1])
-      })
-    })
-
-    describe('addCellContainer', () => {
-      it('places container on plain considering torus topography', () => {
-        const pos = plain.addCellContainer(cellContainer, 3, 2)
-        expect(plain.getAt(0, 0).getCellContainers()[0]).toBe(cellContainer)
-        expect(pos).toEqual([0, 0])
-      })
-    })
-
-    describe('onCellMove', () => {
+    describe('SeedCellAddListener', () => {
+      let seedCellAddListener: MySeedCellAddListener<TestRuleExtensionFactory>
+      let seedCellAddListener2: MySeedCellAddListener<TestRuleExtensionFactory>
       {
         beforeEach(() => {
-          plain.onCellMove(cellContainer, 1, 0)
-          ;(cellContainer as unknown as { _posX: number })._posX = 1
-          ;(cellContainer as unknown as { _posY: number })._posY = 1
+          seedCellAddListener = new MySeedCellAddListener()
+          seedCellAddListener2 = new MySeedCellAddListener()
+          plain.addSeedCellAddListener(seedCellAddListener)
+          plain.addSeedCellAddListener(seedCellAddListener2)
+          plain.addSeedCellAddListener(seedCellAddListener)
+          spyOn(seedCellAddListener, 'onSeedCellAdd').and.callThrough()
+          spyOn(seedCellAddListener2, 'onSeedCellAdd').and.callThrough()
         })
       }
-      it('moves position of cell container on plain', () => {
-        expect(plain.getAt(0, 1).getCellContainers().length).toBe(0)
-        expect(plain.getAt(1, 1).getCellContainers()[0]).toBe(cellContainer)
+      it('is called like expected', () => {
+        plain.onSeedCellAdd(cellContainer)
+        expect(seedCellAddListener.onSeedCellAdd).toHaveBeenCalledTimes(2)
+        expect(seedCellAddListener2.onSeedCellAdd).toHaveBeenCalledTimes(1)
+        expect(seedCellAddListener2.onSeedCellAdd).toHaveBeenCalledWith(cellContainer)
       })
 
-      it('returns new position considering torus topography', () => {
-        expect(plain.onCellMove(cellContainer, 2, -2)).toEqual([0, 1])
+      it('can be removed', () => {
+        const removed = plain.removeSeedCellAddListener(seedCellAddListener)
+        expect(removed).toBe(2)
+        plain.onSeedCellAdd(cellContainer)
+        expect(seedCellAddListener.onSeedCellAdd).toHaveBeenCalledTimes(0)
+        expect(seedCellAddListener2.onSeedCellAdd).toHaveBeenCalledTimes(1)
       })
     })
 
-    describe('onCellMakeChild', () => {
-      let child: CellContainer<TestRuleExtensionFactory>
+    describe('CellMoveListener', () => {
+      let cellMoveListener: MyCellMoveListener<TestRuleExtensionFactory>
+      let cellMoveListener2: MyCellMoveListener<TestRuleExtensionFactory>
       {
         beforeEach(() => {
-          child = new CellContainer(ruleExtensionFactory, plain)
-          plain.onCellMakeChild(cellContainer, child, -1, 1)
+          cellMoveListener = new MyCellMoveListener()
+          cellMoveListener2 = new MyCellMoveListener()
+          plain.addCellMoveListener(cellMoveListener)
+          plain.addCellMoveListener(cellMoveListener2)
+          plain.addCellMoveListener(cellMoveListener)
+          spyOn(cellMoveListener, 'onCellMove').and.callThrough()
+          spyOn(cellMoveListener2, 'onCellMove').and.callThrough()
+          plain.onSeedCellAdd(cellContainer)
         })
       }
-      it('places child on plain considering torus topography', () => {
-        expect(plain.getAt(2, 0).getCellContainers()[0]).toBe(child)
+      it('is called like expected', () => {
+        plain.onCellMove(cellContainer, 1, 1, -1, -1)
+        expect(cellMoveListener.onCellMove).toHaveBeenCalledTimes(2)
+        expect(cellMoveListener2.onCellMove).toHaveBeenCalledTimes(1)
+        expect(cellMoveListener2.onCellMove).toHaveBeenCalledWith(cellContainer, 1, 1, -1, -1)
       })
 
-      it('keeps parent unchanged on plain', () => {
-        expect(plain.getAt(0, 1).getCellContainers()[0]).toBe(cellContainer)
-      })
-
-      it('works also correctly if child is placed on same field as parent', () => {
-        plain.onCellMakeChild(cellContainer, child, 0, 0)
-        expect(plain.getAt(0, 1).getCellContainers()[0]).toBe(cellContainer)
-        expect(plain.getAt(0, 1).getCellContainers()[1]).toBe(child)
+      it('can be removed', () => {
+        const removed = plain.removeCellMoveListener(cellMoveListener)
+        expect(removed).toBe(2)
+        plain.onCellMove(cellContainer, 1, 1, -1, -1)
+        expect(cellMoveListener.onCellMove).toHaveBeenCalledTimes(0)
+        expect(cellMoveListener2.onCellMove).toHaveBeenCalledTimes(1)
       })
     })
 
-    describe('onCellDivide', () => {
-      let child1: CellContainer<TestRuleExtensionFactory>
-      let child2: CellContainer<TestRuleExtensionFactory>
+    describe('CellMakeChildListener', () => {
+      let cellMakeChildListener: MyCellMakeChildListener<TestRuleExtensionFactory>
       {
         beforeEach(() => {
-          child1 = new CellContainer(ruleExtensionFactory, plain)
-          child2 = new CellContainer(ruleExtensionFactory, plain)
-          plain.onCellDivide(cellContainer, child1, 1, -1, child2, 2, -1)
+          cellMakeChildListener = new MyCellMakeChildListener()
+          plain.addCellMakeChildListener(cellMakeChildListener)
+          spyOn(cellMakeChildListener, 'onCellMakeChild').and.callThrough()
+          plain.onSeedCellAdd(cellContainer)
         })
       }
-      it('removes parent container from plain', () => {
-        expect(plain.getAt(0, 1).getCellContainers().length).toBe(0)
+      it('is called like expected', () => {
+        plain.onCellMakeChild(cellContainer, child1, 0, -1)
+        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledTimes(1)
+        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledWith(cellContainer, child1, 0, -1)
       })
 
-      it('places child containers on plain', () => {
-        expect(plain.getAt(1, 0).getCellContainers()[0]).toBe(child1)
-        expect(plain.getAt(2, 0).getCellContainers()[0]).toBe(child2)
+      it('can be removed', () => {
+        const removed = plain.removeCellMakeChildListener(cellMakeChildListener)
+        expect(removed).toBe(1)
+        plain.onCellMakeChild(cellContainer, child1, 0, -1)
+        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledTimes(0)
       })
     })
 
-    describe('onCellDeath', () => {
-      it('removes cell container from the plain', () => {
+    describe('CellDivideListener', () => {
+      let cellDivideListener: MyCellDivideListener<TestRuleExtensionFactory>
+      {
+        beforeEach(() => {
+          cellDivideListener = new MyCellDivideListener()
+          plain.addCellDivideListener(cellDivideListener)
+          spyOn(cellDivideListener, 'onCellDivide').and.callThrough()
+          plain.onSeedCellAdd(cellContainer)
+        })
+      }
+      it('is called like expected', () => {
+        plain.onCellDivide(cellContainer, child1, 0, -1, child2, -1, 0)
+        expect(cellDivideListener.onCellDivide).toHaveBeenCalledTimes(1)
+        expect(cellDivideListener.onCellDivide).toHaveBeenCalledWith(cellContainer, child1, 0, -1, child2, -1, 0)
+      })
+
+      it('can be removed', () => {
+        const removed = plain.removeCellDivideListener(cellDivideListener)
+        expect(removed).toBe(1)
+        plain.onCellDivide(cellContainer, child1, 0, -1, child2, -1, 0)
+        expect(cellDivideListener.onCellDivide).toHaveBeenCalledTimes(0)
+      })
+    })
+
+    describe('CellDeathListener', () => {
+      let cellDeathListener: MyCellDeathListener<TestRuleExtensionFactory>
+      {
+        beforeEach(() => {
+          cellDeathListener = new MyCellDeathListener()
+          plain.addCellDeathListener(cellDeathListener)
+          spyOn(cellDeathListener, 'onCellDeath').and.callThrough()
+          plain.onSeedCellAdd(cellContainer)
+        })
+      }
+      it('is called like expected', () => {
         plain.onCellDeath(cellContainer)
-        expect(plain.getAt(0, 1).getCellContainers().length).toBe(0)
+        expect(cellDeathListener.onCellDeath).toHaveBeenCalledTimes(1)
+        expect(cellDeathListener.onCellDeath).toHaveBeenCalledWith(cellContainer)
+      })
+
+      it('can be removed', () => {
+        const removed = plain.removeCellDeathListener(cellDeathListener)
+        expect(removed).toBe(1)
+        plain.onCellDeath(cellContainer)
+        expect(cellDeathListener.onCellDeath).toHaveBeenCalledTimes(0)
       })
     })
   })

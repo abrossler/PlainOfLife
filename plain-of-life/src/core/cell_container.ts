@@ -3,6 +3,7 @@ import { SerializableCellContainer, SerializableCellContainers } from './seriali
 import { cellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
+import { modulo } from '../util/modulo'
 
 /**
  * Interface to add and remove cell containers from plain fields.
@@ -13,10 +14,10 @@ import { checkBoolean, checkInt, checkString } from '../util/type_checks'
 interface Plain<E extends RuleExtensionFactory> {
   get width(): number
   get height(): number
-  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number]
-  onSeedCellAdd(cellContainer: ExtCellContainer<E>, posX: number, posY: number): [number, number]
-  onCellMove(cellContainer: ExtCellContainer<E>, dX: number, dY: number): [number, number]
-  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): [number, number]
+  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): void
+  onSeedCellAdd(cellContainer: ExtCellContainer<E>): void
+  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void
   onCellDivide(
     parent: ExtCellContainer<E>,
     child1: ExtCellContainer<E>,
@@ -25,7 +26,7 @@ interface Plain<E extends RuleExtensionFactory> {
     child2: ExtCellContainer<E>,
     dX2: number,
     dY2: number
-  ): [number, number, number, number]
+  ): void
   onCellDeath(cellContainer: ExtCellContainer<E>): void
 }
 
@@ -130,8 +131,10 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this.firstCellContainer = firstCellContainer
     firstCellContainer.first = this
 
-    // Don't forget to add the seed cell container to the plain and set the position of the container
-    ;[this._posX, this._posY] = this.plain.onSeedCellAdd(firstCellContainer.first, posX, posY)
+    // Don't forget to set the position of the container and to add the seed cell container to the plain
+    this._posX = modulo(posX, this.plain.width)
+    this._posY = modulo(posY, this.plain.height)
+    this.plain.onSeedCellAdd(this)
   }
 
   /**
@@ -209,7 +212,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current.cell.initFromSerializable(serializable.cell)
 
       if (!isDead) {
-        current.plain.addCellContainer(current, posX, posY)
+        current.plain.addCellContainer(current, modulo(posX, this.plain.width), modulo(posY, this.plain.height))
       }
     }
     return allCellContainers
@@ -278,6 +281,35 @@ export class CellContainer<E extends RuleExtensionFactory> {
   }
 
   /**
+   * Execute a turn for the cell hosted by the container: Provide the cell a rule specific input to calculate an output.
+   * The rules interpret the output and perform actions like moving the cell based on the output.
+   */
+  executeTurn(input: Uint8Array, output: Uint8Array): void {
+    this.cell.executeTurn(input, output)
+  }
+
+  /**
+   * Let a cell move on the plain.
+   * @param dX the delta to the current x position - e.g. 2 moves the container 2 fields to the right
+   * @param dY the delta to the current y position - e.g. -2 moves the container 2 fields up
+   */
+  move(dX: number, dY: number): void {
+    checkInt(dX)
+    checkInt(dY)
+
+    if (dX === 0 && dY === 0) {
+      return
+    }
+
+    const oldX = this._posX
+    const oldY = this._posY
+
+    this._posX = modulo(oldX + dX, this.plain.width)
+    this._posY = modulo(oldY + dY, this.plain.height)
+    this.plain.onCellMove(this, oldX, oldY, dX, dY)
+  }
+
+  /**
    * Let a cell make a child.
    *
    * The child is added before the parent to the cell containers. Thus when iterating on the cell containers, the just born child
@@ -290,14 +322,14 @@ export class CellContainer<E extends RuleExtensionFactory> {
     checkInt(dX)
     checkInt(dY)
 
-    const childContainer = this.createChildContainer()
-    ;[childContainer._posX, childContainer._posY] = this.plain.onCellMakeChild(this, childContainer, dX, dY)
+    const childContainer = this.createChildContainer(this._posX + dX, this._posY + dY)
+    this.plain.onCellMakeChild(this, childContainer, dX, dY)
 
     return childContainer
   }
 
   /**
-   * Let a  cell divide in two children.
+   * Let a cell divide in two children.
    *
    * The parent cell dies. The two children are added before the parent to the cell containers. Thus when iterating on the cell
    * containers, the just created children will not be included in the current iteration.
@@ -313,47 +345,21 @@ export class CellContainer<E extends RuleExtensionFactory> {
     checkInt(dX2)
     checkInt(dY2)
 
-    const childContainer1 = this.createChildContainer()
-    const childContainer2 = this.createChildContainer()
+    const childContainer1 = this.createChildContainer(this._posX + dX1, this._posY + dY1)
+    const childContainer2 = this.createChildContainer(this._posX + dX2, this._posY + dY2)
 
     this._isDead = true
     this.removeDead()
-    ;[childContainer1._posX, childContainer1._posY, childContainer2._posX, childContainer2._posY] =
-      this.plain.onCellDivide(this, childContainer1, dX1, dY1, childContainer2, dX2, dY2)
+    this.plain.onCellDivide(this, childContainer1, dX1, dY1, childContainer2, dX2, dY2)
 
     return [childContainer1, childContainer2]
   }
 
   /**
-   * Create and init the cell container of a new child
-   * @returns the cell container
-   */
-  private createChildContainer(): CellContainer<E> {
-    const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
-
-    // Insert child before parent
-    childContainer._prev = this._prev
-    childContainer._next = this
-    this._prev._next = childContainer
-    this._prev = childContainer
-
-    // If child is inserted before first, move first to child
-    if (this.firstCellContainer) {
-      this.firstCellContainer.first = this._prev
-      this._prev.firstCellContainer = this.firstCellContainer
-      delete this.firstCellContainer
-    }
-
-    // Create the child cell
-    childContainer.cell = this.cell.makeChild()
-
-    return childContainer
-  }
-
-  /**
    * Let the cell die.
    *
-   * The cell container is removed from the container list of alive cells and from the plain field.
+   * The cell container is removed from the container list of alive cells and from the plain field. The last posX and posY of
+   * the container are still accessible.
    *
    * Rule specific cell records or field records still might hold references to the container of the dead cell.
    * For example a grandpa reference from a cell record to a dead grandpa is totally valid
@@ -379,6 +385,35 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Remove cell from plain
     this.plain.onCellDeath(this)
   }
+  /**
+   * Create and init the cell container of a new child
+   * @returns the cell container
+   */
+  private createChildContainer(posX: number, posY: number): CellContainer<E> {
+    const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
+
+    // Insert child before parent
+    childContainer._prev = this._prev
+    childContainer._next = this
+    this._prev._next = childContainer
+    this._prev = childContainer
+
+    // If child is inserted before first, move first to child
+    if (this.firstCellContainer) {
+      this.firstCellContainer.first = this._prev
+      this._prev.firstCellContainer = this.firstCellContainer
+      delete this.firstCellContainer
+    }
+
+    // Create the child cell
+    childContainer.cell = this.cell.makeChild()
+
+    // Set the position of the child on the plain
+    childContainer._posX = modulo(posX, this.plain.width)
+    childContainer._posY = modulo(posY, this.plain.height)
+
+    return childContainer
+  }
 
   /**
    * Remove the container of a dead cell from the list of all alive cells.
@@ -390,29 +425,5 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this._prev._next = this._next
     this._next._prev = this._prev
     this._prev = this._next = this // For a dead cell prev and next point to the cell itself
-  }
-
-  /**
-   * Let a cell move on the plain.
-   * @param dX the delta to the current x position - e.g. 2 moves the container 2 fields to the right
-   * @param dY the delta to the current y position - e.g. -2 moves the container 2 fields up
-   */
-  move(dX: number, dY: number): void {
-    checkInt(dX)
-    checkInt(dY)
-
-    if (dX === 0 && dY === 0) {
-      return
-    }
-
-    ;[this._posX, this._posY] = this.plain.onCellMove(this, dX, dY)
-  }
-
-  /**
-   * Execute a turn for the cell hosted by the container: Provide the cell a rule specific input to calculate an output.
-   * The rules interpret the output and perform actions like moving the cell based on the output.
-   */
-  executeTurn(input: Uint8Array, output: Uint8Array): void {
-    this.cell.executeTurn(input, output)
   }
 }
