@@ -1,7 +1,14 @@
 import { FloodFill } from '../util/flood_fill'
 import { modulo } from '../util/modulo'
 import { ExtCellContainer } from '../core/cell_container'
-import { ExtPlain } from '../core/plain'
+import {
+  CellDeathListener,
+  CellDivideListener,
+  CellMakeChildListener,
+  CellMoveListener,
+  ExtPlain,
+  SeedCellAddListener
+} from '../core/plain'
 import { RuleExtensionFactory } from '../core/rule_extension_factory'
 
 /**
@@ -26,7 +33,14 @@ interface MinRuleExtensionFactory extends RuleExtensionFactory {
   createNewFieldRecord(): MinFieldRecord & Record<string, unknown>
 }
 
-export class CoherentAreasManager {
+export class CoherentAreasManager
+  implements
+    SeedCellAddListener<MinRuleExtensionFactory>,
+    CellMoveListener<MinRuleExtensionFactory>,
+    CellMakeChildListener<MinRuleExtensionFactory>,
+    CellDivideListener<MinRuleExtensionFactory>,
+    CellDeathListener<MinRuleExtensionFactory>
+{
   private plain: MinFieldRecord[][]
   private floodFill: FloodFill<MinFieldRecord>
   private fillWithNull: MinFieldRecord
@@ -34,6 +48,12 @@ export class CoherentAreasManager {
   private height: number
 
   constructor(extPlain: ExtPlain<MinRuleExtensionFactory>) {
+    extPlain.addSeedCellAddListener(this)
+    extPlain.addCellMoveListener(this)
+    extPlain.addCellMakeChildListener(this)
+    extPlain.addCellDivideListener(this)
+    extPlain.addCellDeathListener(this)
+
     this.plain = new Array<Array<MinFieldRecord>>()
     this.width = extPlain.width
     this.height = extPlain.height
@@ -54,30 +74,77 @@ export class CoherentAreasManager {
     this.fillWithNull = { owner: null }
   }
 
-  public updateAfterBirth(cellContainer: ExtCellContainer<MinRuleExtensionFactory>, x: number, y: number): void {
-    this.place(cellContainer, x, y)
+  onSeedCellAdd(cellContainer: ExtCellContainer<MinRuleExtensionFactory>): void {
+    this.place(cellContainer)
   }
 
-  public updateBeforeMove(cellContainer: ExtCellContainer<MinRuleExtensionFactory>, dX: number, dY: number): void {
+  onCellMove(
+    cellContainer: ExtCellContainer<MinRuleExtensionFactory>,
+    oldX: number,
+    oldY: number,
+    dX: number,
+    dY: number
+  ): void {
     if (dX === 0 && dY === 0) {
       return
     }
 
-    const targetX = cellContainer.posX + dX
-    const targetY = cellContainer.posY + dY
     if (!((dX === 0 && (dY === 1 || dY === -1)) || (dY === 0 && (dX === 1 || dX === -1)))) {
-      cellContainer.cellRecord.ownedFieldsCount = 0
-      this.floodFill.fill(this.fillWithNull, cellContainer.posX, cellContainer.posY)
+      const x = cellContainer.posX
+      const y = cellContainer.posY
+      const xMinus1 = modulo(x - 1, this.width)
+      const xPlus1 = modulo(x + 1, this.width)
+      const yMinus1 = modulo(y - 1, this.height)
+      const yPlus1 = modulo(y + 1, this.height)
+
+      if (
+        this.plain[x][yMinus1].owner !== cellContainer &&
+        this.plain[xPlus1][y].owner !== cellContainer &&
+        this.plain[x][yPlus1].owner !== cellContainer &&
+        this.plain[xMinus1][y].owner !== cellContainer
+      ) {
+        cellContainer.cellRecord.ownedFieldsCount = 0
+        this.floodFill.fill(this.fillWithNull, oldX, oldY)
+      }
     }
-    this.place(cellContainer, targetX, targetY)
+    this.place(cellContainer)
   }
 
-  public updateBeforeDeath(cellContainer: ExtCellContainer<MinRuleExtensionFactory>): void {
+  onCellMakeChild(
+    parent: ExtCellContainer<MinRuleExtensionFactory>,
+    child: ExtCellContainer<MinRuleExtensionFactory>
+    //dX: number,
+    //dY: number
+  ): void {
+    this.place(child)
+  }
+
+  onCellDivide(
+    parent: ExtCellContainer<MinRuleExtensionFactory>
+    // child1: ExtCellContainer<MinRuleExtensionFactory>,
+    // dX1: number,
+    // dY1: number,
+    // child2: ExtCellContainer<MinRuleExtensionFactory>,
+    // dX2: number,
+    // dY2: number
+  ): void {
+    // ToDo
+    // Parent looses all
+    parent.cellRecord.ownedFieldsCount = 0
+    this.floodFill.fill(this.fillWithNull, parent.posX, parent.posY)
+    // No children connected to parent area => Everything lost
+    // Only one child connected => Connected Child gets all
+    // Both children connected => Closer child gets field
+  }
+
+  onCellDeath(cellContainer: ExtCellContainer<MinRuleExtensionFactory>): void {
     cellContainer.cellRecord.ownedFieldsCount = 0
     this.floodFill.fill(this.fillWithNull, cellContainer.posX, cellContainer.posY)
   }
 
-  private place(cellContainer: ExtCellContainer<MinRuleExtensionFactory>, x: number, y: number) {
+  private place(cellContainer: ExtCellContainer<MinRuleExtensionFactory>) {
+    const x = cellContainer.posX
+    const y = cellContainer.posY
     const newFieldRecord = this.plain[x][y]
     const oldOwner = newFieldRecord.owner
 

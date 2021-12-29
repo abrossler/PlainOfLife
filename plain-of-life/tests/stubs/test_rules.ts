@@ -81,7 +81,7 @@ export class TestRules extends Rules<TestRules> {
    */
   initNew(plain: ExtPlain<TestRules>): void {
     super.initNew(plain)
-    plain.getAt(1,1).fieldRecord.temperature = 99
+    plain.getAt(1, 1).fieldRecord.temperature = 99
   }
 
   /**

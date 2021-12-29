@@ -49,5 +49,4 @@ export class DemoRules2 extends Rules<DemoRules> {
   createNewFieldRecord(): { temperature: number; owner: ExtCellContainer<DemoRules2> | null } {
     return { temperature: 25, owner: null }
   }
-
 }

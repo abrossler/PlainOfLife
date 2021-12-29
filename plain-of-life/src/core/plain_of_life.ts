@@ -76,7 +76,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
 
     // Create plain and add seed cell
     newPOL.plain = new Plain<E>(newPOL.rules, width, height)
-    newPOL.rules.initNew( newPOL.plain )
+    newPOL.rules.initNew(newPOL.plain)
     newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
     const seedCell = new Cell()
     const hints = newPOL.rules.getSeedCellHints()

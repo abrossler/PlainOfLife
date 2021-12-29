@@ -11,7 +11,6 @@ import { RuleExtensionFactory } from './rule_extension_factory'
  * class MyRules extends Rules\<MyRules\>
  */
 export abstract class Rules<E extends RuleExtensionFactory> implements RuleExtensionFactory {
-
   /**
    * Initialize the new rules after the plain was initialized.
    *
