@@ -10,7 +10,6 @@ const maxIrradiance = 1000
 
 export class WinCoherentAreas extends Rules<WinCoherentAreas> {
   irradiance: number[] = []
-  areas!: CoherentAreasManager
 
   getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
     return {
@@ -108,12 +107,14 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
       )
     }
 
-    // for (const container of cellContainers) {
-    //   plain.getAt(container.posX, container.posY).fieldRecord.owner = container
-    // }
-
-    this.areas = new CoherentAreasManager(plain)
+    new CoherentAreasManager(plain)
   }
+
+  initFromSerializable(serializable: Record<string, unknown>, plain: ExtPlain<WinCoherentAreas>): void {
+    super.initFromSerializable(serializable, plain)
+    new CoherentAreasManager(plain)
+  }
+
   /**
    * Prepares the input that is passed to a cell when executing a turn. The input is provided to the cell for the 4 neighbor
    * fields.

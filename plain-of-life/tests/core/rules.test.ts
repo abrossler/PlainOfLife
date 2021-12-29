@@ -1,6 +1,8 @@
 import { ExtCellContainer } from '../../src/core/cell_container'
 import { defaultSerialization } from '../../src/core/default_serialization'
+import { Plain } from '../../src/core/plain'
 import { TestRules } from '../stubs/test_rules'
+import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 
 let rules: TestRules
 let serializableRules: Record<string, unknown>
@@ -65,7 +67,7 @@ describe('Rules', () => {
     {
       it('reverts default implementation of toSerializable', () => {
         const testRules = new TestRules()
-        testRules.initFromSerializable(serializableRules)
+        testRules.initFromSerializable(serializableRules, new Plain(new TestRuleExtensionFactory(), 2, 2))
         expect(testRules).toEqual(rules)
       })
     }

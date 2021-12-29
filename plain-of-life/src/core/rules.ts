@@ -27,7 +27,7 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    *
    * Override if {@link defaultFromSerializable} is not sufficient e.g. because of circular object references in your rules.
    */
-  initFromSerializable(serializable: Record<string, unknown>): void {
+  initFromSerializable(serializable: Record<string, unknown>, plain: ExtPlain<E>): void {
     Object.assign(this, defaultSerialization.fromSerializable(serializable))
   }
 

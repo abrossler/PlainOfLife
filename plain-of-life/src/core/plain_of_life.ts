@@ -108,7 +108,6 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       )
     }
     newPOL.rules = new ruleConstructor()
-    newPOL.rules.initFromSerializable(checkObject(serializable.rules))
 
     // Create the family tree
     newPOL.familyTree = new FamilyTree()
@@ -152,6 +151,9 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
         )
       }
     }
+
+    // Init the rules
+    newPOL.rules.initFromSerializable(checkObject(serializable.rules), newPOL.plain)
 
     return newPOL
   }
