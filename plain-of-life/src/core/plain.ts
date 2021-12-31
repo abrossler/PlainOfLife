@@ -145,8 +145,8 @@ export class Plain<E extends RuleExtensionFactory> {
       throw new Error('Plain is too big - width * height must be <= ' + maxPlainSize)
     }
 
-    this.array = Array.from({ length: _width }, () => {
-      return Array.from({ length: _height }, () => {
+    this.array = Array.from({ length: _height }, () => {
+      return Array.from({ length: _width }, () => {
         return new PlainField<E>(fieldRecordFactory)
       })
     })
@@ -165,7 +165,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * Get a plain field for POL core internal usage by it's x and y coordinates
    */
   getAtInt(posX: number, posY: number): PlainField<E> {
-    return this.array[modulo(posX, this._width)][modulo(posY, this._height)]
+    return this.array[modulo(posY, this._height)][modulo(posX, this._width)]
   }
 
   /**
@@ -186,14 +186,14 @@ export class Plain<E extends RuleExtensionFactory> {
    * Add a cell container to the plain at a given position
    */
   addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): void {
-    this.array[posX][posY].addCellContainer(cellContainer)
+    this.array[posY][posX].addCellContainer(cellContainer)
   }
 
   /**
    * If a seed cell is added, add the container of the seed cell to the plain and notify registered listeners
    */
   onSeedCellAdd(cellContainer: ExtCellContainer<E>): void {
-    this.array[cellContainer.posX][cellContainer.posY].addCellContainer(cellContainer)
+    this.array[cellContainer.posY][cellContainer.posX].addCellContainer(cellContainer)
 
     this.seedCellAddListeners.forEach((listener) => {
       listener.onSeedCellAdd(cellContainer)
@@ -219,8 +219,8 @@ export class Plain<E extends RuleExtensionFactory> {
    * If a cell is moved, adjust the position of the cell container on the plain and notify registered listeners.
    */
   onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void {
-    this.array[oldX][oldY].removeCellContainer(cellContainer)
-    this.array[cellContainer.posX][cellContainer.posY].addCellContainer(cellContainer)
+    this.array[oldY][oldX].removeCellContainer(cellContainer)
+    this.array[cellContainer.posY][cellContainer.posX].addCellContainer(cellContainer)
 
     this.cellMoveListeners.forEach((listener) => {
       listener.onCellMove(cellContainer, oldX, oldY, dX, dY)
@@ -246,7 +246,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * If a cell made a child, add the container of the child to the plain and notify registered listeners.
    */
   onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void {
-    this.array[child.posX][child.posY].addCellContainer(child)
+    this.array[child.posY][child.posX].addCellContainer(child)
 
     this.cellMakeChildListeners.forEach((listener) => {
       listener.onCellMakeChild(parent, child, dX, dY)
@@ -281,9 +281,9 @@ export class Plain<E extends RuleExtensionFactory> {
     dX2: number,
     dY2: number
   ): void {
-    this.array[parent.posX][parent.posY].removeCellContainer(parent)
-    this.array[child1.posX][child1.posY].addCellContainer(child1)
-    this.array[child2.posX][child2.posY].addCellContainer(child2)
+    this.array[parent.posY][parent.posX].removeCellContainer(parent)
+    this.array[child1.posY][child1.posX].addCellContainer(child1)
+    this.array[child2.posY][child2.posX].addCellContainer(child2)
 
     this.cellDivideListeners.forEach((listener) => {
       listener.onCellDivide(parent, child1, dX1, dY1, child2, dX2, dY2)
@@ -309,7 +309,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * If a cell died, remove the container of the cell from the plain and notify registered listeners.
    */
   onCellDeath(cellContainer: ExtCellContainer<E>): void {
-    this.array[cellContainer.posX][cellContainer.posY].removeCellContainer(cellContainer)
+    this.array[cellContainer.posY][cellContainer.posX].removeCellContainer(cellContainer)
 
     this.cellDeathListeners.forEach((listener) => {
       listener.onCellDeath(cellContainer)

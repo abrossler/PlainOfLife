@@ -27,10 +27,9 @@ describe('Plain', () => {
   it('construction inits properties correctly', () => {
     expect(plain.width).toBe(plainWidth)
     expect(plain.height).toBe(plainHeight)
-    expect((plain as any).array.length).toBe(plainWidth)
-    expect((plain as any).array[0].length).toBe(plainHeight)
-    expect((plain as any).array[1].length).toBe(plainHeight)
-    expect((plain as any).array[2].length).toBe(plainHeight)
+    expect((plain as any).array.length).toBe(plainHeight)
+    expect((plain as any).array[0].length).toBe(plainWidth)
+    expect((plain as any).array[1].length).toBe(plainWidth)
     expect((plain as any).array[0][0]).toBeInstanceOf(PlainField)
   })
 
@@ -43,8 +42,8 @@ describe('Plain', () => {
   })
 
   it('getAt and getAtInt get individual plain fields', () => {
-    expect(plain.getAt(0, 1)).toBe((plain as any).array[0][1])
-    expect(plain.getAtInt(0, 1)).toBe((plain as any).array[0][1])
+    expect(plain.getAt(0, 1)).toBe((plain as any).array[1][0])
+    expect(plain.getAtInt(0, 1)).toBe((plain as any).array[1][0])
   })
 
   describe('event listeners', () => {
