@@ -1,93 +1,148 @@
-// import { CoherentAreasManager } from '../../src/ownership_managers/coherent_areas_manager'
-// import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
-// import { Plain } from '../../src/core/plain'
-// import { RuleExtensionFactory } from '../../src/core/rule_extension_factory'
-// import { CellContainer, ExtCellContainer } from '../../src/core/cell_container'
-// import { PlainField } from '../../src/core/plain_field'
+import { CoherentAreasManager } from '../../src/ownership_managers/coherent_areas_manager'
+import { Plain } from '../../src/core/plain'
+import { ExtCellContainer } from '../../src/core/cell_container'
+import { PlainOfLife } from '../../src/core/plain_of_life'
+import { TestRules } from '../stubs/test_rules'
+import { TestCell } from '../stubs/test_cell'
 
-// describe('CoherentAreasManager', () => {
-//   describe('place', () => {
-//     it('fills simple shape correctly', () => {
-//       const plainBefore = [
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' ']
-//       ]
-//       //   const fF = new FloodFill(plainToFill)
-//       //   fF.fill(9, 2, 2)
-//       const plainAfter = [
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' '],
-//         [' ', ' ', ' ', ' ', ' ', ' ', ' ']
-//       ]
-//       for (let i = 0; i < plainBefore.length; i++) {
-//         expect(plainBefore[i]).toEqual(plainAfter[i])
-//       }
-//     })
-//   })
-// })
+describe('CoherentAreasManager', () => {
+  describe('test', () => {
+    it('compares plains correctly', () => { // Test the test - make sure that there is no difference found for identical plains
+      const plainBefore = [
+        [' ', 'A', 'a'],
+        ['B', 'CD', 'Fa'],
+        ['GHg', ' I', 'a '],
+        ['', 'J', '   ']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'A', 'a'],
+        ['B', 'CD', 'Fa'],
+        ['GHg', ' I', 'a '],
+        ['', 'J', '   ']
+      ]
+      const plain = prepare(plainBefore)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+  })
 
-// function prepare(plainToPrepare: string[][]) {
-//   const ruleExtensionFactory: MinRuleExtensionFactory = new MinRuleExtensionFactory()
-//   const width = plainToPrepare[0].length
-//   const height = plainToPrepare[0].length
-//   const plain: Plain<MinRuleExtensionFactory> = new Plain(ruleExtensionFactory, width, height)
-//   const array: PlainField<MinRuleExtensionFactory>[][] = (plain as any).array
-//   const cellContainers: CellContainer<MinRuleExtensionFactory>[] = Array.from({ length: 25 }, () => {
-//     return new CellContainer<MinRuleExtensionFactory>(ruleExtensionFactory, plain)
-//   })
+  describe('onCellMove', () => {
+    it('performs simple move in all directions correctly', () => {
+      const plainBefore = [
+        [' ', ' ', ' '],
+        [' ', 'A ', ' '],
+        [' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'A', ' '],
+        [' ', 'a', ' '],
+        [' ', ' ', ' ']
+      ]
+      const plain = prepare(plainBefore)
+      plain.getAt(1,1).getCellContainers()[0].move(0,-1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+  })
 
-//   const ownerIndices = plainToPrepare.map((row) =>
-//     row.map((cell) => {
-//       const charCode = cell.charCodeAt(0)
+})
 
-//       let isLowerCase = charCode >= 65 && charCode <= 90
-//       let isUpperCase = charCode >= 97 && charCode <= 122
+function prepare(plainToPrepare: string[][]): Plain<TestRules> {
+  const width = plainToPrepare[0].length
+  const height = plainToPrepare.length
+  const plainOfLife = PlainOfLife.createNew(width, height, TestRules, TestCell)
+  /* eslint-disable @typescript-eslint/no-explicit-any*/
+  const plain: Plain<TestRules> = (plainOfLife as any).plain
+  const seedCellContainer: ExtCellContainer<TestRules> = (plainOfLife as any).firstCellContainer.first
+  /* eslint-enable @typescript-eslint/no-explicit-any*/
+  seedCellContainer.move(-seedCellContainer.posX, -seedCellContainer.posY)
 
-//       if (cell.length != 1 || (cell != ' ' && !isLowerCase && !isUpperCase)) {
-//         throw new Error('Only value " " or values between A...Z and a...z supported')
-//       }
+  const stringContainerMap = new Map<string, ExtCellContainer<TestRules>>()
 
-//       let ownerIndex: number | undefined = undefined
-//       let isOwnerPosition = false
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const s = plainToPrepare[y][x].trim()
 
-//       if (isLowerCase) {
-//         ownerIndex = charCode - 65
-//       } else if (isUpperCase) {
-//         ownerIndex = charCode - 97
-//         isOwnerPosition = true
-//       }
-//       return { ownerIndex, isOwnerPosition }
-//     })
-//   )
+      if (s!=='' && !/^[a-zA-Z]+$/.test(s)) {
+        throw new Error('Only letters (a-z or A-Z) and white spaces are allowed')
+      }
 
-//   for (let y = 0; y < height; y++) {
-//     for (let x = 0; x < width; x++) {
-//       const ownerIndex = ownerIndices[y][x].ownerIndex
-//       if (ownerIndex !== undefined) {
-//         array[y][x].fieldRecord.owner = cellContainers[ownerIndex]
-//         cellContainers[ownerIndex].cellRecord.ownedFieldsCount++
-//       }
-//       if (ownerIndices[y][x].isOwnerPosition) {
-//         ;(cellContainers[ownerIndex] as { posX: number }).posX = x
-//         ;(cellContainers[ownerIndex] as { posY: number }).posY = y
-//       }
-//       array[y][x].addCellContainer(cellContainers[ownerIndex])
-//     }
-//   }
-//   const coherentAreasManager = new CoherentAreasManager(plain)
-// }
+      const newContainers = s.replace(/[^A-Z]/g, '') // All uppercase letters
 
-// class MinRuleExtensionFactory implements RuleExtensionFactory {
-//   createNewCellRecord(): { ownedFieldsCount: number } {
-//     return { ownedFieldsCount: 0 }
-//   }
+      for (let c of newContainers) {
+        if (!stringContainerMap.has(c)) {
+            let container = seedCellContainer.makeChild(x, y)
+            container.cellRecord.name = c
+          stringContainerMap.set(c, container)
+        } else {
+          throw new Error(
+            'Container "' + c + '" is not unique on the plain (= each upper case letter must exist only once)'
+          )
+        }
+      }
+    }
+  }
 
-//   createNewFieldRecord(): { owner: ExtCellContainer<MinRuleExtensionFactory> | null } {
-//     return { owner: null }
-//   }
-// }
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+        const s = plainToPrepare[y][x].trim()
+
+      let owner = s.replace(/[^a-z]/g, '') // All lowercase letters
+      if (owner.length > 1) {
+        throw new Error('Only one owner (=lower case letter) per field supported.')
+      }
+      if (owner.length == 0) {
+        const records = s.replace(/[^A-Z]/g, '') // All uppercase letters
+        if (records.length > 0) {
+          owner = records.substring(records.length - 1)
+        }
+      } else if (!s.endsWith(owner)){
+        throw new Error('Owners must be defined at the end (=lower case letter must be at the end)')
+      }
+    
+      owner = owner.toUpperCase()
+      if (owner) {
+        const container = stringContainerMap.get(owner)
+        if (container) {
+          plain.getAt(x, y).fieldRecord.owner = container
+          container.cellRecord.ownedFieldsCount++
+         } else {
+          throw new Error(
+            'Container for owner "' +
+              owner +
+              '" missing (=for each different lower case letter there must be exactly one corresponding upper case letter)'
+          )
+        }
+      }
+    }
+  }
+
+  seedCellContainer.die()
+  new CoherentAreasManager(plain)
+  return plain
+}
+
+function compare(plain: Plain<TestRules>, expectedPlainAfter: string[][]): string {
+  let differences = ''
+  const width = plain.width
+  const height = plain.height
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const f = plain.getAt(x, y)
+      const expected = expectedPlainAfter[y][x].trim()
+
+      let found = ''
+      for( let container of f.getCellContainers()){
+          found += container.cellRecord.name
+      }
+      const owner = f.fieldRecord.owner
+      if(owner && owner.cellRecord.name !== found.substring(found.length-1)){
+        found += owner.cellRecord.name.toLowerCase()
+      }
+
+      if(found !== expected){
+        differences += 'At x=' + x + ', y=' + y + ' expected "' + expected +'" but found "' + found + '"\n'
+      }
+    }
+  }
+  return differences
+}

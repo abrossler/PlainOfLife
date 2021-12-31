@@ -56,10 +56,14 @@ export class TestRules extends Rules<TestRules> {
   createNewCellRecord(): {
     cellAge: number
     parent: ExtCellContainer<TestRules> | null
+    ownedFieldsCount: number
+    name: string
   } {
     return {
       cellAge: 0,
-      parent: null
+      parent: null,
+      ownedFieldsCount: 0,
+      name: ''
     }
   }
 
