@@ -1,4 +1,4 @@
-import { FloodFill } from '../util/flood_fill'
+import { FloodFill, Point } from '../util/flood_fill'
 import { modulo } from '../util/modulo'
 import { ExtCellContainer } from '../core/cell_container'
 import {
@@ -57,9 +57,9 @@ export class CoherentAreasManager
     this.plain = new Array<Array<MinFieldRecord>>()
     this.width = extPlain.width
     this.height = extPlain.height
-    for (let y = 0; (y < this.height); y++) {
+    for (let y = 0; y < this.height; y++) {
       const row: MinFieldRecord[] = new Array<MinFieldRecord>()
-      for (let x = 0; (x < this.width); x++) {
+      for (let x = 0; x < this.width; x++) {
         row.push(extPlain.getAt(x, y).fieldRecord)
       }
       this.plain.push(row)
@@ -175,6 +175,7 @@ export class CoherentAreasManager
 
     newFieldRecord.owner = cellContainer
     cellRecord.ownedFieldsCount++
+    oldOwner.cellRecord.ownedFieldsCount--
 
     const xMinus1 = modulo(x - 1, this.width)
     const xPlus1 = modulo(x + 1, this.width)
@@ -183,19 +184,24 @@ export class CoherentAreasManager
 
     let sameOwner: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 = 0b0000
     if (this.plain[yMinus1][x].owner === oldOwner) {
+      // Up
       sameOwner |= 0b1000
     }
     if (this.plain[y][xPlus1].owner === oldOwner) {
+      // Right
       sameOwner |= 0b0100
     }
     if (this.plain[yPlus1][x].owner === oldOwner) {
+      // Down
       sameOwner |= 0b0010
     }
     if (this.plain[y][xMinus1].owner === oldOwner) {
+      // Left
       sameOwner |= 0b0001
     }
 
     switch (sameOwner) {
+      // No neighbors or only one neighbor owned by the old owner
       case 0b0000:
       case 0b1000:
       case 0b0100:
@@ -203,14 +209,15 @@ export class CoherentAreasManager
       case 0b0001:
         return
 
+      // Two neighbors owned by the old owner
       // Up right
       case 0b1100:
         if (this.plain[yMinus1][xPlus1].owner !== oldOwner) {
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
-            [x, yMinus1, neighborDist[relPos][up]],
-            [xPlus1, y, neighborDist[relPos][right]]
+            { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
+            { x: xPlus1, y: y, dist: neighborDist[relPos][right] }
           )
         }
         return
@@ -221,8 +228,8 @@ export class CoherentAreasManager
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
-            [xPlus1, y, neighborDist[relPos][right]],
-            [x, yPlus1, neighborDist[relPos][down]]
+            { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
+            { x: x, y: yPlus1, dist: neighborDist[relPos][down] }
           )
         }
         return
@@ -233,8 +240,8 @@ export class CoherentAreasManager
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
-            [x, yPlus1, neighborDist[relPos][down]],
-            [xMinus1, y, neighborDist[relPos][left]]
+            { x: x, y: yPlus1, dist: neighborDist[relPos][down] },
+            { x: xMinus1, y: y, dist: neighborDist[relPos][left] }
           )
         }
         return
@@ -245,35 +252,133 @@ export class CoherentAreasManager
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
-            [xMinus1, y, neighborDist[relPos][left]],
-            [x, yMinus1, neighborDist[relPos][up]]
+            { x: xMinus1, y: y, dist: neighborDist[relPos][left] },
+            { x: x, y: yMinus1, dist: neighborDist[relPos][up] }
           )
         }
         return
 
-      // Horizontal
+      // Horizontal row
       case 0b0101: {
         const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNullNeighbors(
           oldOwner,
-          [xPlus1, y, neighborDist[relPos][right]],
-          [xMinus1, y, neighborDist[relPos][left]]
+          { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
+          { x: xMinus1, y: y, dist: neighborDist[relPos][left] }
         )
         return
       }
-      // Vertical
+      // Vertical column
       case 0b1010: {
         const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNullNeighbors(
           oldOwner,
-          [x, yMinus1, neighborDist[relPos][up]],
-          [x, yPlus1, neighborDist[relPos][down]]
+          { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
+          { x: x, y: yPlus1, dist: neighborDist[relPos][down] }
         )
         return
       }
 
-      case 0b1110:
-        return //##############################ToDo Weiter
+      // Three neighbors owned by the old owner
+      // Up neighbor is not owned by old owner
+      case 0b0111: {
+        const rightDownOwned = this.plain[yPlus1][xPlus1].owner === oldOwner
+        const leftDownOwned = this.plain[yPlus1][xMinus1].owner === oldOwner
+        if (rightDownOwned && leftDownOwned) {
+          return
+        }
+        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        this.checkAndNull3Neighbors(
+          oldOwner,
+          { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
+          { x: x, y: yPlus1, dist: neighborDist[relPos][down] },
+          { x: xMinus1, y: y, dist: neighborDist[relPos][left] },
+          rightDownOwned,
+          leftDownOwned
+        )
+        return
+      }
+
+      // Right neighbor is not owned by old owner
+      case 0b1011: {
+        const leftDownOwned = this.plain[yPlus1][xMinus1].owner === oldOwner
+        const leftUpOwned = this.plain[yMinus1][xMinus1].owner === oldOwner
+        if (leftDownOwned && leftUpOwned) {
+          return
+        }
+        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        this.checkAndNull3Neighbors(
+          oldOwner,
+          { x: x, y: yPlus1, dist: neighborDist[relPos][down] },
+          { x: xMinus1, y: y, dist: neighborDist[relPos][left] },
+          { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
+          leftDownOwned,
+          leftUpOwned
+        )
+        return
+      }
+
+      // Down neighbor is not owned by old owner
+      case 0b1101: {
+        const leftUpOwned = this.plain[yMinus1][xMinus1].owner === oldOwner
+        const rightUpOwned = this.plain[yMinus1][xPlus1].owner === oldOwner
+        if (leftUpOwned && rightUpOwned) {
+          return
+        }
+        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        this.checkAndNull3Neighbors(
+          oldOwner,
+          { x: xMinus1, y: y, dist: neighborDist[relPos][left] },
+          { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
+          { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
+          leftUpOwned,
+          rightUpOwned
+        )
+        return
+      }
+
+      // Left neighbor is not owned by old owner
+      case 0b1110: {
+        const rightUpOwned = this.plain[yMinus1][xPlus1].owner === oldOwner
+        const rightDownOwned = this.plain[yPlus1][xPlus1].owner === oldOwner
+        if (rightUpOwned && rightDownOwned) {
+          return
+        }
+        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        this.checkAndNull3Neighbors(
+          oldOwner,
+          { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
+          { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
+          { x: x, y: yPlus1, dist: neighborDist[relPos][down] },
+          rightUpOwned,
+          rightDownOwned
+        )
+        return
+      }
+
+      // All 4 neighbors are owned by the old owner
+      case 0b1111: {
+        return
+      }
+    }
+  }
+
+  private checkAndNull3Neighbors(
+    oldOwner: ExtCellContainer<MinRuleExtensionFactory>,
+    n1: Neighbor,
+    n2: Neighbor,
+    n3: Neighbor,
+    c1SameOwner: boolean,
+    c2SameOwner: boolean
+  ) {
+    if (c1SameOwner) {
+      n1.dist = Math.min(n1.dist, n2.dist)
+      this.checkAndNullNeighbors(oldOwner, n1, n3)
+    } else if (c2SameOwner) {
+      n3.dist = Math.min(n3.dist, n2.dist)
+      this.checkAndNullNeighbors(oldOwner, n1, n3)
+    } else {
+      this.checkAndNullNeighbors(oldOwner, n1, n2, n3)
     }
   }
 
@@ -321,62 +426,67 @@ export class CoherentAreasManager
     }
   }
 
-  private checkAndNullNeighbors(
-    oldOwner: ExtCellContainer<MinRuleExtensionFactory>,
-    ...neighborPosAndDist: [number, number, number][]
-  ): void {
-    //let [x,y] = pos[0]
-
+  private checkAndNullNeighbors(oldOwner: ExtCellContainer<MinRuleExtensionFactory>, ...toCheck: Neighbor[]): void {
     const oldOwnerX = oldOwner.posX
     const oldOwnerY = oldOwner.posY
 
-    let closest: [number, number, number] | null = null
+    let closest: Neighbor | null = null
 
-    for (let i = 0; i < neighborPosAndDist.length; i++) {
-      if (i > 1 && this.plain[neighborPosAndDist[i][1]][neighborPosAndDist[i][0]].owner === null) {
+    for (let i = 0; i < toCheck.length; i++) {
+      if (i > 1 && this.plain[toCheck[i].y][toCheck[i].x].owner === null) {
         continue
       }
 
       if (closest === null) {
-        closest = neighborPosAndDist[i]
+        closest = toCheck[i]
         continue
       }
 
-      let current = neighborPosAndDist[i]
+      let current = toCheck[i]
 
-      if (current[2] < closest[2]) {
+      if (current.dist < closest.dist) {
         ;[closest, current] = [current, closest]
       }
 
       // Try to fill a disconnected part of the area with null
-      this.floodFill.fill(this.fillWithNull, current[0], current[1])
+      const filledPoints: Point[] = []
+      const filled = this.floodFill.fill(this.fillWithNull, current.x, current.y, filledPoints)
 
       // Ups, by mistake we filled a part that is connected
       if (this.plain[oldOwnerY][oldOwnerX].owner === null) {
+        oldOwner.cellRecord.ownedFieldsCount = filled
+
         // At least we now know for sure that every non-null neighbor must be disconnected and we have to fill it with null
-        for (let i = 0; i < neighborPosAndDist.length; i++) {
-          const [x, y] = neighborPosAndDist[i]
-          if (this.plain[y][x].owner !== null) {
-            this.floodFill.fill(this.fillWithNull, x, y)
+        for (const current of toCheck) {
+          if (this.plain[current.y][current.x].owner !== null) {
+            this.floodFill.fill(this.fillWithNull, current.x, current.y)
           }
         }
-        // ToDo Undo fill by mistake
-        //######################################
+        // Undo fill by mistake
+        for (const point of filledPoints) {
+          this.plain[point.y][point.x].owner = oldOwner
+        }
         return
+      } else {
+        oldOwner.cellRecord.ownedFieldsCount -= filled
       }
 
       // OK, closest was connected to disconnected part and has to be re-filled in the next iteration
-      if (this.plain[closest[1]][closest[0]].owner === null) {
+      if (this.plain[closest.y][closest.x].owner === null) {
         closest = null
       }
     }
   }
 }
 
-const up = 0
-const right = 1
-const down = 2
-const left = 3
+type Direction = 0 | 1 | 2 | 3
+const up: Direction = 0
+const right: Direction = 1
+const down: Direction = 2
+const left: Direction = 3
+
+type Neighbor = { x: number; y: number; dist: number }
+
 // Precalculated: Which neighbor of the field to be occupied is closest to the old owner, depending on the
 // relative position of the old owner? Which is second, third and fourth?
 // The first dimension of the array is the relative position of the old owner (0-7)

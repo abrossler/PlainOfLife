@@ -4,10 +4,12 @@ import { ExtCellContainer } from '../../src/core/cell_container'
 import { PlainOfLife } from '../../src/core/plain_of_life'
 import { TestRules } from '../stubs/test_rules'
 import { TestCell } from '../stubs/test_cell'
+import { FloodFill } from '../../src/util/flood_fill'
 
 describe('CoherentAreasManager', () => {
   describe('test', () => {
-    it('compares plains correctly', () => { // Test the test - make sure that there is no difference found for identical plains
+    it('compares plains correctly', () => {
+      // Test the test - make sure that there is no difference found for identical plains
       const plainBefore = [
         [' ', 'A', 'a'],
         ['B', 'CD', 'Fa'],
@@ -20,32 +22,1076 @@ describe('CoherentAreasManager', () => {
         ['GHg', ' I', 'a '],
         ['', 'J', '   ']
       ]
-      const plain = prepare(plainBefore)
+      const plain = prepare(plainBefore).plain
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
   })
 
   describe('onCellMove', () => {
-    it('performs simple move in all directions correctly', () => {
+    it('performs simple move up correctly (considering torus topography and keeping ownership of neighbor)', () => {
       const plainBefore = [
         [' ', ' ', ' '],
-        [' ', 'A ', ' '],
+        ['a', 'A', ' '],
+        [' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'a', ' '],
+        ['a', 'a', ' '],
+        [' ', 'A', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(1, 1).getCellContainers()[0]
+      a.move(0, -1)
+      a.move(0, -1)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(4)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+    })
+
+    it('performs simple move right correctly (considering torus topography and keeping ownership of neighbor)', () => {
+      const plainBefore = [
+        [' ', 'a', ' '],
+        [' ', 'A', ' '],
+        [' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'a', ' '],
+        ['A', 'a', 'a'],
+        [' ', ' ', ' ']
+      ]
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(1, 1).getCellContainers()[0]
+      a.move(1, 0)
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('performs simple move down correctly (considering torus topography and keeping ownership of neighbor)', () => {
+      const plainBefore = [
+        [' ', ' ', ' '],
+        [' ', 'A', 'a'],
         [' ', ' ', ' ']
       ]
       const expectedPlainAfter = [
         [' ', 'A', ' '],
-        [' ', 'a', ' '],
-        [' ', ' ', ' ']
+        [' ', 'a', 'a'],
+        [' ', 'a', ' ']
       ]
-      const plain = prepare(plainBefore)
-      plain.getAt(1,1).getCellContainers()[0].move(0,-1)
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(1, 1).getCellContainers()[0]
+      a.move(0, 1)
+      a.move(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
-  })
 
+    it('performs simple move left correctly (considering torus topography and keeping ownership of neighbor)', () => {
+      const plainBefore = [
+        [' ', ' ', ' '],
+        [' ', 'A', ' '],
+        [' ', 'a', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['a', 'a', 'A'],
+        [' ', 'a', ' ']
+      ]
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(1, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('looses all owned fields if moving 2 steps up and being disconnected (considering torus topography)', () => {
+      const plainBefore = [
+        ['a', ' ', ' ', 'a'],
+        ['a', 'a', 'A', 'a'],
+        [' ', ' ', ' ', ' '],
+        ['a', ' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'A', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(2, 1).getCellContainers()[0]
+      a.move(0, -2)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+
+    it('looses all owned fields if moving 2 steps right and being disconnected (considering torus topography)', () => {
+      const plainBefore = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'A', ' '],
+        [' ', ' ', 'a', ' '],
+        [' ', 'a', 'a', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['A', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(2, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('looses all owned fields if moving 2 steps down and being disconnected (considering torus topography)', () => {
+      const plainBefore = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', 'a', 'A', ' '],
+        [' ', 'a', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', 'A', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(2, 2).getCellContainers()[0]
+      a.move(0, 2)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('looses all owned fields if moving 2 steps left and being disconnected (considering torus topography)', () => {
+      const plainBefore = [
+        [' ', 'a', 'a', ' '],
+        [' ', 'a', ' ', ' '],
+        [' ', 'A', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', 'A'],
+        [' ', ' ', ' ', ' ']
+      ]
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(1, 2).getCellContainers()[0]
+      a.move(-2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('does not loose owned fields if moving 2 steps but still is connected', () => {
+      let plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['A', 'a', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['a', 'a', 'A', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      let plain = prepare(plainBefore).plain
+      let a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(3)
+
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['A', ' ', ' ', 'a'],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['a', ' ', 'A', 'a'],
+        [' ', ' ', ' ', ' ']
+      ]
+      plain = prepare(plainBefore).plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+
+      plainBefore = [
+        ['a', 'a', 'a', ' '],
+        ['A', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        ['a', 'a', 'a', ' '],
+        ['a', ' ', 'A', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      plain = prepare(plainBefore).plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['A', ' ', ' ', ' '],
+        ['a', 'a', 'a', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['a', ' ', 'A', ' '],
+        ['a', 'a', 'a', ' ']
+      ]
+      plain = prepare(plainBefore).plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('does not change anything if moving on already owned field', () => {
+      const plainBefore = [
+        [' ', ' ', ' '],
+        ['a', 'A', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['A', 'a', ' ']
+      ]
+      const plain = prepare(plainBefore).plain
+      const a = plain.getAt(1, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+    })
+
+    it('lets the old owner loose all fields if directly moving on the old owner', () => {
+      const plainBefore = [
+        [' ', ' ', 'b'],
+        ['A', 'B', 'b'],
+        ['b', ' ', 'b']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['a', 'BA', ' '],
+        [' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 1).getCellContainers()[0]
+      const b = prep.plain.getAt(1, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+      expect(b.cellRecord.ownedFieldsCount).toBe(0)
+      a.move(1, 0)
+      expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['a', 'Ba', 'A'],
+        [' ', ' ', ' ']
+      ]
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(3)
+      expect(b.cellRecord.ownedFieldsCount).toBe(0)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+
+    it('just takes away one field from the old owner if there is max one more neighbor of the same old owner', () => {
+      let plainBefore = [
+        [' ', ' ', ' '],
+        ['A', 'b', ' '],
+        [' ', 'B', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['a', 'A', ' '],
+        [' ', 'B', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(0, 1).getCellContainers()[0]
+      let b = plain.getAt(1, 2).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      plainBefore = [
+        [' ', 'B', ' '],
+        ['A', 'b', ' '],
+        [' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', ' '],
+        ['a', 'A', ' '],
+        [' ', ' ', ' ']
+      ]
+      plain = prepare(plainBefore).plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+
+      plainBefore = [
+        [' ', ' ', ' '],
+        ['A', 'b', 'B'],
+        [' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['a', 'A', 'B'],
+        [' ', ' ', ' ']
+      ]
+      plain = prepare(plainBefore).plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(2, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+
+      plainBefore = [
+        [' ', ' ', ' '],
+        ['B', 'b', 'A'],
+        [' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['B', 'A', 'a'],
+        [' ', ' ', ' ']
+      ]
+      plain = prepare(plainBefore).plain
+      a = plain.getAt(2, 1).getCellContainers()[0]
+      b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('considers two neighbor fields (up and right) owned by the old owner correctly', () => {
+      // Direct bridge in corner
+      let plainBefore = [
+        [' ', 'B', ' ', ' '],
+        [' ', 'b', 'b', ' '],
+        ['A', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', 'B', ' ', ' '],
+        [' ', 'b', 'b', ' '],
+        ['a', 'A', 'b', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(0, 2).getCellContainers()[0]
+      let b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+      expect(b.cellRecord.ownedFieldsCount).toBe(4)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // Indirect bridge, not in corner X
+      plainBefore = [
+        [' ', 'B', 'b', 'b'],
+        [' ', 'b', 'X', 'b'],
+        ['A', 'b', 'b', 'b'],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', 'b', 'b'],
+        [' ', 'b', 'X', 'b'],
+        ['a', 'A', 'b', 'b'],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 2).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+      expect(b.cellRecord.ownedFieldsCount).toBe(7)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // No bridge, B is closer to connected edge => optimized to call flood fill only once
+      plainBefore = [
+        [' ', 'B', ' ', ' '],
+        [' ', 'b', ' ', 'b'],
+        ['A', 'b', 'b', 'b'],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', ' ', ' '],
+        [' ', 'b', ' ', ' '],
+        ['a', 'A', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 2).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(2)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // No bridge, B is closer to disconnected edge => algorithm is fooled and flood fill is called twice
+      plainBefore = [
+        [' ', ' ', 'B', 'b', ' '],
+        ['b', 'b', ' ', 'b', ' '],
+        ['A', 'b', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', 'B', 'b', ' '],
+        [' ', ' ', ' ', 'b', ' '],
+        ['a', 'A', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 2).getCellContainers()[0]
+      b = plain.getAt(2, 0).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+    })
+
+    it('considers two neighbor fields (right and down) owned by the old owner correctly', () => {
+      // Direct bridge in corner
+      let plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['A', 'b', 'b', 'B'],
+        [' ', 'b', 'b', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['a', 'A', 'b', 'B'],
+        [' ', 'b', 'b', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(0, 1).getCellContainers()[0]
+      let b = plain.getAt(3, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(4)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // Indirect bridge, not in corner X
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['A', 'b', 'b', 'B'],
+        [' ', 'b', 'X', 'b'],
+        [' ', 'b', 'b', 'b']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['a', 'A', 'b', 'B'],
+        [' ', 'b', 'X', 'b'],
+        [' ', 'b', 'b', 'b']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(3, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(7)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // No bridge, B is closer to connected edge => optimized to call flood fill only once
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['A', 'b', 'b', 'B'],
+        [' ', 'b', ' ', ' '],
+        ['b', 'b', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['a', 'A', 'b', 'B'],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(3, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(2)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // No bridge, B is closer to disconnected edge => algorithm is fooled and flood fill is called twice
+      // Other neighbors (X) have no influence
+      plainBefore = [
+        ['X', 'x', 'x', 'x'],
+        ['A', 'b', 'b', 'x'],
+        ['x', 'b', 'x', 'B'],
+        ['x', 'b', 'b', 'b']
+      ]
+      expectedPlainAfter = [
+        ['X', 'x', 'x', 'x'],
+        ['a', 'A', ' ', 'x'],
+        ['x', 'b', 'x', 'B'],
+        ['x', 'b', 'b', 'b']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(3, 2).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+    })
+
+    it('considers two neighbor fields (down and left) owned by the old owner correctly', () => {
+      // Direct bridge in corner
+      let plainBefore = [
+        [' ', ' ', ' '],
+        ['B', 'b', 'A'],
+        ['b', 'b', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['B', 'A', 'a'],
+        ['b', 'b', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(2, 1).getCellContainers()[0]
+      let b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(3)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // Indirect bridge (considering torus topography of plain), not in corner X
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['b', 'B', 'b', 'A'],
+        ['b', 'X', 'b', 'b']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['b', 'B', 'A', 'a'],
+        ['b', 'X', 'b', 'b']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(3, 1).getCellContainers()[0]
+      b = plain.getAt(1, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // No bridge, B is closer to connected edge => optimized to call flood fill only once
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['b', 'b', 'b', 'A'],
+        [' ', ' ', 'b', ' '],
+        [' ', ' ', 'b', ' '],
+        [' ', ' ', 'b', 'B']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'A', 'a'],
+        [' ', ' ', 'b', ' '],
+        [' ', ' ', 'b', ' '],
+        [' ', ' ', 'b', 'B']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(3, 1).getCellContainers()[0]
+      b = plain.getAt(3, 4).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(4)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // No bridge, B is closer to disconnected edge => algorithm is fooled and flood fill is called twice
+      plainBefore = [
+        ['B', ' ', ' ', ' ', ' '],
+        ['b', ' ', 'b', 'b', 'A'],
+        ['b', ' ', ' ', 'b', ' '],
+        ['b', 'b', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        ['B', ' ', ' ', ' ', ' '],
+        ['b', ' ', ' ', 'A', 'a'],
+        ['b', ' ', ' ', 'b', ' '],
+        ['b', 'b', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(4, 1).getCellContainers()[0]
+      b = plain.getAt(0, 0).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(8)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+    })
+
+    it('considers two neighbor fields (left and up) owned by the old owner correctly', () => {
+      // Direct bridge in corner
+      let plainBefore = [
+        ['b', 'b', ' '],
+        ['B', 'b', 'A'],
+        [' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        ['b', 'b', ' '],
+        ['B', 'A', 'a'],
+        [' ', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(2, 1).getCellContainers()[0]
+      let b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(3)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // Indirect bridge (considering torus topography of plain), not in corner X
+      plainBefore = [
+        ['b', 'X', 'b', 'b'],
+        ['b', 'B', 'b', 'A'],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        ['b', 'X', 'b', 'b'],
+        ['b', 'B', 'A', 'a'],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(3, 1).getCellContainers()[0]
+      b = plain.getAt(1, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+
+    it('considers two neighbor fields forming a horizontal line owned by the old owner correctly', () => {
+      // Disconnected
+      let plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['B', 'b', 'b', ' '],
+        [' ', 'A', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['B', 'A', ' ', ' '],
+        [' ', 'a', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(1, 2).getCellContainers()[0]
+      let b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(0, -1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // Indirect bridge
+      plainBefore = [
+        [' ', 'A', ' ', ' '],
+        ['B', 'b', 'b', ' '],
+        ['b', ' ', 'b', ' '],
+        ['b', 'b', 'b', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' '],
+        ['B', 'A', 'b', ' '],
+        ['b', ' ', 'b', ' '],
+        ['b', 'b', 'b', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(7)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // Disconnected, B is closer to disconnected end => algorithm is fooled and flood fill is called twice
+      plainBefore = [
+        [' ', ' ', ' ', ' '],
+        ['b', 'b', 'b', 'B'],
+        ['b', ' ', ' ', ' '],
+        ['b', 'b', 'b', ' '],
+        [' ', 'A', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        ['b', 'b', 'b', 'B'],
+        ['b', ' ', ' ', ' '],
+        ['b', 'A', ' ', ' '],
+        [' ', 'a', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 4).getCellContainers()[0]
+      b = plain.getAt(3, 1).getCellContainers()[0]
+      a.move(0, -1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(6)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+    })
+
+    it('considers two neighbor fields forming a vertical line owned by the old owner correctly', () => {
+      // Disconnected
+      let plainBefore = [
+        [' ', 'b', ' '],
+        ['A', 'b', ' '],
+        [' ', 'B', ' '],
+        [' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['a', 'A', ' '],
+        [' ', 'B', ' '],
+        [' ', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(0, 1).getCellContainers()[0]
+      let b = plain.getAt(1, 2).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // Indirect bridge considering torus topography of plain
+      plainBefore = [
+        [' ', 'b', ' '],
+        ['A', 'b', ' '],
+        [' ', 'B', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'b', ' '],
+        ['a', 'A', ' '],
+        [' ', 'B', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(1, 2).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(2)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+
+    it('considers three neighbor fields (only not up) owned by the old owner correctly', () => {
+      // All 3 neighbors connected by bridges in both corners
+      let plainBefore = [
+        [' ', 'A', ' ', ' '],
+        ['b', 'b', 'b', ' '],
+        ['b', 'b', 'B', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', 'a', ' ', ' '],
+        ['b', 'A', 'b', ' '],
+        ['b', 'b', 'B', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(1, 0).getCellContainers()[0]
+      let b = plain.getAt(2, 2).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // Neighbors not connected by bridges in corners at all
+      plainBefore = [
+        [' ', 'A', ' ', ' '],
+        ['b', 'b', 'B', ' '],
+        [' ', 'b', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' '],
+        [' ', 'A', 'B', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(2, 1).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(2)
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+
+      // Two neighbors not connected to B are connected by indirect bridge
+      plainBefore = [
+        [' ', 'A', ' ', ' ', ' '],
+        ['B', 'b', 'b', 'b', ' '],
+        [' ', 'b', ' ', 'b', ' '],
+        [' ', 'b', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' ', ' '],
+        ['B', 'A', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // Two neighbors connected to B are connected by indirect bridge
+      plainBefore = [
+        [' ', 'A', ' ', ' ', ' '],
+        ['b', 'b', 'b', 'b', ' '],
+        [' ', 'b', ' ', 'b', ' '],
+        [' ', 'b', 'b', 'B', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' ', ' '],
+        [' ', 'A', 'b', 'b', ' '],
+        [' ', 'b', ' ', 'b', ' '],
+        [' ', 'b', 'b', 'B', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(3, 3).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(7)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+
+      // All three neighbors connected by indirect bridges (considering torus topography of plain)
+      plainBefore = [
+        [' ', 'A', ' ', ' ', ' '],
+        ['b', 'b', 'b', 'b', 'b'],
+        [' ', 'b', ' ', 'b', ' '],
+        [' ', 'b', 'b', 'B', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' ', ' '],
+        ['b', 'A', 'b', 'b', 'b'],
+        [' ', 'b', ' ', 'b', ' '],
+        [' ', 'b', 'b', 'B', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(3, 3).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(9)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // Only 2 neighbors are connected by a bridge in a corner, B is closer to connected corners so that flood fill is only called once...
+      plainBefore = [
+        [' ', 'A', ' ', ' '],
+        ['b', 'b', 'b', ' '],
+        ['b', 'b', ' ', ' '],
+        [' ', 'b', 'B', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' '],
+        ['b', 'A', ' ', ' '],
+        ['b', 'b', ' ', ' '],
+        [' ', 'b', 'B', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(2, 3).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+
+      // Only 2 neighbors are connected by a bridge in a corner, B is closer to disconnected corner so that flood fill is called twice...
+      plainBefore = [
+        [' ', 'A', ' ', ' ', ' '],
+        ['b', 'b', 'b', ' ', ' '],
+        ['b', 'b', ' ', 'B', ' '],
+        [' ', 'b', 'b', 'b', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' ', ' '],
+        ['b', 'A', ' ', ' ', ' '],
+        ['b', 'b', ' ', 'B', ' '],
+        [' ', 'b', 'b', 'b', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(3, 2).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(7)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+
+      // Only 2 neighbors are connected by a bridge in a corner, but these 2 neighbors are not connected to B
+      plainBefore = [
+        [' ', 'A', ' ', ' '],
+        ['B', 'b', 'b', ' '],
+        [' ', 'b', 'b', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'a', ' ', ' '],
+        ['B', 'A', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 0).getCellContainers()[0]
+      b = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(0, 1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+
+    it('considers three neighbor fields (only not right) owned by the old owner correctly', () => {
+      // All 3 neighbors connected by bridges in both corners
+      let plainBefore = [
+        ['B', 'b', ' '],
+        ['b', 'b', 'A'],
+        ['b', 'b', ' '],
+        [' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        ['B', 'b', ' '],
+        ['b', 'A', 'a'],
+        ['b', 'b', ' '],
+        [' ', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(2, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // Neighbors not connected by bridges in corners at all
+      plainBefore = [
+        [' ', 'b', ' '],
+        ['B', 'b', 'A'],
+        [' ', 'b', ' '],
+        [' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' '],
+        ['B', 'A', 'a'],
+        [' ', ' ', ' '],
+        [' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(2, 1).getCellContainers()[0]
+      a.move(-1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
+    })
+
+    it('considers three neighbor fields (only not down) owned by the old owner correctly', () => {
+      // All 3 neighbors connected by bridges in both corners
+      let plainBefore = [
+        ['b', 'b', 'b', ' '],
+        ['b', 'b', 'B', ' '],
+        [' ', 'A', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        ['b', 'b', 'b', ' '],
+        ['b', 'A', 'B', ' '],
+        [' ', 'a', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(1, 2).getCellContainers()[0]
+      a.move(0, -1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // 2 neighbors connected by bridge in one corner
+      plainBefore = [
+        ['b', 'b', ' ', ' '],
+        ['b', 'b', 'B', ' '],
+        [' ', 'A', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', 'A', 'B', ' '],
+        [' ', 'a', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(1, 2).getCellContainers()[0]
+      a.move(0, -1)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+
+    it('considers three neighbor fields (only not left) owned by the old owner correctly', () => {
+      // All 3 neighbors connected by bridges in both corners
+      let plainBefore = [
+        [' ', 'B', 'b'],
+        ['A', 'b', 'b'],
+        [' ', 'b', 'b'],
+        [' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', 'B', 'b'],
+        ['a', 'A', 'b'],
+        [' ', 'b', 'b'],
+        [' ', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+
+      // 2 neighbors connected by bridge in one corner
+      plainBefore = [
+        [' ', 'B', 'b'],
+        ['A', 'b', 'b'],
+        [' ', 'b', ' '],
+        [' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', 'b'],
+        ['a', 'A', 'b'],
+        [' ', ' ', ' '],
+        [' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(1, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+  })
 })
 
-function prepare(plainToPrepare: string[][]): Plain<TestRules> {
+function prepare(plainToPrepare: string[][]): {
+  plain: Plain<TestRules>
+  floodFill: FloodFill<ReturnType<TestRules['createNewFieldRecord']>>
+} {
   const width = plainToPrepare[0].length
   const height = plainToPrepare.length
   const plainOfLife = PlainOfLife.createNew(width, height, TestRules, TestCell)
@@ -61,16 +1107,16 @@ function prepare(plainToPrepare: string[][]): Plain<TestRules> {
     for (let x = 0; x < width; x++) {
       const s = plainToPrepare[y][x].trim()
 
-      if (s!=='' && !/^[a-zA-Z]+$/.test(s)) {
+      if (s !== '' && !/^[a-zA-Z]+$/.test(s)) {
         throw new Error('Only letters (a-z or A-Z) and white spaces are allowed')
       }
 
       const newContainers = s.replace(/[^A-Z]/g, '') // All uppercase letters
 
-      for (let c of newContainers) {
+      for (const c of newContainers) {
         if (!stringContainerMap.has(c)) {
-            let container = seedCellContainer.makeChild(x, y)
-            container.cellRecord.name = c
+          const container = seedCellContainer.makeChild(x, y)
+          container.cellRecord.name = c
           stringContainerMap.set(c, container)
         } else {
           throw new Error(
@@ -83,7 +1129,7 @@ function prepare(plainToPrepare: string[][]): Plain<TestRules> {
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-        const s = plainToPrepare[y][x].trim()
+      const s = plainToPrepare[y][x].trim()
 
       let owner = s.replace(/[^a-z]/g, '') // All lowercase letters
       if (owner.length > 1) {
@@ -94,17 +1140,17 @@ function prepare(plainToPrepare: string[][]): Plain<TestRules> {
         if (records.length > 0) {
           owner = records.substring(records.length - 1)
         }
-      } else if (!s.endsWith(owner)){
+      } else if (!s.endsWith(owner)) {
         throw new Error('Owners must be defined at the end (=lower case letter must be at the end)')
       }
-    
+
       owner = owner.toUpperCase()
       if (owner) {
         const container = stringContainerMap.get(owner)
         if (container) {
           plain.getAt(x, y).fieldRecord.owner = container
           container.cellRecord.ownedFieldsCount++
-         } else {
+        } else {
           throw new Error(
             'Container for owner "' +
               owner +
@@ -116,8 +1162,12 @@ function prepare(plainToPrepare: string[][]): Plain<TestRules> {
   }
 
   seedCellContainer.die()
-  new CoherentAreasManager(plain)
-  return plain
+  const coherentAreasManager = new CoherentAreasManager(plain)
+  /* eslint-disable @typescript-eslint/no-explicit-any*/
+  const floodFill: FloodFill<ReturnType<TestRules['createNewFieldRecord']>> = (coherentAreasManager as any).floodFill
+  /* eslint-enable @typescript-eslint/no-explicit-any*/
+  spyOn(floodFill, 'fill').and.callThrough()
+  return { plain, floodFill }
 }
 
 function compare(plain: Plain<TestRules>, expectedPlainAfter: string[][]): string {
@@ -131,16 +1181,16 @@ function compare(plain: Plain<TestRules>, expectedPlainAfter: string[][]): strin
       const expected = expectedPlainAfter[y][x].trim()
 
       let found = ''
-      for( let container of f.getCellContainers()){
-          found += container.cellRecord.name
+      for (const container of f.getCellContainers()) {
+        found += container.cellRecord.name
       }
       const owner = f.fieldRecord.owner
-      if(owner && owner.cellRecord.name !== found.substring(found.length-1)){
+      if (owner && owner.cellRecord.name !== found.substring(found.length - 1)) {
         found += owner.cellRecord.name.toLowerCase()
       }
 
-      if(found !== expected){
-        differences += 'At x=' + x + ', y=' + y + ' expected "' + expected +'" but found "' + found + '"\n'
+      if (found !== expected) {
+        differences += 'At x=' + x + ', y=' + y + ' expected "' + expected + '" but found "' + found + '"\n'
       }
     }
   }

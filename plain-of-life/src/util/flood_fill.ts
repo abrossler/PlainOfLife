@@ -23,6 +23,8 @@ export class FloodFill<T> {
   private static maxTaping = 256
 
   /**
+   * Note that isEqual and replace don't work on deep attributes of an object if T is an object.
+   *
    * @param plainToFill A 2D array of an arbitrary type T to be flood filled. Each line of the array is expected to have the same length
    * @param isEqual An optional custom comparison function - with {@link defaultIsEqual} as default (just comparing with ===)
    * @param replace An optional custom replacement function - with {@link defaultReplace} as default (just assigning with =)
@@ -44,7 +46,11 @@ export class FloodFill<T> {
    */
   public fill(fillWith: T, x: number, y: number, filledPoints?: Point[]): number {
     this.filledCount = 0
-    const toReplace = this.plainToFill[y][x]
+
+    let toReplace: T = this.plainToFill[y][x]
+    if (typeof toReplace === 'object') {
+      toReplace = { ...toReplace } // Limitation: Only a shallow copy => isEqual() and replace() must not work on deep properties
+    }
 
     if (this.isEqual(fillWith, toReplace)) {
       return this.filledCount
