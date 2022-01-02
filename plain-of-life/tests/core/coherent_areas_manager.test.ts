@@ -1272,6 +1272,218 @@ describe('CoherentAreasManager', () => {
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
     })
   })
+
+  describe('onCellMakeChild', () => {
+    it('makes the child the owner of the field where it is placed', () => {
+      const plainBefore = [
+        ['A', ' '],
+        [' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        ['A', 'S'],
+        ['T', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 0).getCellContainers()[0]
+      a.makeChild(1, 0)
+      a.makeChild(0, 1)
+      const s = prep.plain.getAt(1, 0).getCellContainers()[0]
+      const t = prep.plain.getAt(0, 1).getCellContainers()[0]
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(1)
+      expect(s.cellRecord.ownedFieldsCount).toBe(1)
+      expect(t.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
+    })
+
+    it('is able to place multiple children on the same field', () => {
+      const plainBefore = [
+        ['A', ' '],
+        [' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        ['AS', 'TU'],
+        [' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 0).getCellContainers()[0]
+      a.makeChild(0, 0)
+      a.makeChild(1, 0)
+      a.makeChild(1, 0)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('handles an old owner of the field where the child is placed correctly', () => {
+      const plainBefore = [
+        ['A', ' ', ' ', ' '],
+        ['B', 'b', 'b', ' '],
+        [' ', ' ', 'b', ' ']
+      ]
+      const expectedPlainAfter = [
+        ['A', ' ', ' ', ' '],
+        ['B', 'S', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 0).getCellContainers()[0]
+      a.makeChild(1, 1)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+    })
+  })
+
+  describe('onCellDivide', () => {
+    it('divides a cell in two children and makes the children the owners of the fields they are placed on', () => {
+      const plainBefore = [
+        [' ', ' ', 'A', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        ['S', ' ', ' ', ' ', 'T'],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(2, 0).getCellContainers()[0]
+      a.divide(-2, 0, 2, 0)
+      const s = prep.plain.getAt(0, 0).getCellContainers()[0]
+      const t = prep.plain.getAt(4, 0).getCellContainers()[0]
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.isDead).toBeTrue
+      expect(a.cellRecord.ownedFieldsCount).toBe(0)
+      expect(s.cellRecord.ownedFieldsCount).toBe(1)
+      expect(t.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(3)
+    })
+
+    it('inherits the owned fields from the parent to the closest child including a fair distribution of fields with the same distance to both children', () => {
+      const plainBefore = [
+        [' ', 'a', 'A', 'a', ' '],
+        [' ', 'a', 'a', 'a', ' '],
+        [' ', 'a', 'a', 'a', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'S', 's', 'T', ' '],
+        [' ', 's', 't', 't', ' '],
+        [' ', 's', 's', 't', ' '],
+        [' ', ' ', ' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(2, 0).getCellContainers()[0]
+      a.divide(-1, 0, 1, 0)
+      const s = prep.plain.getAt(1, 0).getCellContainers()[0]
+      const t = prep.plain.getAt(3, 0).getCellContainers()[0]
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(s.cellRecord.ownedFieldsCount).toBe(5)
+      expect(t.cellRecord.ownedFieldsCount).toBe(4)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(3)
+    })
+
+    it('handles the old owners of the fields where the children are placed correctly', () => {
+      const plainBefore = [
+        ['B', 'a', 'A', 'a', 'C', ' '],
+        ['b', 'a', 'a', 'a', 'c', ' '],
+        ['b', 'a', 'a', 'a', 'c', ' '],
+        ['b', 'b', ' ', 'c', 'c', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        ['B', 's', 's', 't', 'C', ' '],
+        ['S', 's', 's', 't', 'c', ' '],
+        [' ', 's', 't', 't', 'T', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(2, 0).getCellContainers()[0]
+      a.divide(-2, 1, 2, 2)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('cuts of inherited disconnected parts from children', () => {
+      const plainBefore = [
+        [' ', 'a', 'A', 'a', 'a', 'a', ' '],
+        [' ', 'a', ' ', ' ', ' ', 'a', ' '],
+        [' ', 'a', 'a', 'a', ' ', 'a', ' '],
+        [' ', ' ', ' ', 'a', ' ', 'a', ' '],
+        [' ', 'a', ' ', ' ', ' ', 'a', ' '],
+        [' ', 'a', 'a', 'a', 'a', 'a', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ', ' ']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'S', 's', 't', 'T', 't', ' '],
+        [' ', 's', ' ', ' ', ' ', 't', ' '],
+        [' ', 's', 's', ' ', ' ', 't', ' '],
+        [' ', ' ', ' ', ' ', ' ', 't', ' '],
+        [' ', ' ', ' ', ' ', ' ', 't', ' '],
+        [' ', ' ', ' ', 't', 't', 't', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(2, 0).getCellContainers()[0]
+      a.divide(-1, 0, 2, 0)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('considers tors topography of plain with decision which is the closest child', () => {
+      const plainBefore = [
+        ['A', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+        ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+        ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+        ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+        ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+        ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a']
+      ]
+      const expectedPlainAfter = [
+        ['S', 's', 's', 't', 't', 't', 's', 's'],
+        ['s', 's', 't', 't', 't', 't', 's', 's'],
+        ['s', 't', 't', 'T', 't', 't', 's', 's'],
+        ['s', 't', 't', 't', 't', 't', 't', 's'],
+        ['s', 's', 't', 't', 't', 't', 's', 's'],
+        ['s', 's', 's', 't', 't', 's', 's', 's']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 0).getCellContainers()[0]
+      a.divide(0, 0, 3, 2)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+    })
+
+    it('does not inherit parent owned fields if both children are placed on the same field', () => {
+      const plainBefore = [
+        ['A', 'a', 'a'],
+        ['a', 'a', 'a']
+      ]
+      const expectedPlainAfter = [
+        [' ', 'ST', ' '],
+        [' ', ' ', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 0).getCellContainers()[0]
+      a.divide(1, 0, 1, 0)
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+    })
+  })
+
+  describe('onCellDeath', () => {
+    it('releases all field owned by the cell that died', () => {
+      const plainBefore = [
+        ['A', ' ', 'a'],
+        [' ', 'B', 'a'],
+        ['a', 'b', 'a']
+      ]
+      const expectedPlainAfter = [
+        [' ', ' ', ' '],
+        [' ', 'B', ' '],
+        [' ', 'b', ' ']
+      ]
+      const prep = prepare(plainBefore)
+      const a = prep.plain.getAt(0, 0).getCellContainers()[0]
+      a.die()
+      expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
+      expect(a.isDead).toBeTrue
+      expect(a.cellRecord.ownedFieldsCount).toBe(0)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
+    })
+  })
 })
 
 function prepare(plainToPrepare: string[][]): {
@@ -1356,10 +1568,11 @@ function prepare(plainToPrepare: string[][]): {
   return { plain, floodFill }
 }
 
-function compare(plain: Plain<TestRules>, expectedPlainAfter: string[][]): string {
+function compare(plain: Plain<TestRules>, expectedPlainAfter: string[][], startChildNamesFrom = 'S'): string {
   let differences = ''
   const width = plain.width
   const height = plain.height
+  let currentChildChar = startChildNamesFrom.charCodeAt(0)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -1368,11 +1581,20 @@ function compare(plain: Plain<TestRules>, expectedPlainAfter: string[][]): strin
 
       let found = ''
       for (const container of f.getCellContainers()) {
+        if (container.cellRecord.name === '') {
+          container.cellRecord.name = String.fromCharCode(currentChildChar++)
+        }
         found += container.cellRecord.name
       }
       const owner = f.fieldRecord.owner
-      if (owner && owner.cellRecord.name !== found.substring(found.length - 1)) {
-        found += owner.cellRecord.name.toLowerCase()
+
+      if (owner) {
+        if (owner.cellRecord.name === '') {
+          owner.cellRecord.name = String.fromCharCode(currentChildChar++)
+        }
+        if (owner.cellRecord.name !== found.substring(found.length - 1)) {
+          found += owner.cellRecord.name.toLowerCase()
+        }
       }
 
       if (found !== expected) {

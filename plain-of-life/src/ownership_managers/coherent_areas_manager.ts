@@ -1,6 +1,5 @@
 import { FloodFill, Point } from '../util/flood_fill'
 import { modulo } from '../util/modulo'
-import { ExtCellContainer } from '../core/cell_container'
 import {
   CellDeathListener,
   CellDivideListener,
@@ -18,11 +17,17 @@ interface MinCellRecord {
   ownedFieldsCount: number
 }
 
+interface CellContainer {
+  posX: number
+  posY: number
+  cellRecord: MinCellRecord
+}
+
 /**
  * The minimum field record required by a coherent areas manager containing at least an owner property
  */
 interface MinFieldRecord {
-  owner: ExtCellContainer<MinRuleExtensionFactory> | null
+  owner: CellContainer | null
 }
 
 /**
@@ -33,7 +38,17 @@ interface MinRuleExtensionFactory extends RuleExtensionFactory {
   createNewFieldRecord(): MinFieldRecord & Record<string, unknown>
 }
 
-export class CoherentAreasManager
+/**
+ * A manager of coherent plain fields owned by a cell in a plain of life game.
+ * Using this manager a cell owns all coherent fields it once visited. If parts of this coherent area are cut off by another
+ * moving cell, the cell looses the ownership of this cut-off part.
+ *
+ * Rules that want to use this kind of field ownership can just create a CoherentAreasManager for their plain. The manager
+ * registers to all relevant plain events such as onCellMove and updates the owner property of all plain fields and
+ * the ownedFieldsCount property of all cell containers when the cells are moving, reproducing, ... To use this manager, the
+ * rules must support the owner and ownedFieldsCount properties with their field and cell records.
+ */
+export class CoherentAreasManager // Listens to all relevant cell events that have an impact on the field ownership
   implements
     SeedCellAddListener<MinRuleExtensionFactory>,
     CellMoveListener<MinRuleExtensionFactory>,
@@ -41,22 +56,31 @@ export class CoherentAreasManager
     CellDivideListener<MinRuleExtensionFactory>,
     CellDeathListener<MinRuleExtensionFactory>
 {
-  private plain: MinFieldRecord[][]
+  private plain: MinFieldRecord[][] // Dedicated array on field record level (and not PlainField level) representing the plain => faster access mainly with flood fill
   private floodFill: FloodFill<MinFieldRecord>
-  private fillWithNull: MinFieldRecord
-  private width: number
-  private height: number
+  private fillWithNull: MinFieldRecord = { owner: null } // Dummy field record to flood fill the owner with null
+  private dummyOwner1 = { posX: -1, posY: -1, cellRecord: { ownedFieldsCount: -1 } }
+  private dummyOwner2 = { posX: -1, posY: -1, cellRecord: { ownedFieldsCount: -1 } }
+  private childOneInheritsNext = true
+  private width: number // Width of plain
+  private halfWidth: number
+  private height: number // Height of plain
+  private halfHeight: number
 
   constructor(extPlain: ExtPlain<MinRuleExtensionFactory>) {
+    // Register for all cell events that have an impact on the field ownership
     extPlain.addSeedCellAddListener(this)
     extPlain.addCellMoveListener(this)
     extPlain.addCellMakeChildListener(this)
     extPlain.addCellDivideListener(this)
     extPlain.addCellDeathListener(this)
 
+    // Init plain of field records
     this.plain = new Array<Array<MinFieldRecord>>()
     this.width = extPlain.width
+    this.halfWidth = this.width >> 1
     this.height = extPlain.height
+    this.halfHeight = this.height >> 1
     for (let y = 0; y < this.height; y++) {
       const row: MinFieldRecord[] = new Array<MinFieldRecord>()
       for (let x = 0; x < this.width; x++) {
@@ -65,44 +89,45 @@ export class CoherentAreasManager
       this.plain.push(row)
     }
 
+    // Create flood fill object
     this.floodFill = new FloodFill(
       this.plain,
-      (t1, t2) => t1.owner === t2.owner,
-      (plain, fillWith, x, y) => (plain[y][x].owner = fillWith.owner)
+      (t1, t2) => t1.owner === t2.owner, // Equality of fields means that owners are equal
+      (plain, fillWith, x, y) => (plain[y][x].owner = fillWith.owner) // Fill means to change owner of field
     )
-
-    this.fillWithNull = { owner: null }
   }
 
-  onSeedCellAdd(cellContainer: ExtCellContainer<MinRuleExtensionFactory>): void {
+  /**
+   * If a new seed cell was added, it is made the owner of the field where it was placed on.
+   *
+   * If there is already an old owner of that field, the old owner looses the ownership (also cutting off disconnected parts )
+   */
+  onSeedCellAdd(cellContainer: CellContainer): void {
     this.place(cellContainer)
   }
 
-  onCellMove(
-    cellContainer: ExtCellContainer<MinRuleExtensionFactory>,
-    oldX: number,
-    oldY: number,
-    dX: number,
-    dY: number
-  ): void {
+  /**
+   * If a cell was moved, it's made the new owner of the field where it's moving to. But if the new position is not connected to
+   * the already owned area, this area is completely lost. If there is already an old owner of the target field, the old owner
+   * looses the ownership.
+   */
+  onCellMove(cellContainer: CellContainer, oldX: number, oldY: number, dX: number, dY: number): void {
     if (dX === 0 && dY === 0) {
       return
     }
-
+    // If moving more than 1 field in any direction...
     if (!((dX === 0 && (dY === 1 || dY === -1)) || (dY === 0 && (dX === 1 || dX === -1)))) {
       const x = cellContainer.posX
       const y = cellContainer.posY
-      const xMinus1 = modulo(x - 1, this.width)
-      const xPlus1 = modulo(x + 1, this.width)
-      const yMinus1 = modulo(y - 1, this.height)
-      const yPlus1 = modulo(y + 1, this.height)
 
+      // If target field is disconnected (has no neighbor that is owned by moved cell)...
       if (
-        this.plain[yMinus1][x].owner !== cellContainer &&
-        this.plain[y][xPlus1].owner !== cellContainer &&
-        this.plain[yPlus1][x].owner !== cellContainer &&
-        this.plain[y][xMinus1].owner !== cellContainer
+        this.plain[modulo(y - 1, this.height)][x].owner !== cellContainer &&
+        this.plain[y][modulo(x + 1, this.width)].owner !== cellContainer &&
+        this.plain[modulo(y + 1, this.height)][x].owner !== cellContainer &&
+        this.plain[y][modulo(x - 1, this.width)].owner !== cellContainer
       ) {
+        // The moved cell loses the disconnected originally owned area
         cellContainer.cellRecord.ownedFieldsCount = 0
         this.floodFill.fill(this.fillWithNull, oldX, oldY)
       }
@@ -110,51 +135,116 @@ export class CoherentAreasManager
     this.place(cellContainer)
   }
 
-  onCellMakeChild(
-    parent: ExtCellContainer<MinRuleExtensionFactory>,
-    child: ExtCellContainer<MinRuleExtensionFactory>
-    //dX: number,
-    //dY: number
-  ): void {
+  /**
+   * If a cell made a child, the child is made the new owner of the field were it is placed. If there is already an old owner
+   * of the child's field, the old owner looses the ownership.
+   *
+   * The child doesn't inherit any ownership from the parent.
+   */
+  onCellMakeChild(child: CellContainer): void {
     this.place(child)
   }
 
-  onCellDivide(
-    parent: ExtCellContainer<MinRuleExtensionFactory>
-    // child1: ExtCellContainer<MinRuleExtensionFactory>,
-    // dX1: number,
-    // dY1: number,
-    // child2: ExtCellContainer<MinRuleExtensionFactory>,
-    // dX2: number,
-    // dY2: number
-  ): void {
-    // ToDo
-    // Parent looses all
+  /**
+   * If a cell divided, the two children are made the new owners of the field they are placed on. Old owners loose the
+   * ownership.
+   *
+   * Each child inherits the ownership of the fields owned by the (died) parent were it's closer to than the other child. In
+   * case of the same distance, fields are assigned alternately to the one and the other child. But only fields connected to
+   * the child's coherent owned field area are inherited. All disconnected fields are assigned to no owner at all.
+   */
+  onCellDivide(parent: CellContainer, child1: CellContainer, dX1: number, dY1: number, child2: CellContainer): void {
+    const c1x = child1.posX
+    const c1y = child1.posY
+    const c2x = child2.posX
+    const c2y = child2.posY
+
+    // Remember and release all fields owned by the parent
     parent.cellRecord.ownedFieldsCount = 0
-    this.floodFill.fill(this.fillWithNull, parent.posX, parent.posY)
-    // No children connected to parent area => Everything lost
-    // Only one child connected => Connected Child gets all
-    // Both children connected => Closer child gets field
+    const parentOwned: Point[] = []
+    this.floodFill.fill(this.fillWithNull, parent.posX, parent.posY, parentOwned)
+
+    // Inherit parent owned fields only if the two children are not placed on the same field
+    if (c1x !== c2x || c1y !== c2y) {
+      // Figure out for each parent owned field which child is closer and mark the field with a dummy owner corresponding to the closer child
+      for (const toCheck of parentOwned) {
+        const dc1 = this.getComparableDist(c1x, c1y, toCheck.x, toCheck.y)
+        const dc2 = this.getComparableDist(c2x, c2y, toCheck.x, toCheck.y)
+
+        let closest: CellContainer | null
+        if (dc1 < dc2) {
+          closest = this.dummyOwner1
+        } else if (dc2 < dc1) {
+          closest = this.dummyOwner2
+        } else {
+          // In case of same distance, take one time the one, one time the other child as owner
+          if (this.childOneInheritsNext) {
+            closest = this.dummyOwner1
+          } else {
+            closest = this.dummyOwner2
+          }
+          this.childOneInheritsNext = !this.childOneInheritsNext
+        }
+        this.plain[toCheck.y][toCheck.x].owner = closest
+      }
+
+      // Flood fill all coherent fields marked with dummy owner 1 starting from child 1 position with child 1 as owner.
+      // Note that disconnected parts are not filled
+      const oldOwnerChild1 = this.plain[child1.posY][child1.posX].owner
+      this.plain[child1.posY][child1.posX].owner = this.dummyOwner1
+      child1.cellRecord.ownedFieldsCount = this.floodFill.fill({ owner: child1 }, child1.posX, child1.posY) - 1 // -1 => Field where child is placed is added later by place()
+
+      // Same for child 2
+      const oldOwnerChild2 = this.plain[child2.posY][child2.posX].owner
+      this.plain[child2.posY][child2.posX].owner = this.dummyOwner2
+      child2.cellRecord.ownedFieldsCount = this.floodFill.fill({ owner: child2 }, child2.posX, child2.posY) - 1 // -1 => Field where child is placed is added later by place()
+
+      // Remove the owner from all former parent owned fields that are still marked with a dummy owner (this are the disconnected parts)
+      for (const toCheck of parentOwned) {
+        const currentOwner = this.plain[toCheck.y][toCheck.x].owner
+        if (currentOwner === this.dummyOwner1 || currentOwner === this.dummyOwner2) {
+          this.plain[toCheck.y][toCheck.x].owner = null
+        }
+      }
+
+      // Before placing the children on their fields, the old owner has to be restored to disconnect cut-off parts correctly
+      // placing the children
+      this.plain[child1.posY][child1.posX].owner = oldOwnerChild1
+      this.plain[child2.posY][child2.posX].owner = oldOwnerChild2
+    }
+
+    this.place(child1)
+    this.place(child2)
   }
 
-  onCellDeath(cellContainer: ExtCellContainer<MinRuleExtensionFactory>): void {
+  /**
+   * If a cell died, all fields owned by this cell are released.
+   */
+  onCellDeath(cellContainer: CellContainer): void {
     cellContainer.cellRecord.ownedFieldsCount = 0
     this.floodFill.fill(this.fillWithNull, cellContainer.posX, cellContainer.posY)
   }
 
-  private place(cellContainer: ExtCellContainer<MinRuleExtensionFactory>) {
+  /**
+   * Handle the ownership after a cell container was placed on a plain field:
+   *
+   * Make the new container the owner of the plain field and remove the old owner. If with the removal of the old owner parts
+   * of the coherent area owned by the old owner get disconnected, also remove the ownership for these disconnected parts.
+   */
+  private place(cellContainer: CellContainer): void {
     const x = cellContainer.posX
     const y = cellContainer.posY
     const newFieldRecord = this.plain[y][x]
     const oldOwner = newFieldRecord.owner
 
-    // Return if plain field already belongs to cell just placed that field
+    // Return if the plain field already belongs to cell just placed on that field
     if (oldOwner === cellContainer) {
       return
     }
 
     const cellRecord = cellContainer.cellRecord
 
+    // If there is no old owner just make the cell the new owner
     if (oldOwner === null) {
       newFieldRecord.owner = cellContainer
       cellRecord.ownedFieldsCount++
@@ -173,6 +263,7 @@ export class CoherentAreasManager
       return
     }
 
+    // Make the current cell the new owner
     newFieldRecord.owner = cellContainer
     cellRecord.ownedFieldsCount++
     oldOwner.cellRecord.ownedFieldsCount--
@@ -182,26 +273,24 @@ export class CoherentAreasManager
     const yMinus1 = modulo(y - 1, this.height)
     const yPlus1 = modulo(y + 1, this.height)
 
+    // Figure out which neighbors have the old owner as owner, too
     let sameOwner: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 = 0b0000
     if (this.plain[yMinus1][x].owner === oldOwner) {
-      // Up
-      sameOwner |= 0b1000
+      sameOwner |= 0b1000 // Up
     }
     if (this.plain[y][xPlus1].owner === oldOwner) {
-      // Right
-      sameOwner |= 0b0100
+      sameOwner |= 0b0100 // Right
     }
     if (this.plain[yPlus1][x].owner === oldOwner) {
-      // Down
-      sameOwner |= 0b0010
+      sameOwner |= 0b0010 // Down
     }
     if (this.plain[y][xMinus1].owner === oldOwner) {
-      // Left
-      sameOwner |= 0b0001
+      sameOwner |= 0b0001 // Left
     }
 
+    // Handle all 16 combinations of neighbors having the old owner as owner
     switch (sameOwner) {
-      // No neighbors or only one neighbor owned by the old owner
+      // If no neighbors or only one neighbor is owned by the old owner, nothing can be cut off - we are done
       case 0b0000:
       case 0b1000:
       case 0b0100:
@@ -209,12 +298,19 @@ export class CoherentAreasManager
       case 0b0001:
         return
 
-      // Two neighbors owned by the old owner
-      // Up right
+      // If two neighbors are owned by the old owner there are two groups of cases. First 4 elbow cases:
+      // Up right elbow
+      //
+      //            X = plain field where new cell is placed and that currently belongs to old owner
+      //    o b     o = the two neighbors owned by the old owner
+      //  * X o     b = the potential direct bridge between the two o: If b also belongs to old owner, nothing can be disconnected
+      //    *       * = further neighbors of X with other owner than the old owner
       case 0b1100:
         if (this.plain[yMinus1][xPlus1].owner !== oldOwner) {
+          // If there is no direct bridge
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
+            // check in detail if one of the two o is disconnected
             oldOwner,
             { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
             { x: xPlus1, y: y, dist: neighborDist[relPos][right] }
@@ -222,7 +318,7 @@ export class CoherentAreasManager
         }
         return
 
-      // Down right
+      // Down right elbow - see above
       case 0b0110:
         if (this.plain[yPlus1][xPlus1].owner !== oldOwner) {
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
@@ -234,7 +330,7 @@ export class CoherentAreasManager
         }
         return
 
-      // Down left
+      // Down left elbow - see above
       case 0b0011:
         if (this.plain[yPlus1][xMinus1].owner !== oldOwner) {
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
@@ -246,7 +342,7 @@ export class CoherentAreasManager
         }
         return
 
-      // Up left
+      // Up left elbow - see above
       case 0b1001:
         if (this.plain[yMinus1][xMinus1].owner !== oldOwner) {
           const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
@@ -258,17 +354,24 @@ export class CoherentAreasManager
         }
         return
 
-      // Horizontal row
+      // Second 2 line cases:
+      // Horizontal line
+      //
+      //            X = plain field where new cell is placed and that currently belongs to old owner
+      //    *       o = the two neighbors owned by the old owner
+      //  o X o     * = further neighbors of X with other owner than the old owner
+      //    *       Note that there are no potential direct bridges in this case
       case 0b0101: {
         const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNullNeighbors(
+          // as there are no direct bridges, we always have to check in detail if one of the two o is disconnected
           oldOwner,
           { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
           { x: xMinus1, y: y, dist: neighborDist[relPos][left] }
         )
         return
       }
-      // Vertical column
+      // Vertical line - see above
       case 0b1010: {
         const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNullNeighbors(
@@ -279,8 +382,13 @@ export class CoherentAreasManager
         return
       }
 
-      // Three neighbors owned by the old owner
+      // If three neighbors are owned by the old owner, there are 4 cases:
       // Up neighbor is not owned by old owner
+      //
+      //            X = plain field where new cell is placed and that currently belongs to old owner
+      //    *       o = the three neighbors owned by the old owner
+      //  o X o     b = the potential direct bridges between the o
+      //  b o b     * = further neighbor of X with other owner than the old owner
       case 0b0111: {
         const rightDownOwned = this.plain[yPlus1][xPlus1].owner === oldOwner
         const leftDownOwned = this.plain[yPlus1][xMinus1].owner === oldOwner
@@ -299,7 +407,7 @@ export class CoherentAreasManager
         return
       }
 
-      // Right neighbor is not owned by old owner
+      // Right neighbor is not owned by old owner - see above
       case 0b1011: {
         const leftDownOwned = this.plain[yPlus1][xMinus1].owner === oldOwner
         const leftUpOwned = this.plain[yMinus1][xMinus1].owner === oldOwner
@@ -318,7 +426,7 @@ export class CoherentAreasManager
         return
       }
 
-      // Down neighbor is not owned by old owner
+      // Down neighbor is not owned by old owner - see above
       case 0b1101: {
         const leftUpOwned = this.plain[yMinus1][xMinus1].owner === oldOwner
         const rightUpOwned = this.plain[yMinus1][xPlus1].owner === oldOwner
@@ -337,7 +445,7 @@ export class CoherentAreasManager
         return
       }
 
-      // Left neighbor is not owned by old owner
+      // Left neighbor is not owned by old owner - see above
       case 0b1110: {
         const rightUpOwned = this.plain[yMinus1][xPlus1].owner === oldOwner
         const rightDownOwned = this.plain[yPlus1][xPlus1].owner === oldOwner
@@ -359,7 +467,7 @@ export class CoherentAreasManager
       // All 4 neighbors are owned by the old owner
       case 0b1111: {
         const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
-        let toCheck: Neighbor[] = []
+        const toCheck: Neighbor[] = []
 
         let minDist = neighborDist[relPos][up]
         if (this.plain[yMinus1][xPlus1].owner !== oldOwner) {
@@ -399,7 +507,7 @@ export class CoherentAreasManager
   }
 
   private checkAndNull3Neighbors(
-    oldOwner: ExtCellContainer<MinRuleExtensionFactory>,
+    oldOwner: CellContainer,
     n1: Neighbor,
     n2: Neighbor,
     n3: Neighbor,
@@ -461,7 +569,7 @@ export class CoherentAreasManager
     }
   }
 
-  private checkAndNullNeighbors(oldOwner: ExtCellContainer<MinRuleExtensionFactory>, ...toCheck: Neighbor[]): void {
+  private checkAndNullNeighbors(oldOwner: CellContainer, ...toCheck: Neighbor[]): void {
     const oldOwnerX = oldOwner.posX
     const oldOwnerY = oldOwner.posY
 
@@ -511,6 +619,26 @@ export class CoherentAreasManager
         closest = null
       }
     }
+  }
+
+  /**
+   * Get a comparable distance between two points considering the torus topography of the plain.
+   *
+   * Comparable means that if d1<d2, distance1 is shorter than distance2. Returns dx*dx + dy*dy instead of the real distance
+   * SQRT(dx*dx + dy*dy) for better performance.
+   */
+  getComparableDist(x1: number, y1: number, x2: number, y2: number): number {
+    let dx = Math.abs(x2 - x1)
+    if (dx > this.halfWidth) {
+      dx = this.width - dx
+    }
+
+    let dy = Math.abs(y2 - y1)
+    if (dy > this.halfHeight) {
+      dy = this.height - dy
+    }
+
+    return dx * dx + dy * dy
   }
 }
 

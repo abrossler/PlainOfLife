@@ -40,7 +40,17 @@ interface Plain<E extends RuleExtensionFactory> {
  */
 export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
   CellContainer<E>,
-  'makeChild' | 'move' | 'executeTurn' | 'posX' | 'posY' | 'die' | 'isDead' | 'cellRecord' | 'toSerializable' | 'next'
+  | 'makeChild'
+  | 'divide'
+  | 'move'
+  | 'executeTurn'
+  | 'posX'
+  | 'posY'
+  | 'die'
+  | 'isDead'
+  | 'cellRecord'
+  | 'toSerializable'
+  | 'next'
 >
 
 /**

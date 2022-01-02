@@ -66,12 +66,12 @@ export interface CellMakeChildListener<E extends RuleExtensionFactory> {
    * Method called for registered listeners after a cell made a child
    *
    * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
-   * @param parent container of the parent cell
    * @param child container of the child cell
+   * @param parent container of the parent cell
    * @param dX delta, distance from parent to child in x- direction
    * @param dY delta, distance from parent to child in y- direction
    */
-  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void
+  onCellMakeChild(child: ExtCellContainer<E>, parent: ExtCellContainer<E>, dX: number, dY: number): void
 }
 
 /**
@@ -249,7 +249,7 @@ export class Plain<E extends RuleExtensionFactory> {
     this.array[child.posY][child.posX].addCellContainer(child)
 
     this.cellMakeChildListeners.forEach((listener) => {
-      listener.onCellMakeChild(parent, child, dX, dY)
+      listener.onCellMakeChild(child, parent, dX, dY)
     })
   }
 

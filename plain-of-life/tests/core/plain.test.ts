@@ -139,7 +139,7 @@ describe('Plain', () => {
       it('is called like expected', () => {
         plain.onCellMakeChild(cellContainer, child1, 0, -1)
         expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledTimes(1)
-        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledWith(cellContainer, child1, 0, -1)
+        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledWith(child1, cellContainer, 0, -1)
       })
 
       it('can be removed', () => {
