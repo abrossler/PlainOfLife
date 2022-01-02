@@ -358,6 +358,41 @@ export class CoherentAreasManager
 
       // All 4 neighbors are owned by the old owner
       case 0b1111: {
+        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        let toCheck: Neighbor[] = []
+
+        let minDist = neighborDist[relPos][up]
+        if (this.plain[yMinus1][xPlus1].owner !== oldOwner) {
+          // Right up corner not owned
+          toCheck.push({ x: x, y: yMinus1, dist: minDist })
+          minDist = 4
+        }
+
+        minDist = Math.min(minDist, neighborDist[relPos][right])
+        if (this.plain[yPlus1][xPlus1].owner !== oldOwner) {
+          // Right down corner not owned
+          toCheck.push({ x: xPlus1, y: y, dist: minDist })
+          minDist = 4
+        }
+
+        minDist = Math.min(minDist, neighborDist[relPos][down])
+        if (this.plain[yPlus1][xMinus1].owner !== oldOwner) {
+          // Left down corner not owned
+          toCheck.push({ x: x, y: yPlus1, dist: minDist })
+          minDist = 4
+        }
+
+        minDist = Math.min(minDist, neighborDist[relPos][left])
+        if (this.plain[yMinus1][xMinus1].owner !== oldOwner) {
+          // Left up corner not owned
+          toCheck.push({ x: xMinus1, y: y, dist: minDist })
+        } else if (toCheck.length) {
+          toCheck[0].dist = Math.min(toCheck[0].dist, minDist)
+        }
+
+        if (toCheck.length > 1) {
+          this.checkAndNullNeighbors(oldOwner, ...toCheck)
+        }
         return
       }
     }

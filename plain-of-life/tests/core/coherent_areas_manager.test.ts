@@ -1085,6 +1085,192 @@ describe('CoherentAreasManager', () => {
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
     })
+
+    it('considers all four neighbor fields owned by the old owner correctly', () => {
+      // All 4 neighbors connected by bridges in all corners
+      let plainBefore = [
+        [' ', 'B', 'b', 'b'],
+        ['A', 'b', 'b', 'b'],
+        [' ', 'b', 'b', 'b'],
+        [' ', ' ', ' ', ' ']
+      ]
+      let expectedPlainAfter = [
+        [' ', 'B', 'b', 'b'],
+        [' ', 'b', 'A', 'b'],
+        [' ', 'b', 'b', 'b'],
+        [' ', ' ', ' ', ' ']
+      ]
+      let prep = prepare(plainBefore)
+      let plain = prep.plain
+      let a = plain.getAt(0, 1).getCellContainers()[0]
+      let b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(8)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1) // Called one time when filling old position of A, independent from B
+
+      // All 4 neighbors connected by bridges in three corners
+      plainBefore = [
+        [' ', 'B', 'b', 'b'],
+        ['A', 'b', 'b', 'b'],
+        [' ', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', 'b', 'b'],
+        [' ', 'b', 'A', 'b'],
+        [' ', 'b', 'b', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(7)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(1) // Called one time when filling old position of A, independent from B
+
+      // The 4 neighbors are connected to two pairs by bridges in two corners
+      plainBefore = [
+        [' ', 'B', 'b', ' '],
+        ['A', 'b', 'b', 'b'],
+        [' ', ' ', 'b', 'b'],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', 'b', ' '],
+        [' ', 'b', 'A', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(3)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2) // Called one time when filling old position of A, independent from B
+
+      // The 4 neighbors are connected to two one triple and one isolated neighbor by bridges in two corners, B is connected to the triple
+      plainBefore = [
+        [' ', 'B', 'b', ' '],
+        ['A', 'b', 'b', 'b'],
+        [' ', 'b', 'b', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', 'b', ' '],
+        [' ', 'b', 'A', ' '],
+        [' ', 'b', 'b', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(5)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2) // Called one time when filling old position of A, independent from B
+
+      // The 4 neighbors are connected to two one triple and one isolated neighbor by bridges in two corners, B is connected to the isolated neighbor
+      plainBefore = [
+        [' ', 'b', 'b', ' '],
+        ['A', 'b', 'b', 'B'],
+        [' ', 'b', 'b', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'A', 'B'],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(3, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(1)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(2) // Called one time when filling old position of A, independent from B
+
+      // 2 neighbors are connected by one bridge
+      plainBefore = [
+        [' ', 'B', 'b', ' '],
+        ['A', 'b', 'b', 'b'],
+        [' ', ' ', 'b', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'B', 'b', ' '],
+        [' ', 'b', 'A', ' '],
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      b = plain.getAt(1, 0).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(b.cellRecord.ownedFieldsCount).toBe(3)
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
+
+      // 2 neighbors are connected by one bridge and there is an additional indirect bridge (considering the torus topography of the plain)
+      plainBefore = [
+        [' ', 'b', 'b', ' '],
+        ['A', 'b', 'b', 'b'],
+        [' ', ' ', 'B', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', 'b', 'b', ' '],
+        [' ', 'b', 'A', ' '],
+        [' ', ' ', 'B', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
+
+      // No bridges at all
+      plainBefore = [
+        [' ', ' ', 'b', ' '],
+        ['A', 'b', 'b', 'b'],
+        [' ', ' ', 'B', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'A', ' '],
+        [' ', ' ', 'B', ' '],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(4) // Called one time when filling old position of A, independent from B
+
+      // Just one indirect bridge (considering torus topography of plain)
+      plainBefore = [
+        [' ', ' ', 'b', ' '],
+        ['A', 'b', 'b', 'B'],
+        [' ', ' ', 'b', ' ']
+      ]
+      expectedPlainAfter = [
+        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'A', 'B'],
+        [' ', ' ', ' ', ' ']
+      ]
+      prep = prepare(plainBefore)
+      plain = prep.plain
+      a = plain.getAt(0, 1).getCellContainers()[0]
+      a.move(2, 0)
+      expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
+    })
   })
 })
 
