@@ -17,6 +17,9 @@ interface MinCellRecord {
   ownedFieldsCount: number
 }
 
+/**
+ * Cell container as needed by a coherent areas manager
+ */
 interface CellContainer {
   posX: number
   posY: number
@@ -41,7 +44,7 @@ interface MinRuleExtensionFactory extends RuleExtensionFactory {
 /**
  * A manager of coherent plain fields owned by a cell in a plain of life game.
  * Using this manager a cell owns all coherent fields it once visited. If parts of this coherent area are cut off by another
- * moving cell, the cell looses the ownership of this cut-off part.
+ * moving cell, the cell looses the ownership of these cut-off parts.
  *
  * Rules that want to use this kind of field ownership can just create a CoherentAreasManager for their plain. The manager
  * registers to all relevant plain events such as onCellMove and updates the owner property of all plain fields and
@@ -59,14 +62,22 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
   private plain: MinFieldRecord[][] // Dedicated array on field record level (and not PlainField level) representing the plain => faster access mainly with flood fill
   private floodFill: FloodFill<MinFieldRecord>
   private fillWithNull: MinFieldRecord = { owner: null } // Dummy field record to flood fill the owner with null
-  private dummyOwner1 = { posX: -1, posY: -1, cellRecord: { ownedFieldsCount: -1 } }
-  private dummyOwner2 = { posX: -1, posY: -1, cellRecord: { ownedFieldsCount: -1 } }
-  private childOneInheritsNext = true
   private width: number // Width of plain
   private halfWidth: number
   private height: number // Height of plain
   private halfHeight: number
 
+  // Some onCellDivide specific stuff...
+  private dummyOwner1: CellContainer = { posX: -1, posY: -1, cellRecord: { ownedFieldsCount: -1 } }
+  private dummyOwner2: CellContainer = { posX: -1, posY: -1, cellRecord: { ownedFieldsCount: -1 } }
+  private childOneInheritsNext = true
+
+  /**
+   * Create a coherent ares manager for a plain. For consistency make sure that the manager is created before the first
+   * relevant cell events such as addSeedCell occurred.
+   *
+   * Don't serialize a coherent areas manager. Just create a new manager after de-serialization.
+   */
   constructor(extPlain: ExtPlain<MinRuleExtensionFactory>) {
     // Register for all cell events that have an impact on the field ownership
     extPlain.addSeedCellAddListener(this)
@@ -108,8 +119,9 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
 
   /**
    * If a cell was moved, it's made the new owner of the field where it's moving to. But if the new position is not connected to
-   * the already owned area, this area is completely lost. If there is already an old owner of the target field, the old owner
-   * looses the ownership.
+   * the already owned area, this area is completely lost.
+   *
+   * If there is already an old owner of the target field, the old owner looses the ownership and disconnected parts are cut off.
    */
   onCellMove(cellContainer: CellContainer, oldX: number, oldY: number, dX: number, dY: number): void {
     if (dX === 0 && dY === 0) {
@@ -139,7 +151,7 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
    * If a cell made a child, the child is made the new owner of the field were it is placed. If there is already an old owner
    * of the child's field, the old owner looses the ownership.
    *
-   * The child doesn't inherit any ownership from the parent.
+   * The child doesn't inherit any ownership of fields from the parent.
    */
   onCellMakeChild(child: CellContainer): void {
     this.place(child)
@@ -199,7 +211,7 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
       this.plain[child2.posY][child2.posX].owner = this.dummyOwner2
       child2.cellRecord.ownedFieldsCount = this.floodFill.fill({ owner: child2 }, child2.posX, child2.posY) - 1 // -1 => Field where child is placed is added later by place()
 
-      // Remove the owner from all former parent owned fields that are still marked with a dummy owner (this are the disconnected parts)
+      // Remove the owner from all former parent owned fields that are still marked with a dummy owner (this are the disconnected parts not reached by flood fill)
       for (const toCheck of parentOwned) {
         const currentOwner = this.plain[toCheck.y][toCheck.x].owner
         if (currentOwner === this.dummyOwner1 || currentOwner === this.dummyOwner2) {
@@ -208,11 +220,10 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
       }
 
       // Before placing the children on their fields, the old owner has to be restored to disconnect cut-off parts correctly
-      // placing the children
       this.plain[child1.posY][child1.posX].owner = oldOwnerChild1
       this.plain[child2.posY][child2.posX].owner = oldOwnerChild2
     }
-
+    // Finally placing the children
     this.place(child1)
     this.place(child2)
   }
@@ -230,6 +241,10 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
    *
    * Make the new container the owner of the plain field and remove the old owner. If with the removal of the old owner parts
    * of the coherent area owned by the old owner get disconnected, also remove the ownership for these disconnected parts.
+   *
+   * This part is highly optimized to avoid costly unnecessary flood fills. If a part is really disconnected from the coherent
+   * area owned by a cell, it must be filled with owner = null. But there are several strategies to avoid unnecessary additional
+   * fills just to figure out what's disconnected.
    */
   private place(cellContainer: CellContainer): void {
     const x = cellContainer.posX
@@ -299,18 +314,24 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         return
 
       // If two neighbors are owned by the old owner there are two groups of cases. First 4 elbow cases:
-      // Up right elbow
       //
-      //            X = plain field where new cell is placed and that currently belongs to old owner
-      //    o b     o = the two neighbors owned by the old owner
-      //  * X o     b = the potential direct bridge between the two o: If b also belongs to old owner, nothing can be disconnected
-      //    *       * = further neighbors of X with other owner than the old owner
+      //            X = the plain field where new cell is placed and that currently belongs to old owner
+      //    N C     N = the two neighbors owned by the old owner
+      //  * X N     C = the corner between the two Ns
+      //    *       * = further neighbors of X with an other owner than the old owner
+      //
+      // All 4 elbow cases have a bridge in the corner C of the elbow if C is also owned by the old owner. In this case the
+      // coherent area of the old owner can't be split in two parts - we are done. Otherwise a detailed check is required:
+      // The two Ns still might be connected by another longer path (and thus there is still one coherent area) or - if not
+      // connected - we have to figure out if N1 or N2 is still connected to the old owner.
+      //
+      // 1.) Up right elbow
       case 0b1100:
         if (this.plain[yMinus1][xPlus1].owner !== oldOwner) {
-          // If there is no direct bridge
-          const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+          // If there is no direct bridge...
+          const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
-            // check in detail if one of the two o is disconnected
+            // ...check in detail if one of the two Ns is disconnected from the old owner
             oldOwner,
             { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
             { x: xPlus1, y: y, dist: neighborDist[relPos][right] }
@@ -318,10 +339,10 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         }
         return
 
-      // Down right elbow - see above
+      // 2.) Down right elbow
       case 0b0110:
         if (this.plain[yPlus1][xPlus1].owner !== oldOwner) {
-          const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+          const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
             { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
@@ -330,10 +351,10 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         }
         return
 
-      // Down left elbow - see above
+      // 3.) Down left elbow
       case 0b0011:
         if (this.plain[yPlus1][xMinus1].owner !== oldOwner) {
-          const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+          const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
             { x: x, y: yPlus1, dist: neighborDist[relPos][down] },
@@ -342,10 +363,10 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         }
         return
 
-      // Up left elbow - see above
+      // 4.) Up left elbow
       case 0b1001:
         if (this.plain[yMinus1][xMinus1].owner !== oldOwner) {
-          const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+          const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
           this.checkAndNullNeighbors(
             oldOwner,
             { x: xMinus1, y: y, dist: neighborDist[relPos][left] },
@@ -355,25 +376,27 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         return
 
       // Second 2 line cases:
-      // Horizontal line
       //
-      //            X = plain field where new cell is placed and that currently belongs to old owner
-      //    *       o = the two neighbors owned by the old owner
-      //  o X o     * = further neighbors of X with other owner than the old owner
-      //    *       Note that there are no potential direct bridges in this case
+      //    *       X = the plain field where new cell is placed and that currently belongs to old owner
+      //  N X N     N = the two neighbors owned by the old owner
+      //    *       * = further neighbors of X with an other owner than the old owner
+      //
+      // In both line cases there are no corner fields that might act as bride and directly connect N1 and N2. So a detailed
+      // check is always required for both Ns.
+      //
+      // 1.) Horizontal line
       case 0b0101: {
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNullNeighbors(
-          // as there are no direct bridges, we always have to check in detail if one of the two o is disconnected
           oldOwner,
           { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
           { x: xMinus1, y: y, dist: neighborDist[relPos][left] }
         )
         return
       }
-      // Vertical line - see above
+      // 2.) Vertical line
       case 0b1010: {
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNullNeighbors(
           oldOwner,
           { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
@@ -383,19 +406,24 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
       }
 
       // If three neighbors are owned by the old owner, there are 4 cases:
-      // Up neighbor is not owned by old owner
       //
-      //            X = plain field where new cell is placed and that currently belongs to old owner
-      //    *       o = the three neighbors owned by the old owner
-      //  o X o     b = the potential direct bridges between the o
-      //  b o b     * = further neighbor of X with other owner than the old owner
+      //            X = the plain field where new cell is placed and that currently belongs to old owner
+      //    *       N = the three neighbors owned by the old owner
+      //  N X N     C = the two corners between the three Ns
+      //  C N C     * = the remaining neighbor of X with an other owner than the old owner
+      //
+      // In all 4 cases there are three neighbors that might be connected by two bridges in the two corners. If there are two bridges
+      // the coherent area of the old owner can't be split in two parts - we are done. Otherwise a detailed check is required.
+      //
+      // 1.) Only neighbor above is not owned by old owner
       case 0b0111: {
         const rightDownOwned = this.plain[yPlus1][xPlus1].owner === oldOwner
         const leftDownOwned = this.plain[yPlus1][xMinus1].owner === oldOwner
         if (rightDownOwned && leftDownOwned) {
-          return
+          return // If there are two bridges, nothing can be disconnected and we are done
         }
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        // All other cases have to be checked in detail...
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNull3Neighbors(
           oldOwner,
           { x: xPlus1, y: y, dist: neighborDist[relPos][right] },
@@ -407,14 +435,14 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         return
       }
 
-      // Right neighbor is not owned by old owner - see above
+      // 2.) Only the right neighbor is not owned by old owner
       case 0b1011: {
         const leftDownOwned = this.plain[yPlus1][xMinus1].owner === oldOwner
         const leftUpOwned = this.plain[yMinus1][xMinus1].owner === oldOwner
         if (leftDownOwned && leftUpOwned) {
           return
         }
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNull3Neighbors(
           oldOwner,
           { x: x, y: yPlus1, dist: neighborDist[relPos][down] },
@@ -426,14 +454,14 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         return
       }
 
-      // Down neighbor is not owned by old owner - see above
+      // 3.) Only the neighbor below is not owned by old owner
       case 0b1101: {
         const leftUpOwned = this.plain[yMinus1][xMinus1].owner === oldOwner
         const rightUpOwned = this.plain[yMinus1][xPlus1].owner === oldOwner
         if (leftUpOwned && rightUpOwned) {
           return
         }
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNull3Neighbors(
           oldOwner,
           { x: xMinus1, y: y, dist: neighborDist[relPos][left] },
@@ -445,14 +473,14 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         return
       }
 
-      // Left neighbor is not owned by old owner - see above
+      // 4.) Only the left neighbor is not owned by old owner
       case 0b1110: {
         const rightUpOwned = this.plain[yMinus1][xPlus1].owner === oldOwner
         const rightDownOwned = this.plain[yPlus1][xPlus1].owner === oldOwner
         if (rightUpOwned && rightDownOwned) {
           return
         }
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
         this.checkAndNull3Neighbors(
           oldOwner,
           { x: x, y: yMinus1, dist: neighborDist[relPos][up] },
@@ -464,40 +492,55 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
         return
       }
 
-      // All 4 neighbors are owned by the old owner
+      // If all 4 neighbors are owned by the old owner
+      //
+      //  C4 N1 C1     X = the plain field where new cell is placed and that currently belongs to old owner
+      //  N4 X  N2     N = the four neighbors owned by the old owner
+      //  C3 N3 C2     C = the four corners between the four Ns
+      //
+      // If there is a bridge at C1, N1 and N2 are connected and it's sufficient to check only N2 in detail.
+      // If there is a bridge at C2, a detailed check of N2 is not needed and it's sufficient to check N3. And so on...
+      // If overall there are at least 3 bridges in the 4 corners, all Ns are connected and we are done without a detailed
+      // check.
       case 0b1111: {
-        const relPos = this.getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
-        const toCheck: Neighbor[] = []
+        const relPos = getRelPosOldOwner(x, y, oldOwnerX, oldOwnerY)
+        const toCheck: Neighbor[] = [] // Neighbors that have to be checked in detail
 
+        // If checking multiple connected neighbors together, check with the minimum distance
+        // of all connected neighbors to the old owner for best guessing which group of
+        // disconnected neighbors is disconnected from the old owner (assume that the group
+        // with the bigger distance is disconnected)
         let minDist = neighborDist[relPos][up]
+
+        // Right up corner not owned => no bridge there => detailed check needed if neighbor on top is disconnected
         if (this.plain[yMinus1][xPlus1].owner !== oldOwner) {
-          // Right up corner not owned
           toCheck.push({ x: x, y: yMinus1, dist: minDist })
-          minDist = 4
+          minDist = maxNeighborDist
         }
 
         minDist = Math.min(minDist, neighborDist[relPos][right])
+        // Right down corner not owned => no bridge there => detailed check needed if neighbor to right is disconnected
         if (this.plain[yPlus1][xPlus1].owner !== oldOwner) {
-          // Right down corner not owned
           toCheck.push({ x: xPlus1, y: y, dist: minDist })
-          minDist = 4
+          minDist = maxNeighborDist
         }
 
+        // And so on - see above...
         minDist = Math.min(minDist, neighborDist[relPos][down])
         if (this.plain[yPlus1][xMinus1].owner !== oldOwner) {
-          // Left down corner not owned
           toCheck.push({ x: x, y: yPlus1, dist: minDist })
-          minDist = 4
+          minDist = maxNeighborDist
         }
 
+        // And so on - see above...
         minDist = Math.min(minDist, neighborDist[relPos][left])
         if (this.plain[yMinus1][xMinus1].owner !== oldOwner) {
-          // Left up corner not owned
           toCheck.push({ x: xMinus1, y: y, dist: minDist })
         } else if (toCheck.length) {
           toCheck[0].dist = Math.min(toCheck[0].dist, minDist)
         }
 
+        // We have to perform the detailed check only if there are less than 3 bridges
         if (toCheck.length > 1) {
           this.checkAndNullNeighbors(oldOwner, ...toCheck)
         }
@@ -506,6 +549,12 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
     }
   }
 
+  /**
+   * Prepare the detailed check for all 4 cases with three neighbors owned by the old owner.
+   *    *
+   * n3 X  n1
+   * c2 n2 c1
+   */
   private checkAndNull3Neighbors(
     oldOwner: CellContainer,
     n1: Neighbor,
@@ -515,70 +564,37 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
     c2SameOwner: boolean
   ) {
     if (c1SameOwner) {
+      // If c1 is a bridge and connects n1 and n2, n1 and n2 can be checked together
+      // We shall do the joint check of n1 and n2 assuming the minimum distance of n1 and n1 to the old owner for best
+      // guessing which neighbors are connected and which are disconnected (performance optimization in the detailed check)
       n1.dist = Math.min(n1.dist, n2.dist)
       this.checkAndNullNeighbors(oldOwner, n1, n3)
     } else if (c2SameOwner) {
+      // Same as above - just with the bridge in different corner...
       n3.dist = Math.min(n3.dist, n2.dist)
       this.checkAndNullNeighbors(oldOwner, n1, n3)
     } else {
+      // No bridges => all three neighbors n1 to n3 have to be checked in detail
       this.checkAndNullNeighbors(oldOwner, n1, n2, n3)
     }
   }
 
-  private getRelPosOldOwner(x: number, y: number, oldOwnerX: number, oldOwnerY: number): 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 {
-    // Relative position of the old neighbor
-    //   \  7  |  0  /       0: Top right
-    //     \   |   /         1: Right top
-    //   6   \ | /   1       2: Right bottom
-    //   ------X------       3: Bottom right
-    //   5   / | \   2       4: Bottom left
-    //     /   |   \         5: Left bottom
-    //   /  4  |  3  \       6: Left top
-    //                       7: Top left
-    const dX = oldOwnerX - x
-    const dY = oldOwnerY - y
-
-    if (dX > 0) {
-      if (dY <= 0) {
-        if (dX <= -dY) {
-          return 0
-        } else {
-          return 1
-        }
-      } else {
-        if (dX > dY) {
-          return 2
-        } else {
-          return 3
-        }
-      }
-    } else {
-      if (dY > 0) {
-        if (dX > -dY) {
-          return 4
-        } else {
-          return 5
-        }
-      } else {
-        if (dX <= dY) {
-          return 6
-        } else {
-          return 7
-        }
-      }
-    }
-  }
-
+  /**
+   * Perform a detailed check if neighbors owned by the old owner got disconnected from the old owner and thus are not part
+   * of the old owners coherent area any more. If so, flood fill the disconnected neighbor with owner = null to remove the 
+   * whole cut-off area from the old owner's owned area.
+   */
   private checkAndNullNeighbors(oldOwner: CellContainer, ...toCheck: Neighbor[]): void {
     const oldOwnerX = oldOwner.posX
     const oldOwnerY = oldOwner.posY
 
+    // At least one neighbor remains connected to the old owner. Let's guess that this is the neighbor that is currently the
+    // closest to the old owner. Thus don't test the closest in detail. If all other neighbors are disconnected, this one must
+    // be connected without further check. 
     let closest: Neighbor | null = null
 
+    // Check all neighbors to check 
     for (let i = 0; i < toCheck.length; i++) {
-      if (i > 1 && this.plain[toCheck[i].y][toCheck[i].x].owner === null) {
-        continue
-      }
 
       if (closest === null) {
         closest = toCheck[i]
@@ -587,34 +603,37 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
 
       let current = toCheck[i]
 
+      // If the current neighbor is closer than the closest, swap current and closest 
       if (current.dist < closest.dist) {
         ;[closest, current] = [current, closest]
       }
 
-      // Try to fill a disconnected part of the area with null
+      // Try to flood fill a disconnected part of the old owner's owned area with owner = null staring at the current neighbor
       const filledPoints: Point[] = []
       const filled = this.floodFill.fill(this.fillWithNull, current.x, current.y, filledPoints)
 
-      // Ups, by mistake we filled a part that is connected
+      // Ups, by mistake we filled a part that is connected to the old owner
       if (this.plain[oldOwnerY][oldOwnerX].owner === null) {
-        oldOwner.cellRecord.ownedFieldsCount = filled
+        oldOwner.cellRecord.ownedFieldsCount = filled // So we get the number of fields owned by the old owner for free
 
-        // At least we now know for sure that every non-null neighbor must be disconnected and we have to fill it with null
+        // At least we now know for sure that every non-null neighbor must be disconnected and we have to fill it with owner = null
         for (const current of toCheck) {
           if (this.plain[current.y][current.x].owner !== null) {
             this.floodFill.fill(this.fillWithNull, current.x, current.y)
           }
         }
-        // Undo fill by mistake
+        // Undo the fill by mistake
         for (const point of filledPoints) {
           this.plain[point.y][point.x].owner = oldOwner
         }
         return
-      } else {
+      } 
+      // Good, we filled a really disconnected part and can reduce the number of fields owned by the old owner accordingly
+      else {
         oldOwner.cellRecord.ownedFieldsCount -= filled
       }
 
-      // OK, closest was connected to disconnected part and has to be re-filled in the next iteration
+      // OK, closest was connected to the just filled disconnected part and with the next iteration we need a new closest
       if (this.plain[closest.y][closest.x].owner === null) {
         closest = null
       }
@@ -642,6 +661,61 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
   }
 }
 
+/**
+ * Get the relative position of the old owner to the cell to be placed.
+ *
+ * Only to be used for performance optimization (access to neighborDist)! Does not consider the torus topography of the 
+ * plain (for simplicity and better performance) and thus is not reliable in all cases.
+ */
+function getRelPosOldOwner(
+  toPlaceX: number,
+  toPLaceY: number,
+  oldOwnerX: number,
+  oldOwnerY: number
+): 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 {
+  // Relative position of the old neighbor
+  //   \  7  |  0  /       0: Top right
+  //     \   |   /         1: Right top
+  //   6   \ | /   1       2: Right bottom
+  //   ------X------       3: Bottom right
+  //   5   / | \   2       4: Bottom left
+  //     /   |   \         5: Left bottom
+  //   /  4  |  3  \       6: Left top
+  //                       7: Top left
+  const dX = oldOwnerX - toPlaceX
+  const dY = oldOwnerY - toPLaceY
+
+  if (dX > 0) {
+    if (dY <= 0) {
+      if (dX <= -dY) {
+        return 0
+      } else {
+        return 1
+      }
+    } else {
+      if (dX > dY) {
+        return 2
+      } else {
+        return 3
+      }
+    }
+  } else {
+    if (dY > 0) {
+      if (dX > -dY) {
+        return 4
+      } else {
+        return 5
+      }
+    } else {
+      if (dX <= dY) {
+        return 6
+      } else {
+        return 7
+      }
+    }
+  }
+}
+
 type Direction = 0 | 1 | 2 | 3
 const up: Direction = 0
 const right: Direction = 1
@@ -650,9 +724,14 @@ const left: Direction = 3
 
 type Neighbor = { x: number; y: number; dist: number }
 
-// Precalculated: Which neighbor of the field to be occupied is closest to the old owner, depending on the
-// relative position of the old owner? Which is second, third and fourth?
-// The first dimension of the array is the relative position of the old owner (0-7)
+/**
+ * Precalculated distance of neighbors to the old owner : Which neighbor of the field to be occupied is closest to the old owner,
+ * depending on the relative position of the old owner? Which is second, third and fourth?
+ * 
+ * The first dimension of the array is the relative position of the old owner (0-7)
+ * The second dimension is the neighbor: 0: Up, 1: Right, 2: Down, 3: Left
+ */
+
 //   \  7  |  0  /       0: Top right
 //     \   |   /         1: Right top
 //   6   \ U /   1       2: Right bottom
@@ -661,7 +740,6 @@ type Neighbor = { x: number; y: number; dist: number }
 //     /   |   \         5: Left bottom
 //   /  4  |  3  \       6: Left top
 //                       7: Top left
-// The second dimension is the neighbor: 0: Up, 1: Right, 2: Down, 3: Left
 const neighborDist = [
   [1, 2, 4, 3], // If the old owner is placed top right, the neighbor up is the closest, right is second, down is fourth and left is third
   [2, 1, 3, 4], // If the old owner is placed right top, the neighbor up is the second closest, ...
@@ -672,3 +750,8 @@ const neighborDist = [
   [2, 4, 3, 1],
   [1, 3, 4, 2]
 ]
+
+/**
+ * The maximum value in neighborDist
+ */
+const maxNeighborDist = 4

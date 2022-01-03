@@ -1269,7 +1269,7 @@ describe('CoherentAreasManager', () => {
       a = plain.getAt(0, 1).getCellContainers()[0]
       a.move(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
-      expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
+      expect(prep.floodFill.fill).toHaveBeenCalledTimes(4) // Called one time when filling old position of A, independent from B
     })
   })
 
