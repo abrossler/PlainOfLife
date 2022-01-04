@@ -87,7 +87,7 @@ describe('Plain of life', () => {
       })
 
       it('calls executeTurn of rules as expected', () => {
-        expect(rules.executeTurn).toHaveBeenCalledOnceWith(0n, plain, cellContainers as CellContainers<TestRules>)
+        expect(rules.executeTurn).toHaveBeenCalledOnceWith(plain, cellContainers as CellContainers<TestRules>, 0n)
       })
 
       it('updates the family tree', () => {

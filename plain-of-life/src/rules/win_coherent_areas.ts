@@ -18,11 +18,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
     }
   }
 
-  executeTurn(
-    currentTurn: bigint,
-    plain: ExtPlain<WinCoherentAreas>,
-    cellContainers: CellContainers<WinCoherentAreas>
-  ): void {
+  executeTurn(plain: ExtPlain<WinCoherentAreas>, cellContainers: CellContainers<WinCoherentAreas>): void {
     const input = new Uint8Array(4)
     const output = new Uint8Array(1)
     for (const container of cellContainers) {

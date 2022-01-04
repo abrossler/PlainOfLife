@@ -377,7 +377,7 @@ describe('CoherentAreasManager', () => {
       expect(b.cellRecord.ownedFieldsCount).toBe(4)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
 
-      // Indirect bridge, not in corner 
+      // Indirect bridge, not in corner
       plainBefore = [
         [' ', 'B', 'b', 'b'],
         [' ', 'b', ' ', 'b'],

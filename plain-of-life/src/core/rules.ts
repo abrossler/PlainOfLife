@@ -48,7 +48,7 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    * @param cellContainers The container of all alive cells to iterate over the cells, prepare the input, call executeTurn of
    * the cell and process the output
    */
-  abstract executeTurn(currentTurn: bigint, plain: ExtPlain<E>, cellContainers: CellContainers<E>): void
+  abstract executeTurn(plain: ExtPlain<E>, cellContainers: CellContainers<E>, currentTurn: bigint): void
 
   /**
    * Provide an object with all rule specific properties you want to add as cell record to all cell containers.

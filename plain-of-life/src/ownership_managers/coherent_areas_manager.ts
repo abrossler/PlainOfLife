@@ -581,7 +581,7 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
 
   /**
    * Perform a detailed check if neighbors owned by the old owner got disconnected from the old owner and thus are not part
-   * of the old owners coherent area any more. If so, flood fill the disconnected neighbor with owner = null to remove the 
+   * of the old owners coherent area any more. If so, flood fill the disconnected neighbor with owner = null to remove the
    * whole cut-off area from the old owner's owned area.
    */
   private checkAndNullNeighbors(oldOwner: CellContainer, ...toCheck: Neighbor[]): void {
@@ -590,12 +590,11 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
 
     // At least one neighbor remains connected to the old owner. Let's guess that this is the neighbor that is currently the
     // closest to the old owner. Thus don't test the closest in detail. If all other neighbors are disconnected, this one must
-    // be connected without further check. 
+    // be connected without further check.
     let closest: Neighbor | null = null
 
-    // Check all neighbors to check 
+    // Check all neighbors to check
     for (let i = 0; i < toCheck.length; i++) {
-
       if (closest === null) {
         closest = toCheck[i]
         continue
@@ -603,7 +602,7 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
 
       let current = toCheck[i]
 
-      // If the current neighbor is closer than the closest, swap current and closest 
+      // If the current neighbor is closer than the closest, swap current and closest
       if (current.dist < closest.dist) {
         ;[closest, current] = [current, closest]
       }
@@ -627,7 +626,7 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
           this.plain[point.y][point.x].owner = oldOwner
         }
         return
-      } 
+      }
       // Good, we filled a really disconnected part and can reduce the number of fields owned by the old owner accordingly
       else {
         oldOwner.cellRecord.ownedFieldsCount -= filled
@@ -664,7 +663,7 @@ export class CoherentAreasManager // Listens to all relevant cell events that ha
 /**
  * Get the relative position of the old owner to the cell to be placed.
  *
- * Only to be used for performance optimization (access to neighborDist)! Does not consider the torus topography of the 
+ * Only to be used for performance optimization (access to neighborDist)! Does not consider the torus topography of the
  * plain (for simplicity and better performance) and thus is not reliable in all cases.
  */
 function getRelPosOldOwner(
@@ -727,7 +726,7 @@ type Neighbor = { x: number; y: number; dist: number }
 /**
  * Precalculated distance of neighbors to the old owner : Which neighbor of the field to be occupied is closest to the old owner,
  * depending on the relative position of the old owner? Which is second, third and fourth?
- * 
+ *
  * The first dimension of the array is the relative position of the old owner (0-7)
  * The second dimension is the neighbor: 0: Up, 1: Right, 2: Down, 3: Left
  */

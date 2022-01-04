@@ -245,7 +245,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       return false // All cells are dead, game over
     }
 
-    this.rules.executeTurn(this._currentTurn, this.plain, cellContainers)
+    this.rules.executeTurn(this.plain, cellContainers, this._currentTurn)
     this.familyTree.update(cellContainers)
     this._currentTurn++
     return true

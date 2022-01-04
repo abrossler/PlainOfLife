@@ -12,7 +12,7 @@ export class TestRules extends Rules<TestRules> {
   /**
    * Simple executeTurn implementation just letting the cell records do something (reproduce, move, die)
    */
-  executeTurn(currentTurn: bigint, plain: ExtPlain<TestRules>, cellContainers: CellContainers<TestRules>): void {
+  executeTurn(plain: ExtPlain<TestRules>, cellContainers: CellContainers<TestRules>, currentTurn: bigint): void {
     // Toggle between summer and winter every turn...
     if (this.season === 'Summer') {
       this.season = 'Winter'
