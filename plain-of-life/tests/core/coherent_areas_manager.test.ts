@@ -11,7 +11,7 @@ describe('CoherentAreasManager', () => {
     it('compares plains correctly', () => {
       // Test the test - make sure that there is no difference found for identical plains
       const plainBefore = [
-        [' ', 'A', 'a'],
+        ['  ', ' A', 'a '],
         ['B', 'CD', 'Fa'],
         ['GHg', ' I', 'a '],
         ['', 'J', '   ']
@@ -19,8 +19,8 @@ describe('CoherentAreasManager', () => {
       const expectedPlainAfter = [
         [' ', 'A', 'a'],
         ['B', 'CD', 'Fa'],
-        ['GHg', ' I', 'a '],
-        ['', 'J', '   ']
+        ['GHg', ' I ', 'a '],
+        [' ', ' J', '   ']
       ]
       const plain = prepare(plainBefore).plain
       expect(compare(plain, expectedPlainAfter)).toEqual('')
@@ -52,12 +52,12 @@ describe('CoherentAreasManager', () => {
       const plainBefore = [
         [' ', 'a', ' '],
         [' ', 'A', ' '],
-        [' ', ' ', ' ']
+        ['B', 'b', 'b']
       ]
       const expectedPlainAfter = [
         [' ', 'a', ' '],
         ['A', 'a', 'a'],
-        [' ', ' ', ' ']
+        ['B', 'b', 'b']
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
@@ -66,15 +66,15 @@ describe('CoherentAreasManager', () => {
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
-    it('performs simple move down correctly (considering torus topography and keeping ownership of neighbor)', () => {
+    it('performs simple move down correctly (considering torus topography)', () => {
       const plainBefore = [
         [' ', ' ', ' '],
-        [' ', 'A', 'a'],
+        [' ', 'A', ' '],
         [' ', ' ', ' ']
       ]
       const expectedPlainAfter = [
         [' ', 'A', ' '],
-        [' ', 'a', 'a'],
+        [' ', 'a', ' '],
         [' ', 'a', ' ']
       ]
       const plain = prepare(plainBefore).plain
@@ -92,14 +92,16 @@ describe('CoherentAreasManager', () => {
       ]
       const expectedPlainAfter = [
         [' ', ' ', ' '],
-        ['a', 'a', 'A'],
+        ['a', 'A', 'a'],
         [' ', 'a', ' ']
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
       a.move(-1, 0)
       a.move(-1, 0)
+      a.move(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
+      expect(a.cellRecord.ownedFieldsCount).toBe(4)
     })
 
     it('looses all owned fields if moving 2 steps up and being disconnected (considering torus topography)', () => {
@@ -125,32 +127,28 @@ describe('CoherentAreasManager', () => {
 
     it('looses all owned fields if moving 2 steps right and being disconnected (considering torus topography)', () => {
       const plainBefore = [
-        [' ', ' ', ' ', ' '],
         [' ', ' ', 'A', ' '],
-        [' ', ' ', 'a', ' '],
-        [' ', 'a', 'a', ' ']
+        [' ', ' ', 'a', ' ']
       ]
       const expectedPlainAfter = [
-        [' ', ' ', ' ', ' '],
         ['A', ' ', ' ', ' '],
-        [' ', ' ', ' ', ' '],
         [' ', ' ', ' ', ' ']
       ]
       const plain = prepare(plainBefore).plain
-      const a = plain.getAt(2, 1).getCellContainers()[0]
+      const a = plain.getAt(2, 0).getCellContainers()[0]
       a.move(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
     it('looses all owned fields if moving 2 steps down and being disconnected (considering torus topography)', () => {
       const plainBefore = [
-        [' ', ' ', ' ', ' '],
+        [' ', 'b', 'B', ' '],
         [' ', ' ', ' ', ' '],
         [' ', 'a', 'A', ' '],
         [' ', 'a', ' ', ' ']
       ]
       const expectedPlainAfter = [
-        [' ', ' ', 'A', ' '],
+        [' ', ' ', 'BA', ' '],
         [' ', ' ', ' ', ' '],
         [' ', ' ', ' ', ' '],
         [' ', ' ', ' ', ' ']
@@ -163,19 +161,15 @@ describe('CoherentAreasManager', () => {
 
     it('looses all owned fields if moving 2 steps left and being disconnected (considering torus topography)', () => {
       const plainBefore = [
-        [' ', 'a', 'a', ' '],
-        [' ', 'a', ' ', ' '],
-        [' ', 'A', ' ', ' '],
-        [' ', ' ', ' ', ' ']
+        [' ', 'a', 'b', 'b'],
+        [' ', 'A', 'B', ' ']
       ]
       const expectedPlainAfter = [
-        [' ', ' ', ' ', ' '],
-        [' ', ' ', ' ', ' '],
-        [' ', ' ', ' ', 'A'],
-        [' ', ' ', ' ', ' ']
+        [' ', ' ', 'b', 'b'],
+        [' ', ' ', 'B', 'A']
       ]
       const plain = prepare(plainBefore).plain
-      const a = plain.getAt(1, 2).getCellContainers()[0]
+      const a = plain.getAt(1, 1).getCellContainers()[0]
       a.move(-2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
@@ -198,12 +192,12 @@ describe('CoherentAreasManager', () => {
       expect(a.cellRecord.ownedFieldsCount).toBe(3)
 
       plainBefore = [
-        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'B', ' '],
         ['A', ' ', ' ', 'a'],
         [' ', ' ', ' ', ' ']
       ]
       expectedPlainAfter = [
-        [' ', ' ', ' ', ' '],
+        [' ', ' ', 'B', ' '],
         ['a', ' ', 'A', 'a'],
         [' ', ' ', ' ', ' ']
       ]
@@ -214,13 +208,13 @@ describe('CoherentAreasManager', () => {
 
       plainBefore = [
         ['a', 'a', 'a', ' '],
-        ['A', ' ', ' ', ' '],
-        [' ', ' ', ' ', ' ']
+        ['A', 'B', 'C', ' '],
+        [' ', 'D', 'E', ' ']
       ]
       expectedPlainAfter = [
         ['a', 'a', 'a', ' '],
-        ['a', ' ', 'A', ' '],
-        [' ', ' ', ' ', ' ']
+        ['a', 'B', 'CA', ' '],
+        [' ', 'D', 'E', ' ']
       ]
       plain = prepare(plainBefore).plain
       a = plain.getAt(0, 1).getCellContainers()[0]
@@ -383,16 +377,16 @@ describe('CoherentAreasManager', () => {
       expect(b.cellRecord.ownedFieldsCount).toBe(4)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
 
-      // Indirect bridge, not in corner X
+      // Indirect bridge, not in corner 
       plainBefore = [
         [' ', 'B', 'b', 'b'],
-        [' ', 'b', 'X', 'b'],
+        [' ', 'b', ' ', 'b'],
         ['A', 'b', 'b', 'b'],
         [' ', ' ', ' ', ' ']
       ]
       expectedPlainAfter = [
         [' ', 'B', 'b', 'b'],
-        [' ', 'b', 'X', 'b'],
+        [' ', 'b', ' ', 'b'],
         ['a', 'A', 'b', 'b'],
         [' ', ' ', ' ', ' ']
       ]
@@ -472,17 +466,17 @@ describe('CoherentAreasManager', () => {
       expect(b.cellRecord.ownedFieldsCount).toBe(4)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
 
-      // Indirect bridge, not in corner X
+      // Indirect bridge, not in corner C
       plainBefore = [
         [' ', ' ', ' ', ' '],
         ['A', 'b', 'b', 'B'],
-        [' ', 'b', 'X', 'b'],
+        [' ', 'b', 'C', 'b'],
         [' ', 'b', 'b', 'b']
       ]
       expectedPlainAfter = [
         [' ', ' ', ' ', ' '],
         ['a', 'A', 'b', 'B'],
-        [' ', 'b', 'X', 'b'],
+        [' ', 'b', 'C', 'b'],
         [' ', 'b', 'b', 'b']
       ]
       prep = prepare(plainBefore)
