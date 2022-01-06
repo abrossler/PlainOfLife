@@ -5,7 +5,7 @@ export type Direction = 'UP' | 'DOWN' | 'RIGHT' | 'LEFT'
  *
  * Ahead, Behind, Left, Right
  */
-export function get4Neighbors(
+export function getPos4Neighbors(
   x: number,
   y: number,
   heading: Direction
@@ -22,6 +22,74 @@ export function get4Neighbors(
     }
     case 'LEFT': {
       return [x - 1, y, x + 1, y, x, y + 1, x, y - 1]
+    }
+  }
+}
+
+export function getDeltaAhead(heading: Direction): [number, number] {
+  switch (heading) {
+    case 'UP': {
+      return [0, -1]
+    }
+    case 'DOWN': {
+      return [0, 1]
+    }
+    case 'RIGHT': {
+      return [1, 0]
+    }
+    case 'LEFT': {
+      return [-1, 0]
+    }
+  }
+}
+
+export function getDeltaBehind(heading: Direction): [number, number] {
+  switch (heading) {
+    case 'UP': {
+      return [0, 1]
+    }
+    case 'DOWN': {
+      return [0, -1]
+    }
+    case 'RIGHT': {
+      return [-1, 0]
+    }
+    case 'LEFT': {
+      return [1, 0]
+    }
+  }
+}
+
+export function getDeltaLeft(heading: Direction): [number, number] {
+  switch (heading) {
+    case 'UP': {
+      return [-1, 0]
+    }
+    case 'DOWN': {
+      return [1, 0]
+    }
+    case 'RIGHT': {
+      return [0, -1]
+    }
+    case 'LEFT': {
+      return [0, 1]
+    }
+  }
+}
+
+export function getDeltaRight(heading: Direction): [number, number] {
+  switch (heading) {
+    case 'UP': {
+      return [1, 0]
+    }
+    case 'DOWN': {
+      return [-1, 0]
+    }
+    case 'RIGHT': {
+      return [0, 1]
+    }
+    case 'LEFT': {
+      return [0, -1]
     }
   }
 }

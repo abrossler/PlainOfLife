@@ -9,7 +9,10 @@ import { RuleExtensionFactory } from './rule_extension_factory'
  * External plain fields expose all properties and methods that make sense (and safely can be used) outside the
  * POL core
  */
-export type ExtPlainField<E extends RuleExtensionFactory> = Pick<PlainField<E>, 'fieldRecord' | 'getCellContainers'>
+export type ExtPlainField<E extends RuleExtensionFactory> = Pick<
+  PlainField<E>,
+  'fieldRecord' | 'getCellContainers' | 'isFree'
+>
 
 /**
  * The plain field class - not for direct usage outside of POL core: Outside the module {@link ExtPlainField} shall be used
@@ -53,5 +56,12 @@ export class PlainField<E extends RuleExtensionFactory> {
   // For usage outside of the POL core, thus returning ExtCellContainer
   getCellContainers(): Readonly<ExtCellContainer<E>[]> {
     return this.cellContainers
+  }
+
+  /**
+   * Is the plain field free or is it occupied by one or several cell containers?
+   */
+  isFree(): boolean {
+    return this.cellContainers.length === 0
   }
 }
