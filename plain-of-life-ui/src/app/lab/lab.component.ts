@@ -5,7 +5,7 @@ import { CellBase } from '../model/cell.base';
 import { SimpleCell } from '../model/cells/simple.cell';
 
 @Component({
-    selector: 'lab-board',
+    selector: 'app-lab-board',
     templateUrl: 'lab.component.html'
 })
 export class LabComponent implements OnInit, TurnListener  {
