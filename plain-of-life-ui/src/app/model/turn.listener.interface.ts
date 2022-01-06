@@ -1,5 +1,5 @@
-import { Board } from './board';
+import { Board } from './board'
 
-export interface TurnListener{
-    onTurnExecuted( board: Board ): void;
+export interface TurnListener {
+  onTurnExecuted(board: Board): void
 }

@@ -1,7 +1,7 @@
-import {NgModule} from "@angular/core";
+import { NgModule } from '@angular/core'
 
 @NgModule({
-    imports: [],
-    providers: []
+  imports: [],
+  providers: []
 })
-export class ModelModule{ }
+export class ModelModule {}
