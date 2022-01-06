@@ -1,4 +1,4 @@
-import { Name2ConstructorMap } from '../../src/util/name_2_constructor_map'
+import { Name2ConstructorMap } from '../../../../src/app/pol/util/name_2_constructor_map'
 
 class A {
   a = 'a'

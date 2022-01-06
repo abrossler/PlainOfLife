@@ -1,13 +1,13 @@
 import { TestRules } from '../stubs/test_rules'
-import { ExtPlainOfLife, PlainOfLife } from '../../src/core/plain_of_life'
+import { ExtPlainOfLife, PlainOfLife } from '../../../../src/app/pol/core/plain_of_life'
 import { TestCell } from '../stubs/test_cell'
-import { FamilyTree } from '../../src/core/family_tree'
-import { Plain } from '../../src/core/plain'
-import { CellContainer, CellContainers } from '../../src/core/cell_container'
-import { Cell } from '../../src/core/cell'
-import { SerializablePlainOfLife } from '../../src/core/serializable_plain_of_life'
-import { ruleNames } from '../../src/rules/rules_names'
-import { cellNames } from '../../src/cells/cell_names'
+import { FamilyTree } from '../../../../src/app/pol/core/family_tree'
+import { Plain } from '../../../../src/app/pol/core/plain'
+import { CellContainer, CellContainers } from '../../../../src/app/pol/core/cell_container'
+import { Cell } from '../../../../src/app/pol/core/cell'
+import { SerializablePlainOfLife } from '../../../../src/app/pol/core/serializable_plain_of_life'
+import { ruleNames } from '../../../../src/app/pol/rules/rules_names'
+import { cellNames } from '../../../../src/app/pol/cells/cell_names'
 
 describe('Plain of life', () => {
   const plainWidth = 4

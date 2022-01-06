@@ -1,10 +1,10 @@
-import { CoherentAreasManager } from '../../src/ownership_managers/coherent_areas_manager'
-import { Plain } from '../../src/core/plain'
-import { ExtCellContainer } from '../../src/core/cell_container'
-import { PlainOfLife } from '../../src/core/plain_of_life'
+import { CoherentAreasManager } from '../../../../src/app/pol/ownership_managers/coherent_areas_manager'
+import { Plain } from '../../../../src/app/pol/core/plain'
+import { ExtCellContainer } from '../../../../src/app/pol/core/cell_container'
+import { PlainOfLife } from '../../../../src/app/pol/core/plain_of_life'
 import { TestRules } from '../stubs/test_rules'
 import { TestCell } from '../stubs/test_cell'
-import { FloodFill } from '../../src/util/flood_fill'
+import { FloodFill } from '../../../../src/app/pol/util/flood_fill'
 
 describe('CoherentAreasManager', () => {
   describe('test', () => {

@@ -1,6 +1,6 @@
-import { ExtCellContainer } from '../../src/core/cell_container'
-import { defaultSerialization } from '../../src/core/default_serialization'
-import { Plain } from '../../src/core/plain'
+import { ExtCellContainer } from '../../../../src/app/pol/core/cell_container'
+import { defaultSerialization } from '../../../../src/app/pol/core/default_serialization'
+import { Plain } from '../../../../src/app/pol/core/plain'
 import { TestRules } from '../stubs/test_rules'
 import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 

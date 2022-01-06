@@ -1,4 +1,4 @@
-import { FloodFill, Point } from '../../src/util/flood_fill'
+import { FloodFill, Point } from '../../../../src/app/pol/util/flood_fill'
 
 describe('FloodFill', () => {
   it('fills simple shape correctly', () => {

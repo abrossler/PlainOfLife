@@ -1,7 +1,7 @@
 import { FamilyTree } from './family_tree'
 import { Rules } from './rules'
 import { RuleExtensionFactory } from './rule_extension_factory'
-import { SerializablePlainOfLife } from '../core/serializable_plain_of_life'
+import { SerializablePlainOfLife } from './serializable_plain_of_life'
 import { ruleNames } from '../rules/rules_names'
 import { Cell } from './cell'
 import { checkBigInt, checkInt, checkObject, checkString } from '../util/type_checks'

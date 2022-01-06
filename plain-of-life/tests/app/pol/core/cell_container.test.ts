@@ -1,7 +1,7 @@
-import { cellNames } from '../../src/cells/cell_names'
-import { CellContainer } from '../../src/core/cell_container'
-import { Plain } from '../../src/core/plain'
-import { SerializableCellContainer } from '../../src/core/serializable_plain_of_life'
+import { cellNames } from '../../../../src/app/pol/cells/cell_names'
+import { CellContainer } from '../../../../src/app/pol/core/cell_container'
+import { Plain } from '../../../../src/app/pol/core/plain'
+import { SerializableCellContainer } from '../../../../src/app/pol/core/serializable_plain_of_life'
 import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 import { TestCell } from '../stubs/test_cell'
 

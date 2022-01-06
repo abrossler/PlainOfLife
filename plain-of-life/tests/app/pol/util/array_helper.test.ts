@@ -1,4 +1,4 @@
-import { removeFromArray } from '../../src/util/array_helper'
+import { removeFromArray } from '../../../../src/app/pol/util/array_helper'
 
 describe('removeFromArray', () => {
   it('works as expected', () => {

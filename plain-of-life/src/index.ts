@@ -1,6 +1,6 @@
-import { PlainOfLife } from './core/plain_of_life'
-import { DemoRules } from './rules/demo_rules'
-import { DemoCell } from './cells/demo_cell'
+import { PlainOfLife } from './app/pol/core/plain_of_life'
+import { DemoRules } from './app/pol/rules/demo_rules'
+import { DemoCell } from './app/pol/cells/demo_cell'
 
 export function sayHello(): string {
   console.log('Hello')

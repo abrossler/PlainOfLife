@@ -1,6 +1,6 @@
-import { CellContainer } from '../../src/core/cell_container'
-import { Plain } from '../../src/core/plain'
-import { PlainField } from '../../src/core/plain_field'
+import { CellContainer } from '../../../../src/app/pol/core/cell_container'
+import { Plain } from '../../../../src/app/pol/core/plain'
+import { PlainField } from '../../../../src/app/pol/core/plain_field'
 import { TestRuleExtensionFactory } from '../stubs/test_rule_extension_factory'
 
 describe('Plain Field', () => {

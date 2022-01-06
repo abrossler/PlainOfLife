@@ -1,4 +1,4 @@
-import { Cell } from '../../src/core/cell'
+import { Cell } from '../../../../src/app/pol/core/cell'
 
 /**
  * A simple test cell for test automates

@@ -1,5 +1,5 @@
-import { RuleExtensionFactory } from '../../src/core/rule_extension_factory'
-import { CellContainer } from '../../src/core/cell_container'
+import { RuleExtensionFactory } from '../../../../src/app/pol/core/rule_extension_factory'
+import { CellContainer } from '../../../../src/app/pol/core/cell_container'
 
 /**
  * A super simplistic rule extension factory for test automates.

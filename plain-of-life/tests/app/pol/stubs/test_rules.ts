@@ -1,6 +1,6 @@
-import { CellContainers, ExtCellContainer } from '../../src/core/cell_container'
-import { ExtPlain } from '../../src/core/plain'
-import { Rules } from '../../src/core/rules'
+import { CellContainers, ExtCellContainer } from '../../../../src/app/pol/core/cell_container'
+import { ExtPlain } from '../../../../src/app/pol/core/plain'
+import { Rules } from '../../../../src/app/pol/core/rules'
 
 /**
  * A simple set of test rules for test automates

@@ -1,4 +1,4 @@
-import { RawAssembler } from '../../src/cells/raw_assembler'
+import { RawAssembler } from '../../../../src/app/pol/cells/raw_assembler'
 
 describe('RawAssembler', () => {
   const plainSize = 2
