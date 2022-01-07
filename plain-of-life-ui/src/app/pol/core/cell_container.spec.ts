@@ -2,8 +2,8 @@ import { cellNames } from '../cells/cell_names'
 import { CellContainer } from './cell_container'
 import { Plain } from './plain'
 import { SerializableCellContainer } from './serializable_plain_of_life'
-import { TestRuleExtensionFactory } from '../../../tests/stubs/test_rule_extension_factory'
-import { TestCell } from '../../../tests/stubs/test_cell'
+import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
+import { TestCell } from '../../../test_stubs/test_cell'
 
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 

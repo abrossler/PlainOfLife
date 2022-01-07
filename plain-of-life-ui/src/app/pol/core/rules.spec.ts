@@ -1,8 +1,8 @@
 import { ExtCellContainer } from './cell_container'
 import { defaultSerialization } from './default_serialization'
 import { Plain } from './plain'
-import { TestRules } from '../../../tests/stubs/test_rules'
-import { TestRuleExtensionFactory } from '../../../tests/stubs/test_rule_extension_factory'
+import { TestRules } from '../../../test_stubs/test_rules'
+import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
 
 let rules: TestRules
 let serializableRules: Record<string, unknown>

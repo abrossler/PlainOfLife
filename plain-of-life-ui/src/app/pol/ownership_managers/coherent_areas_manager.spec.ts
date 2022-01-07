@@ -2,8 +2,8 @@ import { CoherentAreasManager } from './coherent_areas_manager'
 import { Plain } from '../core/plain'
 import { ExtCellContainer } from '../core/cell_container'
 import { PlainOfLife } from '../core/plain_of_life'
-import { TestRules } from '../../../tests/stubs/test_rules'
-import { TestCell } from '../../../tests/stubs/test_cell'
+import { TestRules } from '../../../test_stubs/test_rules'
+import { TestCell } from '../../../test_stubs/test_cell'
 import { FloodFill } from '../util/flood_fill'
 
 describe('CoherentAreasManager', () => {

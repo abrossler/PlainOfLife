@@ -1,4 +1,4 @@
-import { TestCell } from '../../../tests/stubs/test_cell'
+import { TestCell } from '../../../test_stubs/test_cell'
 
 describe('Cell', () => {
   let testCell: TestCell

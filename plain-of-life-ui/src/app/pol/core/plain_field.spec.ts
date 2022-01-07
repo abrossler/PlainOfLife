@@ -1,7 +1,7 @@
 import { CellContainer } from './cell_container'
 import { Plain } from './plain'
 import { PlainField } from './plain_field'
-import { TestRuleExtensionFactory } from '../../../tests/stubs/test_rule_extension_factory'
+import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
 
 describe('Plain Field', () => {
   const plainSize = 2

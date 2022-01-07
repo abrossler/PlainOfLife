@@ -4,7 +4,7 @@ import { Plain } from './plain'
 import {
   RecordWithCellContainer,
   TestRuleExtensionFactoryWithCellContainer
-} from '../../../tests/stubs/test_rule_extension_factory'
+} from '../../../test_stubs/test_rule_extension_factory'
 
 describe('Default serialization', () => {
   let ruleExtensionFactory: TestRuleExtensionFactoryWithCellContainer

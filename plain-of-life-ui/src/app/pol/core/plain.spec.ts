@@ -1,14 +1,14 @@
 import { CellContainer } from './cell_container'
 import { Plain } from './plain'
 import { PlainField } from './plain_field'
-import { TestRuleExtensionFactory } from '../../../tests/stubs/test_rule_extension_factory'
+import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
 import {
   MyCellDeathListener,
   MyCellDivideListener,
   MyCellMakeChildListener,
   MyCellMoveListener,
   MySeedCellAddListener
-} from '../../../tests/stubs/plain_listeners'
+} from '../../../test_stubs/plain_listeners'
 
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 

@@ -1,6 +1,6 @@
-import { TestRules } from '../../../tests/stubs/test_rules'
+import { TestRules } from '../../../test_stubs/test_rules'
 import { ExtPlainOfLife, PlainOfLife } from './plain_of_life'
-import { TestCell } from '../../../tests/stubs/test_cell'
+import { TestCell } from '../../../test_stubs/test_cell'
 import { FamilyTree } from './family_tree'
 import { Plain } from './plain'
 import { CellContainer, CellContainers } from './cell_container'

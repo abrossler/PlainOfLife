@@ -1,12 +1,12 @@
-import { ExtCellContainer } from '../../app/pol/core/cell_container'
+import { ExtCellContainer } from '../app/pol/core/cell_container'
 import {
   SeedCellAddListener,
   CellMoveListener,
   CellMakeChildListener,
   CellDivideListener,
   CellDeathListener
-} from '../../app/pol/core/plain'
-import { RuleExtensionFactory } from '../../app/pol/core/rule_extension_factory'
+} from '../app/pol/core/plain'
+import { RuleExtensionFactory } from '../app/pol/core/rule_extension_factory'
 
 /* eslint-disable*/
 export class MySeedCellAddListener<E extends RuleExtensionFactory> implements SeedCellAddListener<E> {
