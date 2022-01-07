@@ -14,7 +14,7 @@
         {
             "type": "chrome",
             "request": "attach",
-            "name": "Attach Karma Chrome",
+            "name": "Attach Karma Chrome for debugging",
             "address": "localhost",
             "port": 9333,
             "pathMapping": {
