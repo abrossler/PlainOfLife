@@ -1,3 +1,7 @@
+import { RawAssembler } from '../pol/cells/raw_assembler'
+import { ExtPlainOfLife, PlainOfLife } from '../pol/core/plain_of_life'
+import { RuleExtensionFactory } from '../pol/core/rule_extension_factory'
+import { WinCoherentAreas } from '../pol/rules/win_coherent_areas'
 import { CellBase } from './cell.base'
 import { SimpleCell } from './cells/simple.cell'
 import { ModelModule } from './model.module'
@@ -6,12 +10,14 @@ import { TurnListener } from './turn.listener.interface'
 //let debug = true;
 let debug = false
 
-export class Board {
+export class PlainOfLifeDriver {
   static readonly MOVE_OR_REPRODUCE = 0b00001000
   static readonly POSITION = 0b00000111
 
-  private sizeX = 0
-  private sizeY = 0
+  private plainWidth = 0
+  private plainHeight = 0
+
+  private _plainOfLife: ExtPlainOfLife<RuleExtensionFactory> | null = null
 
   private cellConstructor!: new () => CellBase
   private turnListeners: TurnListener[] = []
@@ -20,13 +26,16 @@ export class Board {
   private cells2: (CellBase | undefined | null)[] = []
 
   private currentTurn = 0
-  public init(sizeX: number, sizeY: number, cellConstructor: new () => CellBase) {
-    this.sizeX = sizeX
-    this.sizeY = sizeY
+  public init(plainWidth: number, plainHeight: number, cellConstructor: new () => CellBase) {
+    this.plainWidth = plainWidth
+    this.plainHeight = plainHeight
+    this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler)
+
+
     this.currentTurn = 0
     this.cellConstructor = cellConstructor
 
-    this.cells1 = new Array<CellBase>(this.sizeX * this.sizeX)
+    this.cells1 = new Array<CellBase>(this.plainWidth * this.plainWidth)
     for (let i = 0; i < this.cells1.length; i++) {
       let rand = Math.random()
       if (rand > 0.97) {
@@ -79,11 +88,13 @@ export class Board {
     this.run()
   }
 
-  public registerOnTurn(listener: TurnListener): void {
+  public addOnTurnListener(listener: TurnListener): void {
     this.turnListeners.push(listener)
   }
 
   private run(): void {
+    this._plainOfLife?.executeTurn()
+
     this.executeTurn()
     this.currentTurn++
 
@@ -93,19 +104,19 @@ export class Board {
   }
 
   protected executeTurn(): void {
-    let i = this.sizeX + 1
+    let i = this.plainWidth + 1
     let input = new Uint8Array(2)
     let output = new Uint8Array(2)
     let conflictIndices: number[] = []
-    for (let y = 1; y < this.sizeY - 1; y++) {
-      for (let x = 1; x < this.sizeX - 1; x++) {
+    for (let y = 1; y < this.plainHeight - 1; y++) {
+      for (let x = 1; x < this.plainWidth - 1; x++) {
         // Prepare input
         if (this.cells2[i] !== undefined && this.cells2[i] !== null) {
           input[0] = input[1] = 0b00000000
           output[0] = output[1] = 0b00000000
 
-          let iMinusSizeX = i - this.sizeX
-          let iPlusSizeX = i + this.sizeX
+          let iMinusSizeX = i - this.plainWidth
+          let iPlusSizeX = i + this.plainWidth
 
           if (debug) {
             console.log('Cell Neighbours')
@@ -222,9 +233,9 @@ export class Board {
 
           // Process output
           // Either move or reproduce...
-          if (output[0] & Board.MOVE_OR_REPRODUCE) {
+          if (output[0] & PlainOfLifeDriver.MOVE_OR_REPRODUCE) {
             // Get Position where to move or reproduce
-            let newPosition = output[0] & Board.POSITION
+            let newPosition = output[0] & PlainOfLifeDriver.POSITION
             let newIndex
             switch (newPosition) {
               case 0:
@@ -370,12 +381,12 @@ export class Board {
       this.cells1[index] = null
     }
 
-    i = this.sizeX + 1
-    for (let y = 1; y < this.sizeY - 1; y++) {
-      for (let x = 1; x < this.sizeX - 1; x++) {
+    i = this.plainWidth + 1
+    for (let y = 1; y < this.plainHeight - 1; y++) {
+      for (let x = 1; x < this.plainWidth - 1; x++) {
         let neighbours = 0
-        let iMinusSizeX = i - this.sizeX
-        let iPlusSizeX = i + this.sizeX
+        let iMinusSizeX = i - this.plainWidth
+        let iPlusSizeX = i + this.plainWidth
         if (this.cells1[iMinusSizeX - 1] !== undefined) {
           neighbours++
         }
@@ -419,9 +430,9 @@ export class Board {
       i += 2
     }
 
-    i = this.sizeX + 1
-    for (let y = 1; y < this.sizeY - 1; y++) {
-      for (let x = 1; x < this.sizeX - 1; x++) {
+    i = this.plainWidth + 1
+    for (let y = 1; y < this.plainHeight - 1; y++) {
+      for (let x = 1; x < this.plainWidth - 1; x++) {
         this.cells1[i] = this.cells2[i]
         i++
       }
@@ -451,4 +462,7 @@ export class Board {
       i++
     }
   }
+
+  get plainOfLife() {return this._plainOfLife}
 }
+

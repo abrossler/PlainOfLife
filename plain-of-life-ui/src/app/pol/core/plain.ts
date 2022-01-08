@@ -117,6 +117,7 @@ export interface CellDeathListener<E extends RuleExtensionFactory> {
  */
 export class Plain<E extends RuleExtensionFactory> {
   private readonly array: PlainField<E>[][]
+  private _cellCount: number = 0
 
   // All registered listeners for cell events
   private seedCellAddListeners: SeedCellAddListener<E>[] = []
@@ -186,6 +187,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * Add a cell container to the plain at a given position
    */
   addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): void {
+    this._cellCount++
     this.array[posY][posX].addCellContainer(cellContainer)
   }
 

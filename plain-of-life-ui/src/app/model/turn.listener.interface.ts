@@ -1,5 +1,5 @@
-import { Board } from './board'
+import { PlainOfLifeDriver } from './plain_of_life_driver'
 
 export interface TurnListener {
-  onTurnExecuted(board: Board): void
+  onTurnExecuted(board: PlainOfLifeDriver): void
 }

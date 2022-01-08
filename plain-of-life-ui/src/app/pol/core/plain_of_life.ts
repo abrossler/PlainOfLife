@@ -32,7 +32,7 @@ import { Plain } from './plain'
  */
 export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   PlainOfLife<E>,
-  'executeTurn' | 'currentTurn' | 'toSerializable' | 'plainWidth' | 'plainHeight'
+  'executeTurn' | 'currentTurn' | 'toSerializable' | 'plainWidth' | 'plainHeight' | 'getPlainImage'
 >
 
 /**
@@ -281,4 +281,49 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   get plainHeight(): number {
     return this.plain.height
   }
+
+  /**
+   * ToDo
+   */
+  getPlainImage(imageData: Uint8ClampedArray): void {
+    let i = 0
+    for(let y=0; y<this.plainWidth; y++){
+      for(let x=0; x<this.plainHeight; x++){ 
+        if(this.plain.getAt(x,y).getCellContainers.length > 0){
+          imageData[i++] = 0
+          imageData[i++] = 0
+          imageData[i++] = 0
+        } else {
+          imageData[i++] = 255
+          imageData[i++] = 0
+          imageData[i++] = 255
+        }
+        imageData[i++] = 255
+      }
+    }
+  }
 }
+
+
+// getImage(data: Uint8ClampedArray) {
+//   let i = 0
+//   for (let di = 0; di < data.length; ) {
+//     if (this.cells1[i] === null) {
+//       data[di++] = 0
+//       data[di++] = 0
+//       data[di++] = 0
+//       data[di++] = 255
+//     } else if (this.cells1[i] === undefined) {
+//       data[di++] = 255
+//       data[di++] = 255
+//       data[di++] = 255
+//       data[di++] = 255
+//     } else {
+//       data[di++] = 255
+//       data[di++] = 0
+//       data[di++] = 0
+//       data[di++] = 255
+//     }
+//     i++
+//   }
+// }
