@@ -55,6 +55,9 @@ describe('Cell Container', () => {
         plain.getAt(posXInPlain, posYInPlain).getCellContainers()[0] as CellContainer<TestRuleExtensionFactory>
       )
     })
+    it('inits the number of cells correctly', () => {
+      expect(plain.cellCount).toBe(1)
+    })
   })
 
   describe('makeChild', () => {
@@ -112,6 +115,10 @@ describe('Cell Container', () => {
       expect(cellContainer.makeChild(0, 1).posY).toBe(0)
       expect(cellContainer.makeChild(1, 0).posX).toBe(0)
     })
+
+    it('increases the number of cells', () => {
+      expect(plain.cellCount).toBe(2)
+    })
   })
 
   describe('divide', () => {
@@ -163,6 +170,10 @@ describe('Cell Container', () => {
       expect(grandChildren[1].posX).toBe(0)
       expect(grandChildren[1].posY).toBe(0)
     })
+
+    it('increases the number of cells', () => {
+      expect(plain.cellCount).toBe(2)
+    })
   })
 
   describe('die', () => {
@@ -212,6 +223,10 @@ describe('Cell Container', () => {
       expect(cellContainer.isDead).toBeTrue()
       expect((cellContainer as any).firstCellContainer).toBe(firstCellContainer)
       expect(cellContainer).toBe(firstCellContainer.first)
+    })
+
+    it('decreases the number of cells', () => {
+      expect(plain.cellCount).toBe(2)
     })
   })
 

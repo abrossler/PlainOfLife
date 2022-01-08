@@ -117,7 +117,7 @@ export interface CellDeathListener<E extends RuleExtensionFactory> {
  */
 export class Plain<E extends RuleExtensionFactory> {
   private readonly array: PlainField<E>[][]
-  private _cellCount: number = 0
+  private _cellCount = 0
 
   // All registered listeners for cell events
   private seedCellAddListeners: SeedCellAddListener<E>[] = []
@@ -184,18 +184,33 @@ export class Plain<E extends RuleExtensionFactory> {
   }
 
   /**
+   * Get the number of cells living on the plain
+   */
+  get cellCount(): number {
+    return this._cellCount
+  }
+
+  /**
    * Add a cell container to the plain at a given position
    */
-  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): void {
+  addCellContainer(cellContainer: ExtCellContainer<E>): void {
     this._cellCount++
-    this.array[posY][posX].addCellContainer(cellContainer)
+    this.array[cellContainer.posY][cellContainer.posX].addCellContainer(cellContainer)
+  }
+
+  /**
+   * Remove a cell container from the plain at a given position
+   */
+  removeCellContainer(cellContainer: ExtCellContainer<E>): void {
+    this._cellCount--
+    this.array[cellContainer.posY][cellContainer.posX].removeCellContainer(cellContainer)
   }
 
   /**
    * If a seed cell is added, add the container of the seed cell to the plain and notify registered listeners
    */
   onSeedCellAdd(cellContainer: ExtCellContainer<E>): void {
-    this.array[cellContainer.posY][cellContainer.posX].addCellContainer(cellContainer)
+    this.addCellContainer(cellContainer)
 
     this.seedCellAddListeners.forEach((listener) => {
       listener.onSeedCellAdd(cellContainer)
@@ -248,7 +263,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * If a cell made a child, add the container of the child to the plain and notify registered listeners.
    */
   onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void {
-    this.array[child.posY][child.posX].addCellContainer(child)
+    this.addCellContainer(child)
 
     this.cellMakeChildListeners.forEach((listener) => {
       listener.onCellMakeChild(child, parent, dX, dY)
@@ -283,9 +298,9 @@ export class Plain<E extends RuleExtensionFactory> {
     dX2: number,
     dY2: number
   ): void {
-    this.array[parent.posY][parent.posX].removeCellContainer(parent)
-    this.array[child1.posY][child1.posX].addCellContainer(child1)
-    this.array[child2.posY][child2.posX].addCellContainer(child2)
+    this.removeCellContainer(parent)
+    this.addCellContainer(child1)
+    this.addCellContainer(child2)
 
     this.cellDivideListeners.forEach((listener) => {
       listener.onCellDivide(parent, child1, dX1, dY1, child2, dX2, dY2)
@@ -311,7 +326,7 @@ export class Plain<E extends RuleExtensionFactory> {
    * If a cell died, remove the container of the cell from the plain and notify registered listeners.
    */
   onCellDeath(cellContainer: ExtCellContainer<E>): void {
-    this.array[cellContainer.posY][cellContainer.posX].removeCellContainer(cellContainer)
+    this.removeCellContainer(cellContainer)
 
     this.cellDeathListeners.forEach((listener) => {
       listener.onCellDeath(cellContainer)

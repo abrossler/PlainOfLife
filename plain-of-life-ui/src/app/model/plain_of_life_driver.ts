@@ -31,7 +31,6 @@ export class PlainOfLifeDriver {
     this.plainHeight = plainHeight
     this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler)
 
-
     this.currentTurn = 0
     this.cellConstructor = cellConstructor
 
@@ -463,6 +462,7 @@ export class PlainOfLifeDriver {
     }
   }
 
-  get plainOfLife() {return this._plainOfLife}
+  get plainOfLife() {
+    return this._plainOfLife
+  }
 }
-

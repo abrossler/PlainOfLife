@@ -14,7 +14,7 @@ import { modulo } from '../util/modulo'
 interface Plain<E extends RuleExtensionFactory> {
   get width(): number
   get height(): number
-  addCellContainer(cellContainer: ExtCellContainer<E>, posX: number, posY: number): void
+  addCellContainer(cellContainer: ExtCellContainer<E>): void
   onSeedCellAdd(cellContainer: ExtCellContainer<E>): void
   onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void
   onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void
@@ -204,8 +204,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
       // cellRecord is de-serialized separately because cell records might hold cell container references and we must
       // collect all cell containers first
 
-      current._posX = posX
-      current._posY = posY
+      current._posX = modulo(posX, this.plain.width)
+      current._posY = modulo(posY, this.plain.height)
       current._isDead = isDead
       current._color = color
 
@@ -222,7 +222,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current.cell.initFromSerializable(serializable.cell)
 
       if (!isDead) {
-        current.plain.addCellContainer(current, modulo(posX, this.plain.width), modulo(posY, this.plain.height))
+        current.plain.addCellContainer(current)
       }
     }
     return allCellContainers

@@ -81,13 +81,18 @@ describe('Plain of life', () => {
     describe('if not game over (if there are alive cells)', () => {
       beforeAll(() => createPlainOfLifeAndExecuteTurn(false))
 
-      it('increases the current turn and returns true', () => {
+      it('increases the current turn and indicates that game is not over', () => {
         expect(executeTurnResult).toBeTrue()
+        expect(plainOfLife.isGameOver).toBeFalse()
         expect(plainOfLife.currentTurn).toBe(1n)
       })
 
       it('calls executeTurn of rules as expected', () => {
         expect(rules.executeTurn).toHaveBeenCalledOnceWith(plain, cellContainers as CellContainers<TestRules>, 0n)
+      })
+
+      it('Keeps the number of cells up to date', () => {
+        expect(plainOfLife.cellCount).toBe(2)
       })
 
       it('updates the family tree', () => {
@@ -97,8 +102,10 @@ describe('Plain of life', () => {
     describe('if game over (if there are no alive cells left)', () => {
       beforeAll(() => createPlainOfLifeAndExecuteTurn(true))
 
-      it('does not increases the current turn and returns false', () => {
+      it('does not increases the current turn and indicates that game is over', () => {
         expect(executeTurnResult).toBeFalse()
+        expect(plainOfLife.isGameOver).toBeTrue()
+        expect(plainOfLife.cellCount).toBe(0)
         expect(plainOfLife.currentTurn).toBe(0n)
       })
 
@@ -166,6 +173,10 @@ describe('Plain of life', () => {
       expect(fromSerializableRules).toBeInstanceOf(TestRules)
       // Check that initFromSerializable was called for the rules: If called, initial season 'Summer' shall be replaced by season 'Winter' from serialized rules
       expect(fromSerializableRules.season).toBe('Winter')
+    })
+
+    it('Restores the number of cells', () => {
+      expect(plainOfLife.cellCount).toBe(2)
     })
 
     it('creates family tree', () => {

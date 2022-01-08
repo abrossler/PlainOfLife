@@ -27,7 +27,7 @@ export class LabComponent implements OnInit, TurnListener {
   }
 
   ngOnInit(): void {
-    if (this.canvas === null || this.plainCanvas === null ) {
+    if (this.canvas === null || this.plainCanvas === null) {
       return
     }
     this.ctx = this.canvas.nativeElement.getContext('2d')

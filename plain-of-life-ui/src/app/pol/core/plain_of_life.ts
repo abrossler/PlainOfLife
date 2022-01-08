@@ -32,7 +32,14 @@ import { Plain } from './plain'
  */
 export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   PlainOfLife<E>,
-  'executeTurn' | 'currentTurn' | 'toSerializable' | 'plainWidth' | 'plainHeight' | 'getPlainImage'
+  | 'executeTurn'
+  | 'currentTurn'
+  | 'cellCount'
+  | 'isGameOver'
+  | 'toSerializable'
+  | 'plainWidth'
+  | 'plainHeight'
+  | 'getPlainImage'
 >
 
 /**
@@ -259,10 +266,27 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   }
 
   /**
+   * Get the number of (alive) cells
+   */
+  get cellCount(): number {
+    if (this.isGameOver) {
+      return 0 // Exception, as if the game is over there is technically one remaining dead cell on the plain
+    }
+    return this.plain.cellCount
+  }
+
+  /**
+   * Is the game over (all cells died)?
+   */
+  get isGameOver(): boolean {
+    return this.firstCellContainer.first.isDead
+  }
+
+  /**
    * Get the containers of all living cells on the plain for iterating
    */
   private getCellContainers(): CellContainers<E> | null {
-    if (this.firstCellContainer.first.isDead) {
+    if (this.isGameOver) {
       return null // Game over - there is only one last dead cell
     }
     return new CellContainers(this.firstCellContainer.first)
@@ -287,9 +311,9 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    */
   getPlainImage(imageData: Uint8ClampedArray): void {
     let i = 0
-    for(let y=0; y<this.plainWidth; y++){
-      for(let x=0; x<this.plainHeight; x++){ 
-        if(this.plain.getAt(x,y).getCellContainers.length > 0){
+    for (let y = 0; y < this.plainWidth; y++) {
+      for (let x = 0; x < this.plainHeight; x++) {
+        if (this.plain.getAt(x, y).getCellContainers.length > 0) {
           imageData[i++] = 0
           imageData[i++] = 0
           imageData[i++] = 0
@@ -303,7 +327,6 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     }
   }
 }
-
 
 // getImage(data: Uint8ClampedArray) {
 //   let i = 0
