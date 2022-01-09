@@ -185,7 +185,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
         current = new CellContainer<E>(this.cellRecordFactory, this.plain)
         // Init container for dead cell
         // Dead cells are not included in the cyclic list of all alive cells but form an isolated cyclic list of just
-        // the dead cell (prev = next = this)
+        // the dead cell (prev = next = this). Note that this is different compared to a non-deserialized list were dead
+        // cells still point to the original prev and next to not break running iterators on the list id a cell dies.
         if (isDead) {
           current._prev = current._next = current
           // Init container for alive cell
@@ -434,5 +435,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Remove dead cell from cell list
     this._prev._next = this._next
     this._next._prev = this._prev
+    // Important: Don't adjust this._next and this._prev here to not break running iterators (class CellContainers) on the list of
+    // alive cells here
   }
 }

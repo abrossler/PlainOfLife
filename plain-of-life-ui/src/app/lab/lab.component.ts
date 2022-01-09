@@ -1,21 +1,15 @@
 import { Component, ViewChild, ElementRef, OnInit, NgZone } from '@angular/core'
 import { TurnListener } from '../model/turn.listener.interface'
 import { PlainOfLifeDriver } from '../model/plain_of_life_driver'
-import { CellBase } from '../model/cell.base'
-import { SimpleCell } from '../model/cells/simple.cell'
 
 @Component({
   selector: 'app-lab-board',
   templateUrl: 'lab.component.html'
 })
 export class LabComponent implements OnInit, TurnListener {
-  @ViewChild('canvas', { static: true })
-  private canvas: ElementRef<HTMLCanvasElement> | null = null
-
   @ViewChild('plainCanvas', { static: true })
   private plainCanvas: ElementRef<HTMLCanvasElement> | null = null
 
-  private ctx: CanvasRenderingContext2D | null = null
   private plainCtx: CanvasRenderingContext2D | null = null
   private plainDriver: PlainOfLifeDriver | undefined
 
@@ -27,23 +21,19 @@ export class LabComponent implements OnInit, TurnListener {
   }
 
   ngOnInit(): void {
-    if (this.canvas === null || this.plainCanvas === null) {
+    if (this.plainCanvas === null) {
       return
     }
-    this.ctx = this.canvas.nativeElement.getContext('2d')
     this.plainCtx = this.plainCanvas.nativeElement.getContext('2d')
     this.paint()
   }
 
   paint(): void {
-    if (this.ctx === null || this.plainCtx === null || !this.plainDriver) {
+    if (this.plainCtx === null || !this.plainDriver) {
       return
     }
 
-    const canvas = this.ctx.canvas
-    let img = this.ctx.createImageData(this.plainWidth, this.plainHeight)
-    this.plainDriver.getImage(img.data)
-    this.ctx.putImageData(img, 20, 20)
+    let img = this.plainCtx.createImageData(this.plainWidth, this.plainHeight)
 
     this.plainDriver.plainOfLife?.getPlainImage(img.data)
     this.plainCtx.putImageData(img, 20, 20)
@@ -78,9 +68,8 @@ export class LabComponent implements OnInit, TurnListener {
   restart(): void {
     console.log('LabComponent.restart()')
     this.plainDriver?.stop()
-    console.log(this.restartCellType)
     this.plainDriver = new PlainOfLifeDriver()
-    this.plainDriver.init(this.plainWidth, this.plainHeight, this.restartCellType)
+    this.plainDriver.init(this.plainWidth, this.plainHeight)
     this.plainDriver.addOnTurnListener(this)
     this.paint()
   }
@@ -93,16 +82,14 @@ export class LabComponent implements OnInit, TurnListener {
     console.log('Ping!')
   }
 
-  getCellTypes(): (new () => CellBase)[] {
-    return [SimpleCell]
+  getCellTypes(): string[] {
+    return ['Hallo']
   }
 
-  public restartCellType: new () => CellBase = SimpleCell
-
   setRestartCellType(typeName: string) {
-    let type = this.getCellTypes().find((type) => type.name === typeName)
-    if (type) {
-      this.restartCellType = type
-    }
+    // let type = this.getCellTypes().find((type) => type.name === typeName)
+    // if (type) {
+    //   this.restartCellType = type
+    // }
   }
 }
