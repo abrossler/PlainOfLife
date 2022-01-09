@@ -69,7 +69,7 @@ export class PlainOfLifeDriver {
     }
     this.interval = window.setInterval(() => {
       this.run()
-    }, 100)
+    }, 1)
   }
 
   public stop(): void {

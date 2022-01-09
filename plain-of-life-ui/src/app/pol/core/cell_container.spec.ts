@@ -145,7 +145,6 @@ describe('Cell Container', () => {
 
     it('lets the parent die', () => {
       expect(cellContainer.isDead).toBe(true)
-      expect(cellContainer.next).toBe(cellContainer) // Dead container removed from list of alive containers...
     })
 
     it('places the child containers on the plain', () => {
@@ -191,9 +190,9 @@ describe('Cell Container', () => {
       expect((cellContainer as any).next).not.toBe(child2Container)
       expect((cellContainer as any)._prev).not.toBe(child2Container)
     })
-    it('lets the dead container form a cyclic list with just one element (the dead container itself)', () => {
-      expect((child2Container as any).next).toBe(child2Container)
-      expect((child2Container as any)._prev).toBe(child2Container)
+    it('lets the dead container still point to the former next and prev container', () => {
+      expect((child2Container as any).next).toBe(cellContainer)
+      expect((child2Container as any)._prev).toBe(child1Container)
     })
     it('removes the dead container from the plain but keeps the last posX and posY in the container', () => {
       expect(child2Container.posX).toBe(0)

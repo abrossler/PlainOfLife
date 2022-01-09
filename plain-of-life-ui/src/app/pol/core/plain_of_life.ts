@@ -289,7 +289,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     if (this.isGameOver) {
       return null // Game over - there is only one last dead cell
     }
-    return new CellContainers(this.firstCellContainer.first)
+    return new CellContainers(this.firstCellContainer)
   }
 
   /**
@@ -311,9 +311,10 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    */
   getPlainImage(imageData: Uint8ClampedArray): void {
     let i = 0
-    for (let y = 0; y < this.plainWidth; y++) {
-      for (let x = 0; x < this.plainHeight; x++) {
-        if (this.plain.getAt(x, y).getCellContainers.length > 0) {
+    for (let y = 0; y < this.plainHeight; y++) {
+      for (let x = 0; x < this.plainWidth; x++) {
+        let containers = this.plain.getAt(x, y).getCellContainers()
+        if (containers.length > 0) {
           imageData[i++] = 0
           imageData[i++] = 0
           imageData[i++] = 0
@@ -327,26 +328,3 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     }
   }
 }
-
-// getImage(data: Uint8ClampedArray) {
-//   let i = 0
-//   for (let di = 0; di < data.length; ) {
-//     if (this.cells1[i] === null) {
-//       data[di++] = 0
-//       data[di++] = 0
-//       data[di++] = 0
-//       data[di++] = 255
-//     } else if (this.cells1[i] === undefined) {
-//       data[di++] = 255
-//       data[di++] = 255
-//       data[di++] = 255
-//       data[di++] = 255
-//     } else {
-//       data[di++] = 255
-//       data[di++] = 0
-//       data[di++] = 0
-//       data[di++] = 255
-//     }
-//     i++
-//   }
-// }

@@ -19,8 +19,8 @@ export class LabComponent implements OnInit, TurnListener {
   private plainCtx: CanvasRenderingContext2D | null = null
   private plainDriver: PlainOfLifeDriver | undefined
 
-  private plainWidth = 1000
-  private plainHeight = 400
+  private plainWidth = 100
+  private plainHeight = 50
 
   constructor(private ngZone: NgZone) {
     this.restart()

@@ -54,24 +54,24 @@ export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
 >
 
 /**
+ * Cell containers are implemented as a cyclic list (where the last element points to the first). FirstCellContainer is the
+ * marker for the first container in the cycle and e.g. used as entry point for iterating the list
+ */
+ export type FirstCellContainer<E extends RuleExtensionFactory> = { first: CellContainer<E> }
+
+/**
  * An iterable iterator to iterate on all {@link ExtCellContainer}s of alive cells.
  */
 export class CellContainers<E extends RuleExtensionFactory> {
-  constructor(private first: ExtCellContainer<E>) {}
+  constructor(private firstCellContainer: FirstCellContainer<E>) {}
   *[Symbol.iterator](): Iterator<ExtCellContainer<E>> {
     let container
-    for (container = this.first; container.next !== this.first; container = container.next) {
+    for ( container = this.firstCellContainer.first; container.next !== this.firstCellContainer.first; container = container.next ) {
       yield container
     }
     yield container // don't forget the last container where next === first
   }
 }
-
-/**
- * Cell containers are implemented as a cyclic list (where the last element points to the first). FirstCellContainer is the
- * marker for the first container in the cycle and e.g. used as entry point for iterating the list
- */
-export type FirstCellContainer<E extends RuleExtensionFactory> = { first: CellContainer<E> }
 
 /**
  * The container for all cells - not for direct usage outside of the POL core: Outside {@link ExtCellContainer} shall be used
@@ -434,6 +434,5 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Remove dead cell from cell list
     this._prev._next = this._next
     this._next._prev = this._prev
-    this._prev = this._next = this // For a dead cell prev and next point to the cell itself
   }
 }

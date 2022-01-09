@@ -30,7 +30,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
   getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
     return {
       inputLength: 4,
-      recommendedSeedCellOutput: new Uint8Array([0])
+      recommendedSeedCellOutput: new Uint8Array([0b00001101])
     }
   }
 
