@@ -247,6 +247,8 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    * @returns False if all cells died (game over), otherwise true
    */
   executeTurn(): boolean {
+    const ts1 = window.performance.now()
+
     const cellContainers = this.getCellContainers()
     if (cellContainers === null) {
       return false // All cells are dead, game over
@@ -255,6 +257,48 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     this.rules.executeTurn(this.plain, cellContainers, this._currentTurn)
     this.familyTree.update(cellContainers)
     this._currentTurn++
+
+    if (this.currentTurn % 100n === 0n) {
+      const ts2 = window.performance.now()
+      console.log(
+        'Turn: ' +
+          this._currentTurn +
+          ' Turn time: ' +
+          (ts2 - ts1) +
+          ' For cells:' +
+          this.plain.cellCount +
+          ' => Time per cell:' +
+          (ts2 - ts1) / this.plain.cellCount
+      )
+    }
+    // // Check consistency
+    // for(let container of cellContainers){
+    //   if(container.isDead) {
+    //     console.log('Ups, container shall not be dead')
+    //     if(container.posX < 0 || container.posX >= this.plainWidth){
+    //       console.log('Ups, x-position of container shall be within plain')
+    //     }
+    //     if(container.posY < 0 || container.posY >= this.plainHeight){
+    //       console.log('Ups, y-position of container shall be within plain')
+    //     }
+    //     if(!this.plain.getAt(container.posX, container.posY).getCellContainers().find((_)=>_===container)){
+    //       console.log('Ups, container shall be at expected position on plain')
+    //     }
+    //   }
+    //   (container as any)._isDead = true
+    // }
+    // for(let y=0; y<this.plainHeight; y++){
+    //   for(let x=0; x<this.plainWidth; x++){
+    //     let field = this.plain.getAt(x, y)
+    //     for(let container of field.getCellContainers()){
+    //       if(!container.isDead){
+    //         console.log('Ups, a container on the plain that is not included in the list of alive containers?')
+    //       }
+    //       (container as any)._isDead = false
+    //     }
+    //   }
+    // }
+
     return true
   }
 
@@ -313,7 +357,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     let i = 0
     for (let y = 0; y < this.plainHeight; y++) {
       for (let x = 0; x < this.plainWidth; x++) {
-        let containers = this.plain.getAt(x, y).getCellContainers()
+        const containers = this.plain.getAt(x, y).getCellContainers()
         if (containers.length > 0) {
           imageData[i++] = 0
           imageData[i++] = 0

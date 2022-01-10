@@ -57,7 +57,7 @@ export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
  * Cell containers are implemented as a cyclic list (where the last element points to the first). FirstCellContainer is the
  * marker for the first container in the cycle and e.g. used as entry point for iterating the list
  */
- export type FirstCellContainer<E extends RuleExtensionFactory> = { first: CellContainer<E> }
+export type FirstCellContainer<E extends RuleExtensionFactory> = { first: CellContainer<E> }
 
 /**
  * An iterable iterator to iterate on all {@link ExtCellContainer}s of alive cells.
@@ -66,7 +66,11 @@ export class CellContainers<E extends RuleExtensionFactory> {
   constructor(private firstCellContainer: FirstCellContainer<E>) {}
   *[Symbol.iterator](): Iterator<ExtCellContainer<E>> {
     let container
-    for ( container = this.firstCellContainer.first; container.next !== this.firstCellContainer.first; container = container.next ) {
+    for (
+      container = this.firstCellContainer.first;
+      container.next !== this.firstCellContainer.first;
+      container = container.next
+    ) {
       yield container
     }
     yield container // don't forget the last container where next === first

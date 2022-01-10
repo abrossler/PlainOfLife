@@ -52,7 +52,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
       // Cells with too less energy become inactive and can't do anything
       if (record.energy >= minCellEnergy) {
         // Get depending on the cell heading the 4 neighbor plain fields
-        const [ahead, behind, atLeft, atRight] = get4Neighbors(plain, x, y, record.heading)
+        let [ahead, behind, atLeft, atRight] = get4Neighbors(plain, x, y, record.heading)
 
         // Prepare input for cell
         this.prepareInput(input, 0, ahead, container, record)
@@ -74,6 +74,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
             record.heading = turnRight(record.heading)
           }
           record.energy -= costCellTurn
+          ;[ahead, behind, atLeft, atRight] = get4Neighbors(plain, x, y, record.heading)
         }
 
         // Divide cell according to output:

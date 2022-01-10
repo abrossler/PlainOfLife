@@ -148,13 +148,14 @@ export class RawAssembler extends Cell {
     }
 
     // Take over memory from parent and make random errors (mutations)
+    let mutate = randIntTo(child.mutationProbability)
     for (let i = 0; i < memorySize; i++) {
-      const mutate = randIntTo(child.mutationProbability)
-
-      if (mutate === 1) {
+      if (mutate === 0) {
+        mutate = randIntTo(child.mutationProbability)
         child.memory[i] = randIntTo(65535)
       } else {
         child.memory[i] = this.memory[i]
+        mutate--
       }
     }
 

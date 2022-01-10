@@ -13,8 +13,8 @@ export class LabComponent implements OnInit, TurnListener {
   private plainCtx: CanvasRenderingContext2D | null = null
   private plainDriver: PlainOfLifeDriver | undefined
 
-  private plainWidth = 100
-  private plainHeight = 50
+  private plainWidth = 200
+  private plainHeight = 200
 
   constructor(private ngZone: NgZone) {
     this.restart()
@@ -33,7 +33,7 @@ export class LabComponent implements OnInit, TurnListener {
       return
     }
 
-    let img = this.plainCtx.createImageData(this.plainWidth, this.plainHeight)
+    const img = this.plainCtx.createImageData(this.plainWidth, this.plainHeight)
 
     this.plainDriver.plainOfLife?.getPlainImage(img.data)
     this.plainCtx.putImageData(img, 20, 20)
