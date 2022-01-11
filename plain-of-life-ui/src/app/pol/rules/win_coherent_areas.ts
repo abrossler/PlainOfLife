@@ -14,14 +14,14 @@ import {
 } from '../util/direction'
 import { ExtPlainField } from '../core/plain_field'
 
-const maxCellLifeTime = 30
-const minCellEnergy = 200
-const costCellTurn = 10
+const maxCellLifeTime = 50
+const minCellEnergy = 400
+const costCellTurn = 20
 const costCellMove = 100
 const percentageEnergyPerChildOnDivide = 25
-const percentageEnergyOnEat = 25
+const percentageEnergyOnEat = 75
 
-const minIrradiance = 10
+const minIrradiance = 1
 const maxIrradiance = 100
 
 export class WinCoherentAreas extends Rules<WinCoherentAreas> {
@@ -30,13 +30,13 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
   getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array } {
     return {
       inputLength: 4,
-      recommendedSeedCellOutput: new Uint8Array([0b00001101])
+      recommendedSeedCellOutput: new Uint8Array([0b00000001, 0b00000011, 0b00000000])
     }
   }
 
   executeTurn(plain: ExtPlain<WinCoherentAreas>, cellContainers: CellContainers<WinCoherentAreas>): void {
     const input = new Uint8Array(4)
-    const output = new Uint8Array(1)
+    const output = new Uint8Array(3)
     for (const container of cellContainers) {
       const record = container.cellRecord
       const x = container.posX
@@ -61,12 +61,12 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         this.prepareInput(input, 3, atLeft, container, record)
 
         // Execute turn for cell
-        output[0] = 0
+        output[0] = output[1] = output[2] = 0
         container.executeTurn(input, output)
 
         // Turn cell according to output:
-        // Bit 0: Turn cell (Yes / No)?
-        // Bit 1: Turn left if true, turn right if false
+        // [0] bit 0: Turn cell (Yes / No)?
+        // [0] bit 1: Turn left if true, turn right if false
         if (output[0] & 0b00000001) {
           if (output[0] & 0b00000010) {
             record.heading = turnLeft(record.heading)
@@ -78,27 +78,27 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         }
 
         // Divide cell according to output:
-        // Bit 2: Divide cell (Yes / No)? Dividing is only possible if the fields left and right from the current cell are not occupied by other cells.
-        // Bit 3: Turn child 1 away from the parent (Yes / No)?
-        // Bit 4: Turn child 1 away from the parent (Yes / No)?
+        // [1] bit 0: Divide cell (Yes / No)? Dividing is only possible if the fields left and right from the current cell are not occupied by other cells.
+        // [1] bit 1: Turn child 1 away from the parent (Yes / No)?
+        // [1] bit 2: Turn child 1 away from the parent (Yes / No)?
         // If the cell is divided, it dies. Child 1 is placed left, child 2 right from the parent relative to the parent's heading.
         // If child 1 is turned, it turns to the left away from the parent.
         // If child 2 is turned, it turns to the right away from the parent.
-        if (output[0] & 0b00000100 && atLeft.isFree() && atRight.isFree()) {
+        if (output[1] & 0b00000001 && atLeft.isFree() && atRight.isFree()) {
           const [dxAtLeft, dyAtLeft] = getDeltaLeft(record.heading)
           const [dxAtRight, dyAtRight] = getDeltaRight(record.heading)
           const [child1, child2] = container.divide(dxAtLeft, dyAtLeft, dxAtRight, dyAtRight)
           const childEnergy = ((record.energy * percentageEnergyPerChildOnDivide) / 100) | 0
           const record1 = child1.cellRecord
           record1.energy = childEnergy
-          if (output[0] & 0b00001000) {
+          if (output[1] & 0b00000010) {
             record1.heading = turnLeft(record.heading)
           } else {
             record1.heading = record.heading
           }
           const record2 = child2.cellRecord
           record2.energy = childEnergy
-          if (output[0] & 0b00010000) {
+          if (output[1] & 0b00100) {
             record2.heading = turnRight(record.heading)
           } else {
             record2.heading = record.heading
@@ -107,16 +107,16 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         }
 
         // Move cells according to output
-        // Bit 5: Move cell (Yes / No)?
-        // Bit 6: Move forward if true, move backward if false
+        // [2] bit 0: Move cell (Yes / No)?
+        // [2] bit 1: Move forward if true, move backward if false
         // If the plain field where to move is occupied by another cell, it's checked which cell is stronger (has more energy): If
         // the moving cell is stronger, it eats the attacked cell and gains a share of the eaten cell's energy. If the attacked
         // cell is stronger the attack fails and the moving cell just dies.
-        if (output[0] & 0b00100000) {
+        if (output[2] & 0b00000001) {
           let dxToMove: number
           let dyToMove: number
           let targetField: ExtPlainField<WinCoherentAreas>
-          if (output[0] & 0b01000000) {
+          if (output[2] & 0b00000010) {
             ;[dxToMove, dyToMove] = getDeltaAhead(record.heading)
             targetField = ahead
           } else {

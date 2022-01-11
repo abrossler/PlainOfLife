@@ -50,7 +50,7 @@ export class PlainOfLifeDriver {
       const timeStampBefore = window.performance.now()
       this.plainOfLife.executeTurn()
       if (this.plainOfLife.currentTurn % 100n === 0n) {
-        const dt = timeStampBefore - window.performance.now()
+        const dt = window.performance.now() - timeStampBefore
         const cellCount = this.plainOfLife.cellCount
         console.log(
           'Turn: ' +
