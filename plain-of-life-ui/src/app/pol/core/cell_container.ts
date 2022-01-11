@@ -4,6 +4,7 @@ import { cellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { checkBoolean, checkInt, checkString } from '../util/type_checks'
 import { modulo } from '../util/modulo'
+import { randIntTo } from '../util/rand'
 
 /**
  * Interface to add and remove cell containers from plain fields.
@@ -46,6 +47,7 @@ export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
   | 'executeTurn'
   | 'posX'
   | 'posY'
+  | 'color'
   | 'die'
   | 'isDead'
   | 'cellRecord'
@@ -116,7 +118,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * Color of the cell container. With {@link makeChild} the color of the child is randomly changed slightly. Thus closely related
    * cell containers have a similar color whereas not related cell containers typically have a different color
    */
-  private _color = 0
+  color = new Uint8ClampedArray([128, 0, 255, 255])
 
   /**
    * Constructor of a cell container instance. Call {@link initSeedCellContainer} or {@link initFromSerializable} before using
@@ -176,7 +178,9 @@ export class CellContainer<E extends RuleExtensionFactory> {
       const posX = checkInt(serializable.posX, 0, current.plain.width)
       const posY = checkInt(serializable.posY, 0, current.plain.height)
       const isDead = checkBoolean(serializable.isDead)
-      const color = checkInt(serializable.color)
+      const colorRed = checkInt(serializable.colorRed, 0, 255)
+      const colorGreen = checkInt(serializable.colorGreen, 0, 255)
+      const colorBlue = checkInt(serializable.colorBlue, 0, 255)
 
       // Init this as the first container
       if (isFirst) {
@@ -212,7 +216,9 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current._posX = modulo(posX, this.plain.width)
       current._posY = modulo(posY, this.plain.height)
       current._isDead = isDead
-      current._color = color
+      current.color[0] = colorRed
+      current.color[1] = colorGreen
+      current.color[2] = colorBlue
 
       // Create and init the cell of the container
       const cellConstructor = cellNames.getConstructor(checkString(serializable.cellTypeName))
@@ -247,7 +253,9 @@ export class CellContainer<E extends RuleExtensionFactory> {
     serializable.isDead = this._isDead
     serializable.posX = this._posX
     serializable.posY = this._posY
-    serializable.color = this._color
+    serializable.colorRed = this.color[0]
+    serializable.colorGreen = this.color[1]
+    serializable.colorBlue = this.color[2]
 
     // _next, _prev and plain are not serialized but reconstructed during de-serialization
 
@@ -285,14 +293,6 @@ export class CellContainer<E extends RuleExtensionFactory> {
    */
   get isDead(): boolean {
     return this._isDead
-  }
-
-  /**
-   * Get the color of the cell container. With {@link makeChild} the color of the child is randomly changed slightly. Thus
-   * closely related cell containers have a similar color whereas not related cell containers typically have a different color.
-   */
-  get color(): number {
-    return this._color
   }
 
   /**
@@ -426,6 +426,36 @@ export class CellContainer<E extends RuleExtensionFactory> {
     // Set the position of the child on the plain
     childContainer._posX = modulo(posX, this.plain.width)
     childContainer._posY = modulo(posY, this.plain.height)
+
+    // Random drift of colors to indicate how close cells are related: Similar colors (likely) indicate that cells are
+    // closely related
+    childContainer.color.set(this.color)
+    const childColor = childContainer.color
+    childColor[0] += randIntTo(3) - 1
+    childColor[1] += randIntTo(3) - 1
+    childColor[2] += randIntTo(3) - 1
+
+    // Avoid to dark colors: If red, green and blue all are quite dark make brightest color component brighter
+    if (childColor[0] < 128 && childColor[1] < 128 && childColor[2] < 128) {
+      if (childColor[0] > childColor[1] && childColor[0] > childColor[2]) {
+        childColor[0]++
+      } else if (childColor[1] > childColor[2]) {
+        childColor[1]++
+      } else {
+        childColor[2]++
+      }
+    }
+
+    // Avoid to bright colors: If red, green and blue all are quite bright make darkest color component darker
+    if (childColor[0] > 128 && childColor[1] > 128 && childColor[2] > 128) {
+      if (childColor[0] < childColor[1] && childColor[0] < childColor[2]) {
+        childColor[0]--
+      } else if (childColor[1] < childColor[2]) {
+        childColor[1]--
+      } else {
+        childColor[2]--
+      }
+    }
 
     return childContainer
   }

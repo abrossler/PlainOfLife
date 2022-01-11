@@ -291,11 +291,13 @@ describe('Cell Container', () => {
       expect(serializable.isDead).toBe(cellContainer.isDead)
       expect(serializable.posX).toBe(cellContainer.posX)
       expect(serializable.posY).toBe(cellContainer.posY)
-      expect(serializable.color).toBe(cellContainer.color)
+      expect(serializable.colorRed).toBe(cellContainer.color[0])
+      expect(serializable.colorGreen).toBe(cellContainer.color[1])
+      expect(serializable.colorBlue).toBe(cellContainer.color[2])
     })
 
     it('does not copy unexpected properties', () => {
-      expect(Object.getOwnPropertyNames(serializable).length).toEqual(6) // Exactly the six properties from above: cellTypeName, ...
+      expect(Object.getOwnPropertyNames(serializable).length).toEqual(8) // Exactly the eight properties from above: cellTypeName, ...
     })
   })
 

@@ -359,13 +359,14 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       for (let x = 0; x < this.plainWidth; x++) {
         const containers = this.plain.getAt(x, y).getCellContainers()
         if (containers.length > 0) {
-          imageData[i++] = 0
-          imageData[i++] = 0
-          imageData[i++] = 0
+          const color = containers[0].color
+          imageData[i++] = color[0]
+          imageData[i++] = color[1]
+          imageData[i++] = color[2]
         } else {
-          imageData[i++] = 255
           imageData[i++] = 0
-          imageData[i++] = 255
+          imageData[i++] = 0
+          imageData[i++] = 0
         }
         imageData[i++] = 255
       }

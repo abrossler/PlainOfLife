@@ -17,7 +17,9 @@ export type SerializablePlainOfLife = {
     isDead: boolean
     posX: number
     posY: number
-    color: number
+    colorRed: number
+    colorGreen: number
+    colorBlue: number
   }[]
   familyTree: unknown //ToDo
 }
