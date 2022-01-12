@@ -13,8 +13,11 @@ export class LabComponent implements OnInit, TurnListener {
   private plainCtx: CanvasRenderingContext2D | null = null
   private plainDriver: PlainOfLifeDriver | undefined
 
-  private plainWidth = 200
-  private plainHeight = 200
+  plainWidth = 250
+  plainHeight = 150
+  plainZoom = 5
+  canvasWidth = this.plainWidth*this.plainZoom
+  canvasHeight = this.plainHeight*this.plainZoom
 
   constructor(private ngZone: NgZone) {
     this.restart()
@@ -33,10 +36,10 @@ export class LabComponent implements OnInit, TurnListener {
       return
     }
 
-    const img = this.plainCtx.createImageData(this.plainWidth, this.plainHeight)
+    const img = this.plainCtx.createImageData(this.canvasWidth, this.canvasHeight)
 
     this.plainDriver.plainOfLife?.getPlainImage(img.data)
-    this.plainCtx.putImageData(img, 20, 20)
+    this.plainCtx.putImageData(img, 0, 0)
 
     // Scaling
     // https://stackoverflow.com/questions/3448347/how-to-scale-an-imagedata-in-html-canvas

@@ -338,21 +338,53 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    * ToDo
    */
   getPlainImage(imageData: Uint8ClampedArray): void {
-    let i = 0
+    const zoom = 5
+    const lineLength = this.plainWidth*zoom*zoom*4
+    let innerColor = new Uint8ClampedArray([0,0,0,255])
+    let outerColor = new Uint8ClampedArray([0,0,0,255])
     for (let y = 0; y < this.plainHeight; y++) {
       for (let x = 0; x < this.plainWidth; x++) {
         const containers = this.plain.getAt(x, y).getCellContainers()
+
         if (containers.length > 0) {
           const color = containers[0].color
-          imageData[i++] = color[0]
-          imageData[i++] = color[1]
-          imageData[i++] = color[2]
+          const c2 = ((containers[0].cellRecord.energy as number)/20) |0
+          outerColor[0] = color[0]
+          outerColor[1] = color[1]
+          outerColor[2] = color[2]
+          innerColor[0] = c2
+          innerColor[1] = innerColor[2] = 0
         } else {
-          imageData[i++] = 0
-          imageData[i++] = 0
-          imageData[i++] = 0
+          const owner = this.plain.getAt(x,y).fieldRecord.owner as ExtCellContainer<E>
+          if(owner){
+            const color = owner.color
+          innerColor[0] = (color[0]/2) |0
+          innerColor[1] = (color[1]/2) |0
+          innerColor[2] = (color[2]/2) |0
+          outerColor[0] = (color[0]/2) |0
+          outerColor[1] = (color[1]/2) |0
+          outerColor[2] = (color[2]/2) |0
+          } else {
+            innerColor[0] = innerColor[1] = innerColor[2] = 0
+            outerColor[0] = outerColor[1] = outerColor[2] = 0
+          }
         }
-        imageData[i++] = 255
+        for(let yy=0; yy<zoom; yy++){
+          for(let xx=0; xx<zoom; xx++){
+            let i= zoom*4*x+xx*4+lineLength*y+yy*4*this.plainWidth*zoom
+            if(yy>0 && yy<zoom-1 && xx>0 && xx<zoom-1){
+              imageData[i++] = innerColor[0]
+              imageData[i++] = innerColor[1]
+              imageData[i++] = innerColor[2]
+              imageData[i++] = innerColor[3]
+            } else {
+              imageData[i++] = outerColor[0]
+              imageData[i++] = outerColor[1]
+              imageData[i++] = outerColor[2]
+              imageData[i++] = outerColor[3]
+            }
+          }
+        }
       }
     }
   }
