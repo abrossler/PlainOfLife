@@ -16,8 +16,8 @@ export class LabComponent implements OnInit, TurnListener {
   plainWidth = 250
   plainHeight = 150
   plainZoom = 5
-  canvasWidth = this.plainWidth*this.plainZoom
-  canvasHeight = this.plainHeight*this.plainZoom
+  canvasWidth = this.plainWidth * this.plainZoom
+  canvasHeight = this.plainHeight * this.plainZoom
 
   constructor(private ngZone: NgZone) {
     this.restart()

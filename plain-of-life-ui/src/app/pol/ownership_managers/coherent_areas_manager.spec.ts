@@ -1486,7 +1486,7 @@ function prepare(plainToPrepare: string[][]): {
 } {
   const width = plainToPrepare[0].length
   const height = plainToPrepare.length
-  const plainOfLife = PlainOfLife.createNew(width, height, TestRules, TestCell)
+  const plainOfLife = PlainOfLife.createNew(width, height, TestRules, TestCell, 3, 3)
   /* eslint-disable @typescript-eslint/no-explicit-any*/
   const plain: Plain<TestRules> = (plainOfLife as any).plain
   const seedCellContainer: ExtCellContainer<TestRules> = (plainOfLife as any).firstCellContainer.first

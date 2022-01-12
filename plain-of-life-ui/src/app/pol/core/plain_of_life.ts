@@ -39,6 +39,8 @@ export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   | 'toSerializable'
   | 'plainWidth'
   | 'plainHeight'
+  | 'familyTreeWidth'
+  | 'familyTreeHeight'
   | 'getPlainImage'
 >
 
@@ -49,7 +51,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   /** The current turn, incremented by {@link executeTurn} */
   private _currentTurn = 0n
   /** The family tree of this plain of life starting from the first seed cell */
-  private familyTree!: FamilyTree<E>
+  private familyTree!: FamilyTree
   /** The rules for this plain of life */
   private rules!: Rules<E>
   /** The 2D plain of plain fields */
@@ -63,33 +65,35 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
 
   /**
    * Create a new plain of life for a rule set and a first seed cell.
-   * @param width  Width of the plain
-   * @param height Height of the plain
+   * @param plainWidth  Width of the plain
+   * @param plainHeight Height of the plain
    * @param Rules Constructor to create the rules that apply to the plain
    * @param Cell Constructor to create a first seed cell on the plain that starts reproducing
    * @returns the new plain of life
    */
   static createNew<E extends RuleExtensionFactory>(
-    width: number,
-    height: number,
+    plainWidth: number,
+    plainHeight: number,
     Rules: new () => Rules<E>,
-    Cell: new () => Cell
+    Cell: new () => Cell,
+    familyTreeWidth: number,
+    familyTreeHeight: number
   ): ExtPlainOfLife<E> {
     // Create plain of life, rules and family tree
     const newPOL = new PlainOfLife<E>()
     newPOL.rules = new Rules()
     newPOL.familyTree = new FamilyTree()
-    newPOL.familyTree.initNew()
+    newPOL.familyTree.initNew(familyTreeWidth, familyTreeHeight)
 
     // Create plain and add seed cell
-    newPOL.plain = new Plain<E>(newPOL.rules, width, height)
+    newPOL.plain = new Plain<E>(newPOL.rules, plainWidth, plainHeight)
     newPOL.rules.initNew(newPOL.plain)
     newPOL.firstCellContainer = { first: new CellContainer(newPOL.rules, newPOL.plain) }
     const seedCell = new Cell()
     const hints = newPOL.rules.getSeedCellHints()
     seedCell.initSeedCell(hints.inputLength, hints.recommendedSeedCellOutput)
-    const posX = Math.floor(width / 2)
-    const posY = Math.floor(height / 2)
+    const posX = Math.floor(plainWidth / 2)
+    const posY = Math.floor(plainHeight / 2)
     newPOL.firstCellContainer.first.initSeedCellContainer(seedCell, posX, posY, newPOL.firstCellContainer)
 
     return newPOL
@@ -253,7 +257,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     }
 
     this.rules.executeTurn(this.plain, cellContainers, this._currentTurn)
-    this.familyTree.update(cellContainers)
+    this.familyTree.update(cellContainers, this.cellCount, this._currentTurn)
     this._currentTurn++
     // // Check consistency
     // for(let container of cellContainers){
@@ -328,10 +332,24 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   }
 
   /**
-   * Get the height of teh plain
+   * Get the height of the plain
    */
   get plainHeight(): number {
     return this.plain.height
+  }
+
+  /**
+   * Get the width of the family tree
+   */
+  get familyTreeWidth(): number {
+    return this.familyTree.width
+  }
+
+  /**
+   * Get the height of the family tree
+   */
+  get familyTreeHeight(): number {
+    return this.familyTree.height
   }
 
   /**
@@ -339,40 +357,40 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    */
   getPlainImage(imageData: Uint8ClampedArray): void {
     const zoom = 5
-    const lineLength = this.plainWidth*zoom*zoom*4
-    let innerColor = new Uint8ClampedArray([0,0,0,255])
-    let outerColor = new Uint8ClampedArray([0,0,0,255])
+    const lineLength = this.plainWidth * zoom * zoom * 4
+    const innerColor = new Uint8ClampedArray([0, 0, 0, 255])
+    const outerColor = new Uint8ClampedArray([0, 0, 0, 255])
     for (let y = 0; y < this.plainHeight; y++) {
       for (let x = 0; x < this.plainWidth; x++) {
         const containers = this.plain.getAt(x, y).getCellContainers()
 
         if (containers.length > 0) {
           const color = containers[0].color
-          const c2 = ((containers[0].cellRecord.energy as number)/20) |0
+          const c2 = ((containers[0].cellRecord.energy as number) / 20) | 0
           outerColor[0] = color[0]
           outerColor[1] = color[1]
           outerColor[2] = color[2]
           innerColor[0] = c2
           innerColor[1] = innerColor[2] = 0
         } else {
-          const owner = this.plain.getAt(x,y).fieldRecord.owner as ExtCellContainer<E>
-          if(owner){
+          const owner = this.plain.getAt(x, y).fieldRecord.owner as ExtCellContainer<E>
+          if (owner) {
             const color = owner.color
-          innerColor[0] = (color[0]/2) |0
-          innerColor[1] = (color[1]/2) |0
-          innerColor[2] = (color[2]/2) |0
-          outerColor[0] = (color[0]/2) |0
-          outerColor[1] = (color[1]/2) |0
-          outerColor[2] = (color[2]/2) |0
+            innerColor[0] = (color[0] / 2) | 0
+            innerColor[1] = (color[1] / 2) | 0
+            innerColor[2] = (color[2] / 2) | 0
+            outerColor[0] = (color[0] / 2) | 0
+            outerColor[1] = (color[1] / 2) | 0
+            outerColor[2] = (color[2] / 2) | 0
           } else {
             innerColor[0] = innerColor[1] = innerColor[2] = 0
             outerColor[0] = outerColor[1] = outerColor[2] = 0
           }
         }
-        for(let yy=0; yy<zoom; yy++){
-          for(let xx=0; xx<zoom; xx++){
-            let i= zoom*4*x+xx*4+lineLength*y+yy*4*this.plainWidth*zoom
-            if(yy>0 && yy<zoom-1 && xx>0 && xx<zoom-1){
+        for (let yy = 0; yy < zoom; yy++) {
+          for (let xx = 0; xx < zoom; xx++) {
+            let i = zoom * 4 * x + xx * 4 + lineLength * y + yy * 4 * this.plainWidth * zoom
+            if (yy > 0 && yy < zoom - 1 && xx > 0 && xx < zoom - 1) {
               imageData[i++] = innerColor[0]
               imageData[i++] = innerColor[1]
               imageData[i++] = innerColor[2]

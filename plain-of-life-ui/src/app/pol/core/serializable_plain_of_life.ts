@@ -8,8 +8,8 @@ export type SerializablePlainOfLife = {
   rulesName: string
   rules: Record<string, unknown>
   fieldRecords: Record<string, unknown>[]
-  // Note that plain fields are not part of the serializable plain of life - they hold only redundant information for
-  // performance optimization
+  // Note that the plain and plain fields are not part of the serializable plain of life - they hold only redundant
+  // information for performance optimization
   cellRecords: Record<string, unknown>[]
   cellContainers: {
     cellTypeName: string
@@ -21,7 +21,10 @@ export type SerializablePlainOfLife = {
     colorGreen: number
     colorBlue: number
   }[]
-  familyTree: unknown //ToDo
+  familyTree: {
+    width: number
+    height: number
+  }
 }
 
 /** A serializable format of a cell container as supported by {@link JSON.stringify} */

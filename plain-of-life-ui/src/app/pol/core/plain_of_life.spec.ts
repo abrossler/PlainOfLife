@@ -12,18 +12,20 @@ import { cellNames } from '../cells/cell_names'
 describe('Plain of life', () => {
   const plainWidth = 4
   const plainHeight = 3
+  const familyTreeWidth = 5
+  const familyTreeHeight = 3
   let plainOfLife: ExtPlainOfLife<TestRules>
   let firstCellContainer: CellContainer<TestRules>
   let seedCell: TestCell
   let rules: TestRules
   let plain: Plain<TestRules>
-  let familyTree: FamilyTree<TestRules>
+  let familyTree: FamilyTree
   let cellContainers: CellContainers<TestRules> | null
   let executeTurnResult: boolean
   let serializable: SerializablePlainOfLife
   let fromSerializable: ExtPlainOfLife<TestRules>
   let fromSerializableRules: TestRules
-  let fromSerializableFamilyTree: FamilyTree<TestRules>
+  let fromSerializableFamilyTree: FamilyTree
 
   describe('createNew', () => {
     beforeAll(createPlainOfLife)
@@ -38,8 +40,10 @@ describe('Plain of life', () => {
       expect(plain.getAt(1, 1).fieldRecord.temperature).toBe(99)
     })
 
-    it('creates family tree', () => {
+    it('creates family tree correctly', () => {
       expect(familyTree).toBeInstanceOf(FamilyTree)
+      expect(plainOfLife.familyTreeWidth).toBe(familyTreeWidth)
+      expect(plainOfLife.familyTreeHeight).toBe(familyTreeHeight)
     })
 
     it('creates plain correctly', () => {
@@ -77,6 +81,15 @@ describe('Plain of life', () => {
     })
   })
 
+  describe('getter for familyTree width and height', () => {
+    beforeAll(createPlainOfLife)
+
+    it('return correct results', () => {
+      expect(plainOfLife.familyTreeWidth).toBe(familyTreeWidth)
+      expect(plainOfLife.familyTreeHeight).toBe(familyTreeHeight)
+    })
+  })
+
   describe('executeTurn', () => {
     describe('if not game over (if there are alive cells)', () => {
       beforeAll(() => createPlainOfLifeAndExecuteTurn(false))
@@ -96,7 +109,11 @@ describe('Plain of life', () => {
       })
 
       it('updates the family tree', () => {
-        expect(familyTree.update).toHaveBeenCalledOnceWith(cellContainers as CellContainers<TestRules>)
+        expect(familyTree.update).toHaveBeenCalledOnceWith(
+          cellContainers as CellContainers<TestRules>,
+          plainOfLife.cellCount,
+          plainOfLife.currentTurn - 1n
+        )
       })
     })
     describe('if game over (if there are no alive cells left)', () => {
@@ -181,6 +198,7 @@ describe('Plain of life', () => {
 
     it('creates family tree', () => {
       expect(fromSerializableFamilyTree).toBeInstanceOf(FamilyTree)
+      expect(fromSerializableFamilyTree.height).toEqual(familyTree.height) // Just a spot check for one property
     })
   })
 
@@ -188,7 +206,7 @@ describe('Plain of life', () => {
    * Create a plain of life and get the most common (private) properties
    */
   function createPlainOfLife(): void {
-    plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, TestRules, TestCell)
+    plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, TestRules, TestCell, familyTreeWidth, familyTreeHeight)
     /* eslint-disable @typescript-eslint/no-explicit-any*/
     firstCellContainer = (plainOfLife as any).firstCellContainer.first
     seedCell = (firstCellContainer as any).cell
@@ -236,6 +254,6 @@ describe('Plain of life', () => {
     spyOn(cellNames, 'getConstructor').and.returnValue(TestCell)
     fromSerializable = PlainOfLife.createFromSerializable(serializable)
     fromSerializableRules = (fromSerializable as unknown as { rules: TestRules }).rules
-    fromSerializableFamilyTree = (fromSerializable as unknown as { familyTree: FamilyTree<TestRules> }).familyTree
+    fromSerializableFamilyTree = (fromSerializable as unknown as { familyTree: FamilyTree }).familyTree
   }
 })

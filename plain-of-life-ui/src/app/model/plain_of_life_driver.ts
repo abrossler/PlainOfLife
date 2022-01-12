@@ -10,7 +10,7 @@ export class PlainOfLifeDriver {
   private interval: number | undefined
 
   public init(plainWidth: number, plainHeight: number) {
-    this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler)
+    this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler, 3, 3)
   }
 
   public isRunning(): boolean {
