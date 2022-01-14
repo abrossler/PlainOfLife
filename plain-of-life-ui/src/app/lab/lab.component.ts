@@ -10,37 +10,48 @@ export class LabComponent implements OnInit, TurnListener {
   @ViewChild('plainCanvas', { static: true })
   private plainCanvas: ElementRef<HTMLCanvasElement> | null = null
 
+  @ViewChild('familyTreeCanvas', { static: true })
+  private familyTreeCanvas: ElementRef<HTMLCanvasElement> | null = null
+
   private plainCtx: CanvasRenderingContext2D | null = null
   private plainDriver: PlainOfLifeDriver | undefined
+
+  private familyTreeCtx: CanvasRenderingContext2D | null = null
 
   plainWidth = 250
   plainHeight = 150
   plainZoom = 5
   canvasWidth = this.plainWidth * this.plainZoom
   canvasHeight = this.plainHeight * this.plainZoom
+  familyTreeWidth = this.canvasWidth
+  familyTreeHeight = 400
 
   constructor(private ngZone: NgZone) {
     this.restart()
   }
 
   ngOnInit(): void {
-    if (this.plainCanvas === null) {
+    if (this.plainCanvas === null  ||  this.familyTreeCanvas === null) {
       return
     }
     this.plainCtx = this.plainCanvas.nativeElement.getContext('2d')
+    this.familyTreeCtx = this.familyTreeCanvas.nativeElement.getContext('2d')
     this.paint()
   }
 
   paint(): void {
-    if (this.plainCtx === null || !this.plainDriver) {
+    if (this.plainCtx === null || this.familyTreeCtx === null|| !this.plainDriver) {
       return
     }
 
     const img = this.plainCtx.createImageData(this.canvasWidth, this.canvasHeight)
-
-    this.plainDriver.plainOfLife?.getPlainImage(img.data)
+    if(this.plainDriver.plainOfLife){
+    this.plainDriver.plainOfLife.getPlainImage(img.data)
     this.plainCtx.putImageData(img, 0, 0)
 
+    const familyTreeImage = new ImageData(this.plainDriver.plainOfLife.getFamilyTreeImage(), this.familyTreeWidth, this.familyTreeHeight)
+    this.familyTreeCtx.putImageData(familyTreeImage, 0, 0)
+    }
     // Scaling
     // https://stackoverflow.com/questions/3448347/how-to-scale-an-imagedata-in-html-canvas
   }
@@ -72,7 +83,7 @@ export class LabComponent implements OnInit, TurnListener {
     console.log('LabComponent.restart()')
     this.plainDriver?.stop()
     this.plainDriver = new PlainOfLifeDriver()
-    this.plainDriver.init(this.plainWidth, this.plainHeight)
+    this.plainDriver.init(this.plainWidth, this.plainHeight, this.familyTreeWidth, this.familyTreeHeight)
     this.plainDriver.addOnTurnListener(this)
     this.paint()
   }

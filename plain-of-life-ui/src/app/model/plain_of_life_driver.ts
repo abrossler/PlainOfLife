@@ -9,8 +9,8 @@ export class PlainOfLifeDriver {
   private turnListeners: TurnListener[] = []
   private interval: number | undefined
 
-  public init(plainWidth: number, plainHeight: number) {
-    this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler, 3, 3)
+  public init(plainWidth: number, plainHeight: number, familyTreeWidth: number, familyTreeHeight: number) {
+    this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler, familyTreeWidth, familyTreeHeight)
   }
 
   public isRunning(): boolean {

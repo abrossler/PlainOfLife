@@ -42,6 +42,7 @@ export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   | 'familyTreeWidth'
   | 'familyTreeHeight'
   | 'getPlainImage'
+  | 'getFamilyTreeImage'
 >
 
 /**
@@ -405,5 +406,9 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
         }
       }
     }
+  }
+
+  getFamilyTreeImage(): Uint8ClampedArray {
+    return this.familyTree.image
   }
 }

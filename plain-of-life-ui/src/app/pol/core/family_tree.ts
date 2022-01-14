@@ -8,6 +8,7 @@ import { SerializableFamilyTree } from './serializable_plain_of_life'
 export class FamilyTree {
   private _width = 0
   private _height = 0
+  private _image: Uint8ClampedArray = new Uint8ClampedArray(0)
 
   /**
    * Transform a family tree to a serializable format (e.g. without cyclic object references).
@@ -28,6 +29,8 @@ export class FamilyTree {
     this.checkSize(width, height)
     this._width = width
     this._height = height
+
+    this._image = new Uint8ClampedArray(this._width*this._height*4) // *4 => 4 bytes per pixel (RGBA)
   }
 
   /**
@@ -70,9 +73,34 @@ export class FamilyTree {
     return this._height
   }
 
-  update(cellContainers: CellContainers<RuleExtensionFactory>, cellCount: number, currentTurn: BigInt): void {
-    // for (const container in cellContainers) {
-    //   // ToDo
-    // }
+  update(cellContainers: CellContainers<RuleExtensionFactory>, cellCount: number, currentTurn: bigint): void {
+    const x = Number( currentTurn % BigInt(this._width) ) * 4 // * 4 => 4 byte per pixel - RGBA
+    const width4 = this._width * 4
+    if( cellCount < this.height){
+      let y = ((this.height-cellCount)/2|0) * width4
+      for(const container of cellContainers){
+        let i = x+y
+        this._image[i++] = container.color[0]
+        this._image[i++] = container.color[1]
+        this._image[i++] = container.color[2]
+        this._image[i] = 255
+        y += width4
+      }
+    } else {
+      const dy = (this._height/cellCount)
+      let y = 0
+      for(const container of cellContainers){
+        let i = x + (y|0) * width4
+        this._image[i++] = container.color[0]
+        this._image[i++] = container.color[1]
+        this._image[i++] = container.color[2]
+        this._image[i] = 255
+        y += dy
+      }
+    }
+  }
+
+  get image() {
+    return this._image
   }
 }
