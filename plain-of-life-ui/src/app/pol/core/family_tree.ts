@@ -74,7 +74,9 @@ export class FamilyTree {
   }
 
   update(cellContainers: CellContainers<RuleExtensionFactory>, cellCount: number, currentTurn: bigint): void {
-    const x = Number( currentTurn % BigInt(this._width) ) * 4 // * 4 => 4 byte per pixel - RGBA
+    if(currentTurn%50n == 0n){
+      let t = Number(currentTurn / 50n)
+    const x = Number( t % this._width ) * 4 // * 4 => 4 byte per pixel - RGBA
     const width4 = this._width * 4
     if( cellCount < this.height){
       let y = ((this.height-cellCount)/2|0) * width4
@@ -98,6 +100,7 @@ export class FamilyTree {
         y += dy
       }
     }
+  }
   }
 
   get image() {

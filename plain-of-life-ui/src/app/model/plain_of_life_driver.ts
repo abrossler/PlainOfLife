@@ -21,6 +21,7 @@ export class PlainOfLifeDriver {
     if (this.isRunning()) {
       return
     }
+    // Not running if window isn't visible - refer to https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
     this.interval = window.setInterval(() => {
       this.run()
     }, 1)

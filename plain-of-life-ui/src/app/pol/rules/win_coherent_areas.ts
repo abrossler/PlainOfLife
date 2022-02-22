@@ -18,11 +18,11 @@ const maxCellLifeTime = 50
 const minCellEnergy = 400
 const costCellTurn = 20
 const costCellMove = 100
-const percentageEnergyPerChildOnDivide = 25
-const percentageEnergyOnEat = 75
+const percentageEnergyPerChildOnDivide = 45
+const percentageEnergyOnEat = 50
 
-const minIrradiance = 1
-const maxIrradiance = 100
+const minIrradiance = 8
+const maxIrradiance = 15
 
 export class WinCoherentAreas extends Rules<WinCoherentAreas> {
   irradiance: number[] = []
