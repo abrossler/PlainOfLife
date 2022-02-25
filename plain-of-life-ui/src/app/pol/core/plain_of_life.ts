@@ -105,7 +105,9 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    * @param serializable A serializable plan of life as returned by {@link toSerializable}
    * @returns the new plain of life
    */
-  static createFromSerializable<E extends RuleExtensionFactory>(serializable: SerializablePlainOfLife): ExtPlainOfLife<E> {
+  static createFromSerializable<E extends RuleExtensionFactory>(
+    serializable: SerializablePlainOfLife
+  ): ExtPlainOfLife<E> {
     // Create the plain of life
     const newPOL = new PlainOfLife<E>()
     newPOL._currentTurn = checkBigInt(BigInt(checkString(serializable.currentTurn)), 0n)

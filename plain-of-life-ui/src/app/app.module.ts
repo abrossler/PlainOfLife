@@ -3,11 +3,12 @@ import { NgModule } from '@angular/core'
 
 import { AppComponent } from './app.component'
 import { LabModule } from './lab/lab.module'
+import { LogService } from './log.service'
 
 @NgModule({
   declarations: [AppComponent],
   imports: [BrowserModule, LabModule],
-  providers: [],
+  providers: [LogService],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

@@ -1,5 +1,6 @@
-import { Component, ViewChild, ElementRef, OnInit, NgZone } from '@angular/core'
-import { TurnListener, PlainOfLifeDriver } from '../model/pol.driver'
+import { Component, ViewChild, ElementRef, NgZone } from '@angular/core'
+import { TurnListener, PlainOfLifeDriver } from '../model/pol.model'
+import { LogService } from '../log.service'
 
 @Component({
   selector: 'app-lab-board',
@@ -25,8 +26,7 @@ export class LabComponent implements TurnListener {
   familyTreeWidth = this.canvasWidth
   familyTreeHeight = 400
 
-  constructor(private ngZone: NgZone) {
-  }
+  constructor(private ngZone: NgZone, private logger: LogService) {}
 
   ngAfterViewInit(): void {
     if (this.plainCanvas === null || this.familyTreeCanvas === null) {
@@ -37,21 +37,21 @@ export class LabComponent implements TurnListener {
     this.restart()
 
     document.addEventListener('visibilitychange', () => {
-      console.log('Visibility changed2')
-        if (document.visibilityState === 'visible') {
-          console.log('Tab became visible2')
-          this.ngZone.runOutsideAngular(() => this.plainDriver?.switchToForeground()) // Avoid running angular change detection for every new turn
-         } else {
-          console.log('Tab became invisible2')
-          setTimeout(() => {  
-            if(document.visibilityState !== 'visible'){ // Still not visible after timeout
-              console.log('Tab still invisible2')
-              this.plainDriver?.switchToBackground()
-        }
+      this.logger.info('Visibility changed')
+      if (document.visibilityState === 'visible') {
+        this.logger.info('Tab became visible - starting to run in foreground')
+        this.ngZone.runOutsideAngular(() => this.plainDriver?.switchToForeground()) // Avoid running angular change detection for every new turn
+      } else {
+        this.logger.info('Tab became invisible')
+        setTimeout(() => {
+          if (document.visibilityState !== 'visible') {
+            // Still not visible after timeout
+            this.logger.info('Tab still invisible - starting to run in background')
+            this.plainDriver?.switchToBackground()
+          }
         }, 5000)
       }
     })
-
   }
 
   paint(): void {
@@ -76,7 +76,7 @@ export class LabComponent implements TurnListener {
   }
 
   start(): void {
-    console.log('LabComponent.start()')
+    this.logger.info('LabComponent.start()')
     this.ngZone.runOutsideAngular(() => this.plainDriver?.start()) // Avoid running angular change detection for every new turn
   }
 
@@ -85,7 +85,7 @@ export class LabComponent implements TurnListener {
       return
     }
 
-    console.log('LabComponent.stop()')
+    this.logger.info('LabComponent.stop()')
     this.plainDriver.stop()
   }
 
@@ -94,14 +94,14 @@ export class LabComponent implements TurnListener {
       return
     }
 
-    console.log('LabComponent.step()')
+    this.logger.info('LabComponent.step()')
     this.plainDriver.step()
   }
 
   restart(): void {
-    console.log('LabComponent.restart()')
+    this.logger.info('LabComponent.restart()')
     this.plainDriver?.stop()
-    this.plainDriver = new PlainOfLifeDriver()
+    this.plainDriver = new PlainOfLifeDriver(this.logger)
     this.plainDriver.init(this.plainWidth, this.plainHeight, this.familyTreeWidth, this.familyTreeHeight)
     this.plainDriver.addOnTurnListener(this)
     this.paint()
@@ -112,7 +112,7 @@ export class LabComponent implements TurnListener {
   }
 
   traceChangeDetection() {
-    //console.log('ChangeDetection running...')
+    this.logger.debug('ChangeDetection running...')
   }
 
   getCellTypes(): string[] {

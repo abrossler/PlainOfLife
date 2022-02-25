@@ -1,3 +1,4 @@
+import { LogService } from '../log.service'
 import { RawAssembler } from '../pol/cells/raw_assembler'
 import { ExtPlainOfLife, PlainOfLife } from '../pol/core/plain_of_life'
 import { RuleExtensionFactory } from '../pol/core/rule_extension_factory'
@@ -9,10 +10,12 @@ export interface TurnListener {
 
 export class PlainOfLifeDriver {
   private _plainOfLife: ExtPlainOfLife<RuleExtensionFactory> | null = null
-  private _isRunning: boolean = false
+  private _isRunning = false
   private worker: Worker | null = null
   private turnListeners: TurnListener[] = []
   private interval: number | undefined
+
+  constructor(private logger: LogService) {}
 
   public init(plainWidth: number, plainHeight: number, familyTreeWidth: number, familyTreeHeight: number) {
     this._plainOfLife = PlainOfLife.createNew(
@@ -26,11 +29,11 @@ export class PlainOfLifeDriver {
   }
 
   public switchToForeground(): boolean {
-    if (!this._isRunning  || !this.worker ) {
+    if (!this._isRunning || !this.worker) {
       return false
     }
-    
-    console.log('Terminating worker')
+
+    this.logger.debug('Terminating worker')
     this.worker?.terminate()
     this.worker = null
     this.setInterval()
@@ -39,14 +42,14 @@ export class PlainOfLifeDriver {
   }
 
   public switchToBackground(): boolean {
-    if (!this._isRunning  || this.worker ) {
+    if (!this._isRunning || this.worker) {
       return false
     }
 
-    console.log('Starting worker')
+    this.logger.debug('Starting worker')
     this.worker = new Worker(new URL('./pol.worker', import.meta.url))
     this.worker.onmessage = ({ data }) => {
-      console.log(`gotPOL`)
+      this.logger.info(`Got POL from worker - turn ` + data.currentTurn)
       this._plainOfLife = PlainOfLife.createFromSerializable(data)
     }
     this.worker.postMessage({ command: 'setPOL', plainOfLife: this.plainOfLife?.toSerializable() })
@@ -101,7 +104,7 @@ export class PlainOfLifeDriver {
       if (this.plainOfLife.currentTurn % 100n === 0n) {
         const dt = window.performance.now() - timeStampBefore
         const cellCount = this.plainOfLife.cellCount
-        console.log(
+        this.logger.info(
           'Turn: ' +
             this.plainOfLife.currentTurn +
             ' Turn time: ' +
