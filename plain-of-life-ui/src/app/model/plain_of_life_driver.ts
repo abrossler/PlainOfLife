@@ -6,37 +6,82 @@ import { TurnListener } from './turn.listener.interface'
 
 export class PlainOfLifeDriver {
   private _plainOfLife: ExtPlainOfLife<RuleExtensionFactory> | null = null
+  private _isRunning: boolean = false
+  private worker: Worker | null = null
   private turnListeners: TurnListener[] = []
   private interval: number | undefined
 
   public init(plainWidth: number, plainHeight: number, familyTreeWidth: number, familyTreeHeight: number) {
-    this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, WinCoherentAreas, RawAssembler, familyTreeWidth, familyTreeHeight)
+    this._plainOfLife = PlainOfLife.createNew(
+      plainWidth,
+      plainHeight,
+      WinCoherentAreas,
+      RawAssembler,
+      familyTreeWidth,
+      familyTreeHeight
+    )
   }
 
-  public isRunning(): boolean {
-    return this.interval !== undefined
+  public switchToForeground(): boolean {
+    if (!this._isRunning  || !this.worker ) {
+      return false
+    }
+    
+    console.log('Terminating worker')
+    this.worker?.terminate()
+    this.worker = null
+    this.setInterval()
+
+    return true
+  }
+
+  public switchToBackground(): boolean {
+    if (!this._isRunning  || this.worker ) {
+      return false
+    }
+
+    console.log('Starting worker')
+    this.worker = new Worker(new URL('./model.worker', import.meta.url))
+    this.worker.onmessage = ({ data }) => {
+      console.log(`gotPOL`)
+      this._plainOfLife = PlainOfLife.createFromSerializable(data)
+    }
+    this.worker.postMessage({ command: 'setPOL', plainOfLife: this.plainOfLife?.toSerializable() })
+    window.clearInterval(this.interval)
+    this.interval = undefined
+    return true
+  }
+
+  public get isRunning(): boolean {
+    return this._isRunning
   }
 
   public start(): void {
-    if (this.isRunning()) {
+    if (this.interval !== undefined) {
       return
     }
+    this._isRunning = true
     // Not running if window isn't visible - refer to https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
+    this.setInterval()
+  }
+
+  private setInterval() {
     this.interval = window.setInterval(() => {
       this.run()
     }, 1)
   }
 
   public stop(): void {
-    if (!this.isRunning()) {
+    if (!this._isRunning) {
       return
     }
+    this._isRunning = false
     window.clearInterval(this.interval)
     this.interval = undefined
   }
 
   public step(): void {
-    if (this.isRunning()) {
+    if (this._isRunning) {
       return
     }
     this.run()

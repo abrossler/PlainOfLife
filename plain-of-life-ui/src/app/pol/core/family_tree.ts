@@ -30,7 +30,7 @@ export class FamilyTree {
     this._width = width
     this._height = height
 
-    this._image = new Uint8ClampedArray(this._width*this._height*4) // *4 => 4 bytes per pixel (RGBA)
+    this._image = new Uint8ClampedArray(this._width * this._height * 4) // *4 => 4 bytes per pixel (RGBA)
   }
 
   /**
@@ -74,33 +74,33 @@ export class FamilyTree {
   }
 
   update(cellContainers: CellContainers<RuleExtensionFactory>, cellCount: number, currentTurn: bigint): void {
-    if(currentTurn%50n == 0n){
-      let t = Number(currentTurn / 50n)
-    const x = Number( t % this._width ) * 4 // * 4 => 4 byte per pixel - RGBA
-    const width4 = this._width * 4
-    if( cellCount < this.height){
-      let y = ((this.height-cellCount)/2|0) * width4
-      for(const container of cellContainers){
-        let i = x+y
-        this._image[i++] = container.color[0]
-        this._image[i++] = container.color[1]
-        this._image[i++] = container.color[2]
-        this._image[i] = 255
-        y += width4
-      }
-    } else {
-      const dy = (this._height/cellCount)
-      let y = 0
-      for(const container of cellContainers){
-        let i = x + (y|0) * width4
-        this._image[i++] = container.color[0]
-        this._image[i++] = container.color[1]
-        this._image[i++] = container.color[2]
-        this._image[i] = 255
-        y += dy
+    if (currentTurn % 50n == 0n) {
+      const t = Number(currentTurn / 50n)
+      const x = Number(t % this._width) * 4 // * 4 => 4 byte per pixel - RGBA
+      const width4 = this._width * 4
+      if (cellCount < this.height) {
+        let y = (((this.height - cellCount) / 2) | 0) * width4
+        for (const container of cellContainers) {
+          let i = x + y
+          this._image[i++] = container.color[0]
+          this._image[i++] = container.color[1]
+          this._image[i++] = container.color[2]
+          this._image[i] = 255
+          y += width4
+        }
+      } else {
+        const dy = this._height / cellCount
+        let y = 0
+        for (const container of cellContainers) {
+          let i = x + (y | 0) * width4
+          this._image[i++] = container.color[0]
+          this._image[i++] = container.color[1]
+          this._image[i++] = container.color[2]
+          this._image[i] = 255
+          y += dy
+        }
       }
     }
-  }
   }
 
   get image() {

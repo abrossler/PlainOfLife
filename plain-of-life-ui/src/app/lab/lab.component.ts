@@ -6,7 +6,7 @@ import { PlainOfLifeDriver } from '../model/plain_of_life_driver'
   selector: 'app-lab-board',
   templateUrl: 'lab.component.html'
 })
-export class LabComponent implements OnInit, TurnListener {
+export class LabComponent implements TurnListener {
   @ViewChild('plainCanvas', { static: true })
   private plainCanvas: ElementRef<HTMLCanvasElement> | null = null
 
@@ -27,30 +27,50 @@ export class LabComponent implements OnInit, TurnListener {
   familyTreeHeight = 400
 
   constructor(private ngZone: NgZone) {
-    this.restart()
   }
 
-  ngOnInit(): void {
-    if (this.plainCanvas === null  ||  this.familyTreeCanvas === null) {
+  ngAfterViewInit(): void {
+    if (this.plainCanvas === null || this.familyTreeCanvas === null) {
       return
     }
     this.plainCtx = this.plainCanvas.nativeElement.getContext('2d')
     this.familyTreeCtx = this.familyTreeCanvas.nativeElement.getContext('2d')
-    this.paint()
+    this.restart()
+
+    document.addEventListener('visibilitychange', () => {
+      console.log('Visibility changed2')
+        if (document.visibilityState === 'visible') {
+          console.log('Tab became visible2')
+          this.ngZone.runOutsideAngular(() => this.plainDriver?.switchToForeground()) // Avoid running angular change detection for every new turn
+         } else {
+          console.log('Tab became invisible2')
+          setTimeout(() => {  
+            if(document.visibilityState !== 'visible'){ // Still not visible after timeout
+              console.log('Tab still invisible2')
+              this.plainDriver?.switchToBackground()
+        }
+        }, 5000)
+      }
+    })
+
   }
 
   paint(): void {
-    if (this.plainCtx === null || this.familyTreeCtx === null|| !this.plainDriver) {
+    if (this.plainCtx === null || this.familyTreeCtx === null || !this.plainDriver) {
       return
     }
 
     const img = this.plainCtx.createImageData(this.canvasWidth, this.canvasHeight)
-    if(this.plainDriver.plainOfLife){
-    this.plainDriver.plainOfLife.getPlainImage(img.data)
-    this.plainCtx.putImageData(img, 0, 0)
+    if (this.plainDriver.plainOfLife) {
+      this.plainDriver.plainOfLife.getPlainImage(img.data)
+      this.plainCtx.putImageData(img, 0, 0)
 
-    const familyTreeImage = new ImageData(this.plainDriver.plainOfLife.getFamilyTreeImage(), this.familyTreeWidth, this.familyTreeHeight)
-    this.familyTreeCtx.putImageData(familyTreeImage, 0, 0)
+      // const familyTreeImage = new ImageData(
+      //   this.plainDriver.plainOfLife.getFamilyTreeImage(),
+      //   this.familyTreeWidth,
+      //   this.familyTreeHeight
+      // )
+      // this.familyTreeCtx.putImageData(familyTreeImage, 0, 0)
     }
     // Scaling
     // https://stackoverflow.com/questions/3448347/how-to-scale-an-imagedata-in-html-canvas
@@ -93,7 +113,7 @@ export class LabComponent implements OnInit, TurnListener {
   }
 
   traceChangeDetection() {
-    console.log('Ping!')
+    //console.log('ChangeDetection running...')
   }
 
   getCellTypes(): string[] {
