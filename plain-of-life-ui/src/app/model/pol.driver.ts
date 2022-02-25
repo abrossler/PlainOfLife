@@ -2,7 +2,10 @@ import { RawAssembler } from '../pol/cells/raw_assembler'
 import { ExtPlainOfLife, PlainOfLife } from '../pol/core/plain_of_life'
 import { RuleExtensionFactory } from '../pol/core/rule_extension_factory'
 import { WinCoherentAreas } from '../pol/rules/win_coherent_areas'
-import { TurnListener } from './turn.listener.interface'
+
+export interface TurnListener {
+  onTurnExecuted(board: PlainOfLifeDriver): void
+}
 
 export class PlainOfLifeDriver {
   private _plainOfLife: ExtPlainOfLife<RuleExtensionFactory> | null = null
@@ -41,7 +44,7 @@ export class PlainOfLifeDriver {
     }
 
     console.log('Starting worker')
-    this.worker = new Worker(new URL('./model.worker', import.meta.url))
+    this.worker = new Worker(new URL('./pol.worker', import.meta.url))
     this.worker.onmessage = ({ data }) => {
       console.log(`gotPOL`)
       this._plainOfLife = PlainOfLife.createFromSerializable(data)

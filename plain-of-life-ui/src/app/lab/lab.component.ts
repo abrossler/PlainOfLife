@@ -1,6 +1,5 @@
 import { Component, ViewChild, ElementRef, OnInit, NgZone } from '@angular/core'
-import { TurnListener } from '../model/turn.listener.interface'
-import { PlainOfLifeDriver } from '../model/plain_of_life_driver'
+import { TurnListener, PlainOfLifeDriver } from '../model/pol.driver'
 
 @Component({
   selector: 'app-lab-board',
