@@ -1,11 +1,8 @@
-// Inspired by https://www.codemag.com/article/1711021/Logging-in-Angular-Applications
-
 import { Injectable } from '@angular/core'
-import { LogService2 } from './log.service2';
+import { LogService as NonInjectableLogService } from './pol/util/log.service'
 
-  @Injectable()
-export class LogService extends LogService2 {
-
-}
-
-
+/**
+ * An injectable log service for use in Angular
+ */
+@Injectable()
+export class LogService extends NonInjectableLogService {}

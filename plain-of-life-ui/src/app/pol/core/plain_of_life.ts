@@ -70,6 +70,8 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    * @param plainHeight Height of the plain
    * @param Rules Constructor to create the rules that apply to the plain
    * @param Cell Constructor to create a first seed cell on the plain that starts reproducing
+   * @param familyTreeWidth Height of the family tree
+   * @param familyTreeHeight Width of teh family tree
    * @returns the new plain of life
    */
   static createNew<E extends RuleExtensionFactory>(

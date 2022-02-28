@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ModelModule } from '../model/model.module'
-import { LabComponent } from './lab.component'
+import { PolLabComponent } from './pol_lab.component'
 
 @NgModule({
   imports: [ModelModule, BrowserModule],
-  declarations: [LabComponent],
-  exports: [LabComponent]
+  declarations: [PolLabComponent],
+  exports: [PolLabComponent]
 })
-export class LabModule {}
+export class PolLabModule {}
