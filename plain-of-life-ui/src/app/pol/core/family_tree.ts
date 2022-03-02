@@ -1,3 +1,4 @@
+import { decode, encode } from 'base64-arraybuffer'
 import { CellContainers } from './cell_container'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { SerializableFamilyTree } from './serializable_plain_of_life'
@@ -16,9 +17,12 @@ export class FamilyTree {
    * @returns a serializable format of the family tree as supported by {@link JSON.stringify}
    */
   toSerializable(): SerializableFamilyTree {
+    const imageAsString = encode(this._image.buffer)
+
     return {
       width: this._width,
-      height: this._height
+      height: this._height,
+      image: imageAsString
     }
   }
 
@@ -57,6 +61,7 @@ export class FamilyTree {
     this.checkSize(serializable.width, serializable.height)
     this._width = serializable.width
     this._height = serializable.height
+    this._image = new Uint8ClampedArray(decode(serializable.image))
   }
 
   /**

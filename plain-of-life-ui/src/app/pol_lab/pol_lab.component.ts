@@ -58,12 +58,12 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
     this.polDriver.plainOfLife.getPlainImage(img.data)
     this.plainCtx.putImageData(img, 0, 0)
 
-    // const familyTreeImage = new ImageData(
-    //   this.plainDriver.plainOfLife.getFamilyTreeImage(),
-    //   this.familyTreeWidth,
-    //   this.familyTreeHeight
-    // )
-    // this.familyTreeCtx.putImageData(familyTreeImage, 0, 0)
+    const familyTreeImage = new ImageData(
+      this.polDriver.plainOfLife.getFamilyTreeImage(),
+      this.familyTreeWidth,
+      this.familyTreeHeight
+    )
+    this.familyTreeCtx.putImageData(familyTreeImage, 0, 0)
 
     // Scaling
     // https://stackoverflow.com/questions/3448347/how-to-scale-an-imagedata-in-html-canvas

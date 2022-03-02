@@ -18,7 +18,7 @@ Run `npm run build` or `ng build` to build the project. The build artifacts will
 
 Run `npm run test` or `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-For debugging with Visual Studio Code set a breakpoint and run configuration `Attach Karma Chrome for debugging`
+For debugging with Visual Studio Code set a breakpoint and run configuration `Attach Karma Chrome for debugging`. Then refresh Karma in browser...
 
 ## Running end-to-end tests
 

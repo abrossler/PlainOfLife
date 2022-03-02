@@ -24,6 +24,7 @@ export type SerializablePlainOfLife = {
   familyTree: {
     width: number
     height: number
+    image: string
   }
 }
 
