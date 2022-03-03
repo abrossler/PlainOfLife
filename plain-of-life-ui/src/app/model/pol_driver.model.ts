@@ -4,6 +4,7 @@ import { ExtPlainOfLife, PlainOfLife } from '../pol/core/plain_of_life'
 import { RuleExtensionFactory } from '../pol/core/rule_extension_factory'
 import { Cell } from '../pol/core/cell'
 import { Rules } from '../pol/core/rules'
+import { saveAs } from 'file-saver'
 
 /** Log every n'th turn */
 const logTurn = 100n
@@ -74,7 +75,63 @@ export class PolDriver {
     familyTreeHeight: number
   ) {
     this._plainOfLife = PlainOfLife.createNew(plainWidth, plainHeight, Rules, Cell, familyTreeWidth, familyTreeHeight)
+    this.reset()
+  }
 
+  /**
+   * Save the Plain of Life run by the driver to a local file
+   */
+  saveToFile(fileName?: string | undefined): void {
+    if (!fileName) {
+      const date = new Date()
+      fileName =
+        'Turn' +
+        this.plainOfLife.currentTurn +
+        '_' +
+        this.plainOfLife.getRulesName().replace(/\s/g, '') +
+/*        '_' +
+        date.getFullYear() +
+        '_' +
+        ('0' + (date.getMonth() + 1)).slice(-2) +
+        '_' +
+        ('0' + date.getDate()).slice(-2) +
+        '_' +
+        ('0' + date.getHours()).slice(-2) +
+        ':' +
+        ('0' + date.getMinutes()).slice(-2) +*/
+        '.json'
+    }
+    const blob = new Blob([JSON.stringify(this.plainOfLife.toSerializable())])
+    saveAs(blob, fileName)
+  }
+
+  /**
+   * Open a saved Plain of Live from a file and run it by the driver
+   */
+  openFromFile(file: Blob): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+
+      reader.onloadend = () => {
+        try {
+          const fileContent = reader.result as string
+          this._plainOfLife = PlainOfLife.createFromSerializable(JSON.parse(fileContent))
+        } catch (e) {
+          reject(e)
+        }
+        this.reset()
+        resolve()
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+
+      reader.readAsText(file)
+    })
+  }
+
+  /**
+   * Reset the driver (without touching the run Plain of Life)
+   */
+  private reset() {
     this._isRunning = false
     this.worker?.terminate()
     this.worker = null

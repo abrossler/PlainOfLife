@@ -81,6 +81,17 @@ describe('Plain of life', () => {
     })
   })
 
+  describe('getRulesName', () => {
+    beforeAll(createPlainOfLife)
+
+    it('returns the rules name correctly and throws an exception if there is no rule name', () => {
+      const expectedName = 'estRules'
+      expect(()=>plainOfLife.getRulesName()).toThrowError()
+      spyOn(ruleNames, 'getName').and.returnValue(expectedName)
+      expect(plainOfLife.getRulesName()).toBe(expectedName)
+    })
+  })
+
   describe('getter for familyTree width and height', () => {
     beforeAll(createPlainOfLife)
 

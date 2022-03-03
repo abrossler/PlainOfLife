@@ -41,6 +41,7 @@ export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   | 'plainHeight'
   | 'familyTreeWidth'
   | 'familyTreeHeight'
+  | 'getRulesName'
   | 'getPlainImage'
   | 'getFamilyTreeImage'
 >
@@ -175,6 +176,17 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
   }
 
   /**
+   * Get the name of the rules that apply to the plain
+   */
+  getRulesName(): string {
+    let name = ruleNames.getName(Object.getPrototypeOf(this.rules).constructor)
+    if (typeof name === 'undefined') {
+      throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
+    }
+    return name
+  }
+
+  /**
    * Convert a plain of life (that has data structures optimized for turn execution) in a serializable format.
    * @returns a serializable format of the plain of life as supported by {@link JSON.stringify}
    */
@@ -190,11 +202,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     serializable['plainHeight'] = height
 
     // Add rules
-    const rulesName = ruleNames.getName(Object.getPrototypeOf(this.rules).constructor)
-    if (typeof rulesName === 'undefined') {
-      throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
-    }
-    serializable['rulesName'] = rulesName
+    serializable['rulesName'] = this.getRulesName()
     serializable['rules'] = this.rules.toSerializable()
 
     // Add family tree

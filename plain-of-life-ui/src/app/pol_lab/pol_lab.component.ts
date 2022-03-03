@@ -3,6 +3,7 @@ import { PolTurnListener, PolDriver } from '../model/pol_driver.model'
 import { LogService } from '../log.service'
 import { RawAssembler } from '../pol/cells/raw_assembler'
 import { WinCoherentAreas } from '../pol/rules/win_coherent_areas'
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-lab-board',
@@ -95,6 +96,35 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
       this.familyTreeHeight
     )
     this.paint()
+  }
+
+  save(): void {
+    this.logger.info('LabComponent.save()')
+    this.polDriver.saveToFile()
+  }
+
+  async open(event: Event) {
+    this.logger.info('LabComponent.open()')
+    if (event.target instanceof HTMLInputElement && event.target.files && event.target.files.length > 0) {
+      const fileName = event.target.files[0].name
+      try {
+        await this.polDriver.openFromFile(event.target.files[0])
+      } catch (e) {
+        this.logger.error('Unable to open file ' + fileName)
+        this.logger.debug('' + e)
+      }
+      this.paint()
+    }
+  }
+
+  openFileSelector() {
+    this.logger.info('LabComponent.openFileSelector()')
+    // Workaround: Programmatically create a file input element and click it to create a file open dialog.
+    // Using the input element directly in the drop-down looks strange - there a dropdown-item is needed...
+    const fileSelector = document.createElement('input')
+    fileSelector.setAttribute('type', 'file')
+    fileSelector.addEventListener('change', (event) => this.open(event))
+    fileSelector.click()
   }
 
   onTurnExecuted(): void {
