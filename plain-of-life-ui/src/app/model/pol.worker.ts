@@ -2,6 +2,7 @@
 import { LogService } from '../pol/util/log.service'
 import { ExtPlainOfLife, PlainOfLife } from '../pol/core/plain_of_life'
 import { RuleExtensionFactory } from '../pol/core/rule_extension_factory'
+import { SerializablePlainOfLife } from '../pol/core/serializable_plain_of_life'
 
 /** Log every n'th turn */
 const logTurn = 100n
@@ -23,7 +24,7 @@ class PolWorker {
   /**
    * Get the POL to run in the serializable format and schedule the turn execution
    */
-  onMessage({ data }: any): void {
+  onMessage( {data}: {data:SerializablePlainOfLife}): void {
     this.logger.debug('Worker got message')
     this.plainOfLife = PlainOfLife.createFromSerializable(data)
     setInterval(() => this.run(), 0)

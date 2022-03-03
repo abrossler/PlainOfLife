@@ -83,13 +83,13 @@ export class PolDriver {
    */
   saveToFile(fileName?: string | undefined): void {
     if (!fileName) {
-      const date = new Date()
+      // const date = new Date()
       fileName =
         'Turn' +
         this.plainOfLife.currentTurn +
         '_' +
         this.plainOfLife.getRulesName().replace(/\s/g, '') +
-/*        '_' +
+        /*        '_' +
         date.getFullYear() +
         '_' +
         ('0' + (date.getMonth() + 1)).slice(-2) +

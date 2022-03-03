@@ -3,7 +3,6 @@ import { PolTurnListener, PolDriver } from '../model/pol_driver.model'
 import { LogService } from '../log.service'
 import { RawAssembler } from '../pol/cells/raw_assembler'
 import { WinCoherentAreas } from '../pol/rules/win_coherent_areas'
-import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-lab-board',

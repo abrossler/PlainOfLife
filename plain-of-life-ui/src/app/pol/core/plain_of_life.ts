@@ -179,7 +179,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    * Get the name of the rules that apply to the plain
    */
   getRulesName(): string {
-    let name = ruleNames.getName(Object.getPrototypeOf(this.rules).constructor)
+    const name = ruleNames.getName(Object.getPrototypeOf(this.rules).constructor)
     if (typeof name === 'undefined') {
       throw new Error('Unable to get rules name from constructor. Forgot to register name for rules implementation?')
     }
