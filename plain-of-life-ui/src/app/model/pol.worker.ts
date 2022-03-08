@@ -24,7 +24,7 @@ class PolWorker {
   /**
    * Get the POL to run in the serializable format and schedule the turn execution
    */
-  onMessage( {data}: {data:SerializablePlainOfLife}): void {
+  onMessage({ data }: { data: SerializablePlainOfLife }): void {
     this.logger.debug('Worker got message')
     this.plainOfLife = PlainOfLife.createFromSerializable(data)
     setInterval(() => this.run(), 0)

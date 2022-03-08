@@ -1,4 +1,4 @@
-import { defaultSerialization } from "./default_serialization"
+import { defaultSerialization } from './default_serialization'
 
 /**
  * Abstract super class for any cell living on a plain of life.
