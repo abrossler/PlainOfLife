@@ -19,7 +19,7 @@ export const defaultSerialization = {
     toSerialize: Record<string, unknown>,
     allCellContainers?: ExtCellContainer<RuleExtensionFactory>[]
   ): Record<string, unknown> {
-    // let mappings: SerializationMapping<any, any>[] = [dateMapping/*, Uint16Mapping*/]
+    // let mappings: SerializationMapping<unknown, unknown>[] = [dateMapping/*, Uint16Mapping*/]
     // let objectLists: any = { }
     // if( allCellContainers ){
     //   mappings.push(cellContainerMapping)
@@ -104,13 +104,16 @@ function getIndexOrAdd<T>(a: unknown[], t: T): number {
 }
 
 function prepare(allCellContainers?: ExtCellContainer<RuleExtensionFactory>[]): {
-  mappings: SerializationMapping<any, any>[]
+  mappings: SerializationMapping<unknown, unknown>[]
   objectLists: ObjectLists
 } {
-  const mappings: SerializationMapping<any, any>[] = [dateMapping, Uint16Mapping]
+  const mappings: SerializationMapping<unknown, unknown>[] = [
+    dateMapping as SerializationMapping<unknown, unknown>,
+    Uint16Mapping as SerializationMapping<unknown, unknown>
+  ]
   const objectLists: ObjectLists = {}
   if (allCellContainers) {
-    mappings.push(cellContainerMapping)
+    mappings.push(cellContainerMapping as SerializationMapping<unknown, unknown>)
     objectLists[defaultSerialization.getCellContainerSuffix()] = allCellContainers
   }
   return { mappings, objectLists }
@@ -181,7 +184,11 @@ const Uint16Mapping: SerializationMapping<Uint16Array, string> = {
   mapFrom: (toMap: string) => new Uint16Array(decode(toMap))
 }
 
-function toSerializable2(from: unknown, mappings: SerializationMapping<any, any>[], objectLists: ObjectLists = {}) {
+function toSerializable2(
+  from: unknown,
+  mappings: SerializationMapping<unknown, unknown>[],
+  objectLists: ObjectLists = {}
+) {
   if (from === null) {
     return null
   }
@@ -240,7 +247,11 @@ function toSerializable2(from: unknown, mappings: SerializationMapping<any, any>
   return from
 }
 
-function fromSerializable2(from: unknown, mappings: SerializationMapping<any, any>[], objectLists: ObjectLists = {}) {
+function fromSerializable2(
+  from: unknown,
+  mappings: SerializationMapping<unknown, unknown>[],
+  objectLists: ObjectLists = {}
+) {
   if (from === null) {
     return null
   }
