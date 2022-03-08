@@ -1,3 +1,5 @@
+import { defaultSerialization } from "./default_serialization"
+
 /**
  * Abstract super class for any cell living on a plain of life.
  *
@@ -41,6 +43,7 @@ export abstract class Cell {
    */
   initFromSerializable(serializable: Record<string, unknown>): void {
     Object.assign(this, JSON.parse(JSON.stringify(serializable)))
+    //Object.assign(this, defaultSerialization.fromSerializable(serializable))
   }
 
   /**
@@ -52,5 +55,6 @@ export abstract class Cell {
    */
   toSerializable(): Record<string, unknown> {
     return JSON.parse(JSON.stringify(this))
+    //return defaultSerialization.toSerializable(this as Record<string, unknown>)
   }
 }
