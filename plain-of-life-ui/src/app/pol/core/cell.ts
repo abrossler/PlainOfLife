@@ -1,4 +1,4 @@
-import { defaultSerialization } from './default_serialization'
+import { Serialization } from './default_serialization'
 
 /**
  * Abstract super class for any cell living on a plain of life.
@@ -39,22 +39,20 @@ export abstract class Cell {
    * Init a new cell from a serializable cell as returned by {@link toSerializable}. Used during plain of life
    * de-serialization.
    *
-   * Override if defaultSerialization.fromSerializable is not sufficient e.g. because of circular object references in your cell.
+   * Override if default serialization is not sufficient e.g. because of circular object references in your cell.
    */
   initFromSerializable(serializable: Record<string, unknown>): void {
-    Object.assign(this, JSON.parse(JSON.stringify(serializable)))
-    //Object.assign(this, defaultSerialization.fromSerializable(serializable))
+    Object.assign(this, new Serialization().fromSerializable(serializable))
   }
 
   /**
-   * Convert a cell to a serializable format e.g. by flattening circular references (if there are any). Used during plain
+   * Convert a cell to a serializable format e.g. by Base64 encoding of typed arrays (if there are any). Used during plain
    * of life serialization
    *
-   * Override if defaultSerialization.toSerializable is not sufficient e.g. because of circular object references in your cell
+   * Override if default serialization is not sufficient e.g. because of circular object references in your cell
    * @returns a serializable format of the cell as supported by {@link JSON.stringify}
    */
   toSerializable(): Record<string, unknown> {
-    return JSON.parse(JSON.stringify(this))
-    //return defaultSerialization.toSerializable(this as Record<string, unknown>)
+    return new Serialization().toSerializable(this as Record<string, unknown>)
   }
 }

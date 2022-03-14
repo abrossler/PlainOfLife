@@ -4,7 +4,7 @@ import { Serialization } from './default_serialization'
 class Tst {
   s = 'string'
   n = 1
-  m(){}
+  m() {}
 }
 
 let instanceNumber = 0
@@ -217,21 +217,21 @@ describe('Serialization', () => {
       })
     }
     {
-      const tst  = new Tst()
-      const object = {f: ()=>1, tst}
+      const tst = new Tst()
+      const object = { f: () => 1, tst }
       const s = new Serialization() // Without class mapping for Tst
       const revertedWithoutStringify = s.fromSerializable(s.toSerializable(object))
       const revertedWithStringify = s.fromSerializable(JSON.parse(JSON.stringify(s.toSerializable(object))))
       it('keeps functions but looses class methods and constructor without JSON.stringify in between', () => {
-        expect((revertedWithoutStringify as {f:Function}).f()).toBe(1)
-        expect((revertedWithoutStringify.tst as {constructor: unknown}).constructor).not.toEqual(tst.constructor)
-        expect((revertedWithoutStringify.tst as {m: unknown}).m).toBeUndefined()
+        expect((revertedWithoutStringify as { f: Function }).f()).toBe(1)
+        expect((revertedWithoutStringify.tst as { constructor: unknown }).constructor).not.toEqual(tst.constructor)
+        expect((revertedWithoutStringify.tst as { m: unknown }).m).toBeUndefined()
       })
 
       it('looses any functions with JSON.stringify in between', () => {
         expect(revertedWithStringify.f).toBeUndefined()
-        expect((revertedWithStringify.tst as {constructor: unknown}).constructor).not.toEqual(tst.constructor)
-        expect((revertedWithStringify.tst as {m: unknown}).m).toBeUndefined()
+        expect((revertedWithStringify.tst as { constructor: unknown }).constructor).not.toEqual(tst.constructor)
+        expect((revertedWithStringify.tst as { m: unknown }).m).toBeUndefined()
       })
     }
   })

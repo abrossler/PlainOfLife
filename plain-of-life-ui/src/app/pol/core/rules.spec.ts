@@ -81,7 +81,7 @@ describe('Rules', () => {
   describe('default implementation of initCellRecordFromSerializable', () => {
     let cellRecord: ReturnType<TestRules['createNewCellRecord']>
     let toInit: ReturnType<TestRules['createNewCellRecord']>
-    let serializable: Record<string, unknown> 
+    let serializable: Record<string, unknown>
     beforeEach(() => {
       cellRecord = rules.createNewCellRecord()
       cellRecord.cellAge = 25 // Set an property to a non-default value to see an effect of initCellRecordFromSerializable
