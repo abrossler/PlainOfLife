@@ -4,7 +4,9 @@ import { Serialization } from './serialization'
 class Tst {
   s = 'string'
   n = 1
-  m() {}
+  m() {
+    return 1
+  }
 }
 
 let instanceNumber = 0
@@ -223,7 +225,7 @@ describe('Serialization', () => {
       const revertedWithoutStringify = s.fromSerializable(s.toSerializable(object))
       const revertedWithStringify = s.fromSerializable(JSON.parse(JSON.stringify(s.toSerializable(object))))
       it('keeps functions but looses class methods and constructor without JSON.stringify in between', () => {
-        expect((revertedWithoutStringify as { f: Function }).f()).toBe(1)
+        expect((revertedWithoutStringify as { f: () => number }).f()).toBe(1)
         expect((revertedWithoutStringify.tst as { constructor: unknown }).constructor).not.toEqual(tst.constructor)
         expect((revertedWithoutStringify.tst as { m: unknown }).m).toBeUndefined()
       })
