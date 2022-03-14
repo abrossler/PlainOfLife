@@ -1,5 +1,5 @@
-import { defaultSerialization } from './default_serialization'
-import { CellContainers, ExtCellContainer } from './cell_container'
+import { Serialization } from './default_serialization'
+import { CellContainer, CellContainers, ExtCellContainer } from './cell_container'
 import { ExtPlain } from './plain'
 import { RuleExtensionFactory } from './rule_extension_factory'
 
@@ -25,21 +25,21 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
    * Init new rules from serializable rules as returned by {@link toSerializable}. Used during plain of life
    * de-serialization.
    *
-   * Override if {@link defaultFromSerializable} is not sufficient e.g. because of circular object references in your rules.
+   * Override if default serialization is not sufficient e.g. because of circular object references in your rules.
    */
   initFromSerializable(serializable: Record<string, unknown>, plain: ExtPlain<E>): void {
-    Object.assign(this, defaultSerialization.fromSerializable(serializable))
+    Object.assign(this, Rules.createDefaultSerialization().fromSerializable(serializable))
   }
 
   /**
-   * Convert the rules to a serializable format e.g. by flattening circular references (if there are any). Used during plain
+   * Convert the rules to a serializable format e.g. by performing a Base4 encoding to typed arrays. Used during plain
    * of life serialization.
    *
-   * Override if {@link defaultToSerializable} is not sufficient e.g. because of circular object references in your rules
+   * Override if default serialization is not sufficient e.g. because of circular object references in your rules.
    * @returns a serializable format of the rules as supported by {@link JSON.stringify}
    */
   toSerializable(): Record<string, unknown> {
-    return defaultSerialization.toSerializable(this as Record<string, unknown>)
+    return Rules.createDefaultSerialization().toSerializable(this as Record<string, unknown>)
   }
 
   /**
@@ -68,10 +68,9 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
   abstract getSeedCellHints(): { inputLength: number; recommendedSeedCellOutput: Uint8Array }
 
   /**
-   * Init a cell record from a serializable cell record as returned by {@link cellRecordToSerializable}. Used during plain
-   * of life de-serialization.
+   * Init a cell record from a serializable cell record. Used during plain of life de-serialization.
    *
-   * Override if {@link defaultFromSerializable} is not sufficient.
+   * Override if default serialization is not sufficient.
    *
    * @param toInit Cell record to init
    * @param serializable Serializable cell record to init from
@@ -83,14 +82,13 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
     serializable: Record<string, unknown>,
     allCellContainers: ExtCellContainer<E>[]
   ): void {
-    Object.assign(toInit, defaultSerialization.fromSerializable(serializable, allCellContainers))
+    Object.assign(toInit, Rules.createDefaultSerialization(allCellContainers).fromSerializable(serializable))
   }
 
   /**
-   * Convert a cell record to a serializable format e.g. by flattening circular references (if there are any). Used during plain
-   * of life serialization.
+   * Convert a cell record to a serializable format e.g. by Base4 encoding typed arrays. Used during plain of life serialization.
    *
-   * Override if {@link defaultToSerializable} is not sufficient.
+   * Override if default serialization is not sufficient.
    *
    * @param cellRecord The cell record to be converted
    * @param allCellContainers If the cell record contains cell container references: All containers to find the index of the
@@ -101,7 +99,7 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
     cellRecord: ReturnType<E['createNewCellRecord']>,
     allCellContainers: ExtCellContainer<E>[]
   ): Record<string, unknown> {
-    return defaultSerialization.toSerializable(cellRecord, allCellContainers)
+    return Rules.createDefaultSerialization(allCellContainers).toSerializable(cellRecord)
   }
 
   /**
@@ -113,10 +111,9 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
   abstract createNewFieldRecord(): ReturnType<E['createNewFieldRecord']>
 
   /**
-   * Init a field record from a serializable field record as returned by {@link fieldRecordToSerializable}. Used during plain
-   * of life de-serialization.
+   * Init a field record from a serializable field record. Used during plain of life de-serialization.
    *
-   * Override if {@link defaultFromSerializable} is not sufficient.
+   * Override if default serialization is not sufficient.
    *
    * @param toInit Field record to init
    * @param serializable Serializable field record to init from
@@ -128,7 +125,7 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
     serializable: Record<string, unknown>,
     allCellContainers: ExtCellContainer<E>[]
   ): void {
-    Object.assign(toInit, defaultSerialization.fromSerializable(serializable, allCellContainers))
+    Object.assign(toInit, Rules.createDefaultSerialization(allCellContainers).fromSerializable(serializable))
   }
 
   /**
@@ -146,6 +143,26 @@ export abstract class Rules<E extends RuleExtensionFactory> implements RuleExten
     fieldRecord: ReturnType<E['createNewFieldRecord']>,
     allCellContainers: ExtCellContainer<E>[]
   ): Record<string, unknown> {
-    return defaultSerialization.toSerializable(fieldRecord, allCellContainers)
+    return Rules.createDefaultSerialization(allCellContainers).toSerializable(fieldRecord)
+  }
+
+  /**
+   * Create a new Serialization object that replaces cell container instances with the index of the cell container in an array if such an array is provided.
+   * @param allCellContainers Array of all cell containers
+   * @returns The new Serialization object
+   */
+  private static createDefaultSerialization(
+    allCellContainers?: ExtCellContainer<RuleExtensionFactory>[]
+  ): Serialization {
+    const serialization = new Serialization()
+    if (allCellContainers) {
+      serialization.addIndexer(
+        CellContainer as new () => CellContainer<RuleExtensionFactory>,
+        '__CellRecord__',
+        allCellContainers
+      )
+    }
+
+    return serialization
   }
 }

@@ -1,120 +1,237 @@
-import { CellContainer, ExtCellContainer } from './cell_container'
-import { defaultSerialization } from './default_serialization'
-import { Plain } from './plain'
-import {
-  RecordWithCellContainer,
-  TestRuleExtensionFactoryWithCellContainer
-} from '../../../test_stubs/test_rule_extension_factory'
+import { encode } from 'base64-arraybuffer'
+import { Serialization } from './default_serialization'
 
-describe('Default serialization', () => {
-  let ruleExtensionFactory: TestRuleExtensionFactoryWithCellContainer
-  let plain: Plain<TestRuleExtensionFactoryWithCellContainer>
-  let cellContainer1: CellContainer<TestRuleExtensionFactoryWithCellContainer>
-  let cellContainer2: CellContainer<TestRuleExtensionFactoryWithCellContainer>
-  let cellContainer3: CellContainer<TestRuleExtensionFactoryWithCellContainer>
-  let allCellContainers: ExtCellContainer<TestRuleExtensionFactoryWithCellContainer>[]
-  let objectWithCellContainer: RecordWithCellContainer
+class Tst {
+  s = 'string'
+  n = 1
+  m(){}
+}
 
-  beforeAll(() => {
-    ruleExtensionFactory = new TestRuleExtensionFactoryWithCellContainer()
-    plain = new Plain(ruleExtensionFactory, 2, 2)
-    cellContainer1 = new CellContainer(ruleExtensionFactory, plain)
-    cellContainer2 = new CellContainer(ruleExtensionFactory, plain)
-    cellContainer3 = new CellContainer(ruleExtensionFactory, plain)
-  })
+let instanceNumber = 0
+class ToIndex {
+  instanceNumber: number
+  constructor() {
+    this.instanceNumber = instanceNumber++
+  }
+}
 
-  beforeEach(() => {
-    allCellContainers = []
-    objectWithCellContainer = ruleExtensionFactory.createNewCellRecord()
-    objectWithCellContainer.cellContainer1 = cellContainer1
-    objectWithCellContainer.cellContainer2 = cellContainer2
-  })
+const instance0 = new ToIndex()
+const instance1 = new ToIndex()
+const instance2 = new ToIndex()
+const instance3 = new ToIndex()
 
+const now = new Date()
+const int8Array = new Int8Array([1, 2, -128])
+const uint8Array = new Uint8Array([1, 2, 255])
+const uint8ClampedArray = new Uint8ClampedArray([1, 2, 255])
+const int16Array = new Int16Array([1, 2, -32768])
+const uint16Array = new Uint16Array([1, 2, 32767])
+const int32Array = new Int32Array([1, 2, -2147483648])
+const uint32Array = new Uint32Array([1, 2, 4294967295])
+const float32Array = new Float32Array([1, 2, 3.3])
+const float64Array = new Float64Array([1, 2, 3.3])
+const bigInt64Array = new BigInt64Array([1n, 2n, -3n])
+const bigUint64Array = new BigUint64Array([1n, 2n, 3n])
+
+const tstObject = {
+  simpleDeepObject: { a: 'A', b: { ba: 'BA', bb: 'BB' } },
+  objectWithNullAndEmpty: {
+    _null: null,
+    empty: {},
+    deep: { _null: null, empty: {} }
+  },
+  variousArrays: {
+    numberA: [1, 2, 3],
+    deep: { stringA: ['A', 'B', 'C'] },
+    objectA: [{ v: 1 }, { v: 2 }],
+    mixedA: [1, 'B', {}]
+  },
+  dates: { date: now, dateA: [now, now], deep: { date: now, dateA: [now, now] } },
+  typedArrays: {
+    int8Array,
+    uint8Array,
+    uint8ClampedArray,
+    int16Array,
+    uint16Array,
+    int32Array,
+    uint32Array,
+    float32Array,
+    float64Array,
+    bigInt64Array,
+    bigUint64Array
+  },
+  legalMixedArrays: { mixedA: [now, null, now], mixedAStartingWithNull: [null, now] },
+  classInstance: { tst: new Tst(), tstA: [new Tst(), null, new Tst()] },
+  toIndex: { i0: instance0, iA12: [instance1, instance2], i0b: instance0, deep: { i3: instance3 }, i3b: instance3 }
+}
+
+function getTstObject() {
+  return tstObject
+}
+
+describe('Serialization', () => {
   describe('toSerializable', () => {
     {
-      const object = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
-      const serializable = defaultSerialization.toSerializable(object)
-      it('creates copy of object', () => {
+      const object = getTstObject().simpleDeepObject
+      const serializable = new Serialization().toSerializable(object)
+      it('creates copy of object to serialize', () => {
         expect(serializable).toEqual(object)
       })
-      it('copy of object is really deep', () => {
+      it('creates really a deep copy', () => {
         expect(serializable).not.toBe(object)
         expect(serializable.b).not.toBe(object.b)
       })
     }
-
-    it('replaces cell containers with index', () => {
-      const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBe(0)
-      expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(1)
-    })
-
-    it('ignores cell containers that are null', () => {
-      objectWithCellContainer.cellContainer1 = null
-      const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBeUndefined()
-      expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(0)
-    })
-
-    it('adds new cell container to allCellContainers', () => {
-      defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(allCellContainers[0]).toBe(cellContainer1)
-      expect(allCellContainers[1]).toBe(cellContainer2)
-    })
-
-    it('finds and uses existing cell container in all cell containers', () => {
-      allCellContainers.push(cellContainer1)
-      allCellContainers.push(cellContainer3)
-      allCellContainers.push(cellContainer2)
-      const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBe(0)
-      expect(serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()]).toBe(2) // Not 1 as at index 1 cellContainer3 was inserted
-    })
-
-    it('does not append a cell container to all cell containers a second time', () => {
-      allCellContainers.push(cellContainer2)
-      const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(allCellContainers.length).toBe(2) // Container2 was already pushed to all containers and Container 1 was added by defaultSerialization
-      expect(serializable['cellContainer1' + defaultSerialization.getCellContainerSuffix()]).toBe(1) // 1 (and not 0) as Container1 was added after Container2
-    })
-
-    it('does not change the object to serialize', () => {
-      const objectWithCellContainer2 = ruleExtensionFactory.createNewCellRecord()
-      objectWithCellContainer2.cellContainer1 = cellContainer1
-      objectWithCellContainer2.cellContainer2 = cellContainer2
-      defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-      expect(objectWithCellContainer).toEqual(objectWithCellContainer2)
-    })
-  })
-
-  describe('defaultFromSerializable', () => {
     {
-      const serializable = { a: 'A', b: { ba: 'BA', bb: 'BB' } }
-      const object = defaultSerialization.fromSerializable(serializable)
-      it('creates deep copy of serializable', () => {
-        expect(object).toEqual(serializable)
+      const object = getTstObject().objectWithNullAndEmpty
+      const serializable = new Serialization().toSerializable(object)
+      it('handles null, and empty objects correctly', () => {
+        expect(serializable._null).toBe(null)
+        expect(serializable.empty).toEqual({})
+        expect(serializable.empty).not.toBe(object.empty) // Really deep copy of empty object
+        expect(serializable.deep).toEqual({ _null: null, empty: {} })
       })
-      it('copy of serializable is really deep', () => {
-        expect(object).not.toBe(serializable)
-        expect(object.b).not.toBe(serializable.b)
+    }
+    {
+      const object = getTstObject().variousArrays
+      const serializable = new Serialization().toSerializable(object)
+      it('handles arrays correctly', () => {
+        expect(serializable).toEqual(object)
+        expect(serializable.numberA).not.toBe(object.numberA) // Really a deep copy of arrays
+        expect((serializable.objectA as Array<unknown>)[0]).not.toBe(object.objectA[0])
+      })
+    }
+
+    {
+      const object = getTstObject().dates
+      const now = object.date
+      const serializable = new Serialization().toSerializable(object)
+      it('performs the standard mapping for dates correctly', () => {
+        expect(serializable.date__Date__).toEqual(now.toISOString())
+        expect((serializable.dateA__Date__ as Array<string>)[0]).toEqual(now.toISOString())
+        expect((serializable.deep as { date__Date__: string; dateA__Date__: string[] }).date__Date__).toEqual(
+          now.toISOString()
+        )
+        expect((serializable.deep as { date__Date__: string; dateA__Date__: string[] }).dateA__Date__[1]).toEqual(
+          now.toISOString()
+        )
+      })
+    }
+
+    {
+      const object = getTstObject().typedArrays
+      const serializable = new Serialization().toSerializable(object)
+      it('performs the standard mappings for typed arrays correctly', () => {
+        expect(serializable.int8Array__Int8Array__).toEqual(encode(object.int8Array))
+        expect(serializable.uint8Array__Uint8Array__).toEqual(encode(object.uint8Array))
+        expect(serializable.uint8ClampedArray__Uint8ClampedArray__).toEqual(encode(object.uint8ClampedArray))
+        expect(serializable.int16Array__Int16Array__).toEqual(encode(object.int16Array.buffer))
+        expect(serializable.uint16Array__Uint16Array__).toEqual(encode(object.uint16Array.buffer))
+        expect(serializable.int32Array__Int32Array__).toEqual(encode(object.int32Array.buffer))
+        expect(serializable.uint32Array__Uint32Array__).toEqual(encode(object.uint32Array.buffer))
+        expect(serializable.float32Array__Float32Array__).toEqual(encode(object.float32Array.buffer))
+        expect(serializable.float64Array__Float64Array__).toEqual(encode(object.float64Array.buffer))
+        expect(serializable.bigInt64Array__BigInt64Array__).toEqual(encode(object.bigInt64Array.buffer))
+        expect(serializable.bigUint64Array__BigUint64Array__).toEqual(encode(object.bigUint64Array.buffer))
+      })
+    }
+
+    {
+      const object = getTstObject().legalMixedArrays
+      const now = object.mixedA[0] as Date
+      const serializable = new Serialization().toSerializable(object)
+      it('supports mappings for arrays with mixed undefined elements and elements to be mapped', () => {
+        expect((serializable.mixedA__Date__ as Array<unknown>)[0]).toEqual(now.toISOString())
+        expect((serializable.mixedA__Date__ as Array<unknown>)[1]).toBe(null)
+        expect((serializable.mixedA__Date__ as Array<unknown>)[2]).toEqual(now.toISOString())
+        expect((serializable.mixedA__Date__ as Array<unknown>)[3]).toBe(undefined)
+        expect((serializable.mixedAStartingWithNull__Date__ as Array<unknown>)[0]).toBe(null)
+        expect((serializable.mixedAStartingWithNull__Date__ as Array<unknown>)[1]).toBe(now.toISOString())
+      })
+    }
+
+    {
+      const now = new Date()
+      const object1 = { badA: [now, 1] }
+      const object2 = { badA: ['A', now] }
+      const object3 = { badA: [{}, now] }
+      const object4 = { badA: [new Tst(), now] }
+      const object5 = { badA: [now, new Tst()] }
+      const object6 = { badA: [new Tst(), new Uint16Array([1, 2, 3])] }
+      it('throws an error for arrays with mixed objects that (partially) require a mapping', () => {
+        expect(() => new Serialization().toSerializable(object1)).toThrowError()
+        expect(() => new Serialization().toSerializable(object2)).toThrowError()
+        expect(() => new Serialization().toSerializable(object3)).toThrowError()
+        expect(() => new Serialization().toSerializable(object4)).toThrowError()
+        expect(() => new Serialization().toSerializable(object5)).toThrowError()
+        expect(() => new Serialization().toSerializable(object6)).toThrowError()
+      })
+      {
+        const object = getTstObject().classInstance
+        const serializable = new Serialization().addClassMapping(Tst, '__Tst__').toSerializable(object)
+        it('supports class mappings', () => {
+          expect((serializable.tst__Tst__ as { s: string }).s).toBe('string')
+          expect((serializable.tstA__Tst__ as { s: string }[]).length).toBe(3)
+          expect((serializable.tstA__Tst__ as { s: string }[])[0].s).toBe('string')
+          expect(serializable.tst__Tst__).not.toBe(object) // Makes a deep copy
+        })
+      }
+      {
+        const object = getTstObject().toIndex
+        const objectList = [object.i0, object.iA12[0]]
+        const serializable = new Serialization().addIndexer(ToIndex, '__ToIndex__', objectList).toSerializable(object)
+        it('supports indexer', () => {
+          expect(objectList.length).toBe(4)
+          expect(objectList[0]).toBe(object.i0)
+          expect(objectList[1]).toBe(object.iA12[0])
+          expect(objectList[2]).toBe(object.iA12[1])
+          expect(objectList[3]).toBe(object.i3b)
+          expect(serializable.i0__ToIndex__).toBe(0)
+          expect(serializable.iA12__ToIndex__).toEqual([1, 2])
+          expect(serializable.i0b__ToIndex__).toBe(0)
+          expect((serializable.deep as { i3__ToIndex__: number }).i3__ToIndex__).toBe(3)
+          expect(serializable.i3b__ToIndex__).toBe(3)
+        })
+      }
+    }
+  })
+  describe('fromSerializable', () => {
+    {
+      const object = getTstObject().simpleDeepObject
+      const fromSerializable = new Serialization().fromSerializable(object)
+      it('creates copy of object to serialize', () => {
+        expect(fromSerializable).toEqual(object)
+      })
+      it('creates really a deep copy', () => {
+        expect(fromSerializable).not.toBe(object)
+        expect(fromSerializable.b).not.toBe(object.b)
+      })
+    }
+    {
+      const object = getTstObject()
+      const objectList: ToIndex[] = []
+      const s = new Serialization().addClassMapping(Tst, '__Tst__').addIndexer(ToIndex, '__ToIndex__', objectList)
+      const revertedObject = s.fromSerializable(JSON.parse(JSON.stringify(s.toSerializable(object))))
+      it('reverts toSerializable for all test cases', () => {
+        expect(revertedObject).toEqual(object)
+      })
+    }
+    {
+      const tst  = new Tst()
+      const object = {f: ()=>1, tst}
+      const s = new Serialization() // Without class mapping for Tst
+      const revertedWithoutStringify = s.fromSerializable(s.toSerializable(object))
+      const revertedWithStringify = s.fromSerializable(JSON.parse(JSON.stringify(s.toSerializable(object))))
+      it('keeps functions but looses class methods and constructor without JSON.stringify in between', () => {
+        expect((revertedWithoutStringify as {f:Function}).f()).toBe(1)
+        expect((revertedWithoutStringify.tst as {constructor: unknown}).constructor).not.toEqual(tst.constructor)
+        expect((revertedWithoutStringify.tst as {m: unknown}).m).toBeUndefined()
       })
 
-      it('reverts defaultToSerializable', () => {
-        const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-        const objectFromSerializable = defaultSerialization.fromSerializable(serializable, allCellContainers)
-        expect(objectFromSerializable).toEqual(objectWithCellContainer)
-      })
-
-      it('throws syntax error if cell container index is out of bounds', () => {
-        const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-        allCellContainers.shift() // Invalidate allCellContainers so that we can't find one of the containers
-        expect(() => defaultSerialization.fromSerializable(serializable, allCellContainers)).toThrowError(SyntaxError)
-      })
-
-      it('throws syntax error if cell container index is not an integer', () => {
-        const serializable = defaultSerialization.toSerializable(objectWithCellContainer, allCellContainers)
-        serializable['cellContainer2' + defaultSerialization.getCellContainerSuffix()] = 1.2
-        expect(() => defaultSerialization.fromSerializable(serializable, allCellContainers)).toThrowError(SyntaxError)
+      it('looses any functions with JSON.stringify in between', () => {
+        expect(revertedWithStringify.f).toBeUndefined()
+        expect((revertedWithStringify.tst as {constructor: unknown}).constructor).not.toEqual(tst.constructor)
+        expect((revertedWithStringify.tst as {m: unknown}).m).toBeUndefined()
       })
     }
   })
