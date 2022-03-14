@@ -1,5 +1,5 @@
 import { encode } from 'base64-arraybuffer'
-import { Serialization } from './default_serialization'
+import { Serialization } from './serialization'
 
 class Tst {
   s = 'string'

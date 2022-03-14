@@ -1,5 +1,5 @@
 import { decode, encode } from 'base64-arraybuffer'
-import { checkInt } from '../util/type_checks'
+import { checkInt } from './type_checks'
 
 /**
  * A mapping for any property of an object that is an instance of toMap:

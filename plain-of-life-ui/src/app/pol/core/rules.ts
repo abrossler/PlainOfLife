@@ -1,4 +1,4 @@
-import { Serialization } from './default_serialization'
+import { Serialization } from '../util/serialization'
 import { CellContainer, CellContainers, ExtCellContainer } from './cell_container'
 import { ExtPlain } from './plain'
 import { RuleExtensionFactory } from './rule_extension_factory'
