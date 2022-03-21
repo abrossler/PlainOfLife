@@ -18,6 +18,9 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
   private plainCtx: CanvasRenderingContext2D | null = null
   private familyTreeCtx: CanvasRenderingContext2D | null = null
 
+  private familyTreeScale: string
+  private selectedFamilyTreeScale = ''
+
   plainWidth = 250
   plainHeight = 150
   plainZoom = 5
@@ -36,6 +39,7 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
       this.familyTreeHeight
     )
     this.polDriver.addTurnListener(this)
+    this.familyTreeScale = this.polDriver.plainOfLife.getFamilyTreeScales()[0]
   }
 
   ngAfterViewInit(): void {
@@ -59,7 +63,7 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
     this.plainCtx.putImageData(img, 0, 0)
 
     const familyTreeImage = new ImageData(
-      this.polDriver.plainOfLife.getFamilyTreeImage(),
+      this.polDriver.plainOfLife.getFamilyTreeImage(this.familyTreeScale),
       this.familyTreeWidth,
       this.familyTreeHeight
     )
@@ -95,6 +99,21 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
       this.familyTreeHeight
     )
     this.paint()
+  }
+
+  setFamilyTreeScale() {
+    this.logger.info('LabComponent.setFamilyTreeScale()')
+    this.familyTreeScale = this.selectedFamilyTreeScale
+    this.paint()
+  }
+
+  selectFamilyTreeScale(scale: string) {
+    this.logger.info('LabComponent.selectFamilyTreeScale()')
+    this.selectedFamilyTreeScale = scale
+  }
+
+  getFamilyTreeScales() {
+    return this.polDriver.plainOfLife.getFamilyTreeScales()
   }
 
   save(): void {

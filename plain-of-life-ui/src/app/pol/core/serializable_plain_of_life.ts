@@ -20,11 +20,12 @@ export type SerializablePlainOfLife = {
     colorRed: number
     colorGreen: number
     colorBlue: number
+    positionsInFamilyTree: number[]
   }[]
   familyTree: {
     width: number
     height: number
-    image: string
+    images: string[]
   }
 }
 

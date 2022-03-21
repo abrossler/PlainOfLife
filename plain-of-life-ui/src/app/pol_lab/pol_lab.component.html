@@ -20,9 +20,10 @@
             <div class="dropdown-menu bg-white" aria-labelledby="navbarDropdown">
               <a class="dropdown-item" (click)="start( )">Run</a>
               <a class="dropdown-item" (click)="stop( )">Stop</a>
-              <!--<div class="dropdown-divider"></div> -->
               <a class="dropdown-item" (click)="step( )">Step</a>
               <a class="dropdown-item" data-toggle="modal" data-target="#restartDialog">Restart ...</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" data-toggle="modal" data-target="#familyTreeScaleDialog">Set Family Tree Scale ...</a>
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" (click)="save( )">Save</a>
               <a class="dropdown-item" (click)="openFileSelector( )">Open</a>
@@ -74,4 +75,32 @@
     </div>
   </div>
 </div>
-  
+
+<!-- Family Tree Scale Dialog -->
+<div class="modal fade" id="familyTreeScaleDialog" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Choose Family Tree Scale</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          Family Tree Scale:
+          <div class="form-group">
+            <select class="form-control"
+                    (change)="selectFamilyTreeScale($event.target.value)">
+                    <option *ngFor="let scale of getFamilyTreeScales()">{{scale}}</option>
+            </select>
+      </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" (click)="setFamilyTreeScale( )">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>  

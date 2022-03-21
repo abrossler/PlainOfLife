@@ -27,7 +27,7 @@ describe('Cell Container', () => {
     cellContainer = new CellContainer(ruleExtensionFactory, plain)
     firstCellContainer = { first: cellContainer }
     seedCell = new TestCell()
-    cellContainer.initSeedCellContainer(seedCell, posXOutsidePlain, posYOutsidePlain, firstCellContainer)
+    cellContainer.initSeedCellContainer(seedCell, posXOutsidePlain, posYOutsidePlain, firstCellContainer, [1])
   })
 
   describe('construction', () => {
@@ -37,6 +37,7 @@ describe('Cell Container', () => {
       expect((cellContainer as any).cellRecordFactory).toBe(ruleExtensionFactory)
       expect((cellContainer as any).cellRecord).toBeDefined()
       expect((cellContainer as any).cell).toBe(seedCell)
+      expect((cellContainer as any).positionsInFamilyTree).toEqual([1])
     })
     it('creates a correct cyclic list of one cell container', () => {
       expect(cellContainer.next === cellContainer).toBeTrue()
@@ -119,6 +120,10 @@ describe('Cell Container', () => {
     it('increases the number of cells', () => {
       expect(plain.cellCount).toBe(2)
     })
+
+    it('hands the positions in the family tree down to the child', () => {
+      expect(child1Container.positionsInFamilyTree).toEqual(cellContainer.positionsInFamilyTree)
+    })
   })
 
   describe('divide', () => {
@@ -172,6 +177,11 @@ describe('Cell Container', () => {
 
     it('increases the number of cells', () => {
       expect(plain.cellCount).toBe(2)
+    })
+
+    it('hands the positions in the family tree down to the children', () => {
+      expect(child1Container.positionsInFamilyTree).toEqual(cellContainer.positionsInFamilyTree)
+      expect(child2Container.positionsInFamilyTree).toEqual(cellContainer.positionsInFamilyTree)
     })
   })
 
@@ -294,10 +304,12 @@ describe('Cell Container', () => {
       expect(serializable.colorRed).toBe(cellContainer.color[0])
       expect(serializable.colorGreen).toBe(cellContainer.color[1])
       expect(serializable.colorBlue).toBe(cellContainer.color[2])
+      expect(serializable.positionsInFamilyTree).toEqual(cellContainer.positionsInFamilyTree)
+      expect(serializable.positionsInFamilyTree).not.toBe(cellContainer.positionsInFamilyTree) // Deep copy...
     })
 
     it('does not copy unexpected properties', () => {
-      expect(Object.getOwnPropertyNames(serializable).length).toEqual(8) // Exactly the eight properties from above: cellTypeName, ...
+      expect(Object.getOwnPropertyNames(serializable).length).toEqual(9) // Exactly the eight properties from above: cellTypeName, ...
     })
   })
 

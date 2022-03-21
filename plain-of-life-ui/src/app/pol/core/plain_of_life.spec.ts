@@ -92,7 +92,7 @@ describe('Plain of life', () => {
     })
   })
 
-  describe('getter for familyTree width and height', () => {
+  describe('getters for familyTree width and height', () => {
     beforeAll(createPlainOfLife)
 
     it('return correct results', () => {
@@ -210,6 +210,33 @@ describe('Plain of life', () => {
     it('creates family tree', () => {
       expect(fromSerializableFamilyTree).toBeInstanceOf(FamilyTree)
       expect(fromSerializableFamilyTree.height).toEqual(familyTree.height) // Just a spot check for one property
+    })
+  })
+
+  describe('getFamilyTreeImage', () => {
+    beforeAll(createPlainOfLife)
+
+    it('gets the family tree image for the given scale', () => {
+      expect(plainOfLife.getFamilyTreeImage('No valid scale')).toBeUndefined()
+      const familyTree = (plainOfLife as unknown as { familyTree: FamilyTree }).familyTree
+      spyOn(familyTree, 'getImage').and.callThrough()
+      for (const scale of plainOfLife.getFamilyTreeScales()) {
+        const image = plainOfLife.getFamilyTreeImage(scale)
+        expect(image.byteLength).toBeGreaterThan(0)
+      }
+      expect(familyTree.getImage).toHaveBeenCalledTimes(plainOfLife.getFamilyTreeScales().length)
+    })
+  })
+
+  describe('getFamilyTreeScales', () => {
+    beforeAll(createPlainOfLife)
+
+    it('gets the available scales', () => {
+      const familyTree = (plainOfLife as unknown as { familyTree: FamilyTree }).familyTree
+      spyOn(familyTree, 'getScales').and.callThrough()
+      const scales = plainOfLife.getFamilyTreeScales()
+      expect(scales.length).toBeGreaterThan(0)
+      expect(familyTree.getScales).toHaveBeenCalledTimes(1)
     })
   })
 

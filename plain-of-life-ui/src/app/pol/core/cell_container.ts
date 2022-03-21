@@ -2,7 +2,7 @@ import { Cell } from './cell'
 import { SerializableCellContainer, SerializableCellContainers } from './serializable_plain_of_life'
 import { cellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
-import { checkBoolean, checkInt, checkString } from '../util/type_checks'
+import { checkBoolean, checkInt, checkNumber, checkString } from '../util/type_checks'
 import { modulo } from '../util/modulo'
 import { randIntTo } from '../util/rand'
 
@@ -119,6 +119,11 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * cell containers have a similar color whereas not related cell containers typically have a different color
    */
   color = new Uint8ClampedArray([128, 0, 255, 255])
+  /**
+   * Smoothed position of the container in the family tree per family tree scale.
+   * Controlled by family tree.
+   */
+  positionsInFamilyTree: number[] = []
 
   /**
    * Constructor of a cell container instance. Call {@link initSeedCellContainer} or {@link initFromSerializable} before using
@@ -138,7 +143,13 @@ export class CellContainer<E extends RuleExtensionFactory> {
   /**
    * Init a seed cell container when adding a first seed cell to a plain.
    */
-  initSeedCellContainer(cell: Cell, posX: number, posY: number, firstCellContainer: FirstCellContainer<E>): void {
+  initSeedCellContainer(
+    cell: Cell,
+    posX: number,
+    posY: number,
+    firstCellContainer: FirstCellContainer<E>,
+    positionsInFamilyTree: number[]
+  ): void {
     // Start with a cyclic list of one (seed) container - the successor and predecessor of this container is the container itself
     this._prev = this._next = this
     this.cell = cell
@@ -151,6 +162,9 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this._posX = modulo(posX, this.plain.width)
     this._posY = modulo(posY, this.plain.height)
     this.plain.onSeedCellAdd(this)
+
+    // Copy the initial positions in the family tree to a new array
+    this.positionsInFamilyTree = positionsInFamilyTree.slice()
   }
 
   /**
@@ -181,6 +195,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       const colorRed = checkInt(serializable.colorRed, 0, 255)
       const colorGreen = checkInt(serializable.colorGreen, 0, 255)
       const colorBlue = checkInt(serializable.colorBlue, 0, 255)
+      serializable.positionsInFamilyTree.forEach((pos) => checkNumber(pos))
 
       // Init this as the first container
       if (isFirst) {
@@ -219,6 +234,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       current.color[0] = colorRed
       current.color[1] = colorGreen
       current.color[2] = colorBlue
+      current.positionsInFamilyTree = serializable.positionsInFamilyTree.slice()
 
       // Create and init the cell of the container
       const cellConstructor = cellNames.getConstructor(checkString(serializable.cellTypeName))
@@ -256,6 +272,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
     serializable.colorRed = this.color[0]
     serializable.colorGreen = this.color[1]
     serializable.colorBlue = this.color[2]
+    serializable.positionsInFamilyTree = this.positionsInFamilyTree.slice()
 
     // _next, _prev and plain are not serialized but reconstructed during de-serialization
 
@@ -456,6 +473,9 @@ export class CellContainer<E extends RuleExtensionFactory> {
         childColor[2]--
       }
     }
+
+    // Child inherits positions in family tree from parent
+    childContainer.positionsInFamilyTree = this.positionsInFamilyTree.slice()
 
     return childContainer
   }

@@ -44,6 +44,7 @@ export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   | 'getRulesName'
   | 'getPlainImage'
   | 'getFamilyTreeImage'
+  | 'getFamilyTreeScales'
 >
 
 /**
@@ -98,7 +99,13 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     seedCell.initSeedCell(hints.inputLength, hints.recommendedSeedCellOutput)
     const posX = Math.floor(plainWidth / 2)
     const posY = Math.floor(plainHeight / 2)
-    newPOL.firstCellContainer.first.initSeedCellContainer(seedCell, posX, posY, newPOL.firstCellContainer)
+    newPOL.firstCellContainer.first.initSeedCellContainer(
+      seedCell,
+      posX,
+      posY,
+      newPOL.firstCellContainer,
+      newPOL.familyTree.getInitialCellContainerPositions()
+    )
 
     return newPOL
   }
@@ -420,7 +427,19 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     }
   }
 
-  getFamilyTreeImage(): Uint8ClampedArray {
-    return this.familyTree.image
+  /**
+   * Get a family tree image for a scale
+   * @param scale One scale as provided by {@link getFamilyTreeScales}
+   * @returns
+   */
+  getFamilyTreeImage(scale: string): Uint8ClampedArray {
+    return this.familyTree.getImage(scale)
+  }
+
+  /**
+   * @returns All available scales of the family tree in a human readable format
+   */
+  getFamilyTreeScales() {
+    return this.familyTree.getScales()
   }
 }

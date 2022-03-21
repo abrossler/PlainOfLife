@@ -80,7 +80,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         // Divide cell according to output:
         // [1] bit 0: Divide cell (Yes / No)? Dividing is only possible if the fields left and right from the current cell are not occupied by other cells.
         // [1] bit 1: Turn child 1 away from the parent (Yes / No)?
-        // [1] bit 2: Turn child 1 away from the parent (Yes / No)?
+        // [1] bit 2: Turn child 2 away from the parent (Yes / No)?
         // If the cell is divided, it dies. Child 1 is placed left, child 2 right from the parent relative to the parent's heading.
         // If child 1 is turned, it turns to the left away from the parent.
         // If child 2 is turned, it turns to the right away from the parent.
@@ -175,15 +175,16 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
    * fields.
    *
    * Meaning of the input (bits from right to left):
-   * Bit 0: Has the field a owner (true / false)?
-   * Bit 1: Is the current cell that gets the input the owner of the field (true / false)?
+   * - Bit 0: Has the field a owner (true / false)?
+   * - Bit 1: Is the current cell that gets the input the owner of the field (true / false)?
+   *
    * If false, all further bits are 0
-   * Bit 2: Has the field a owner that is different from the current cell (true / false)?
-   * Bit 3: Has the owner more or equal energy than the current cell (true / false)?
-   * Bit 4: Has the owner less energy than the current cell (true / false)?
-   * Bit 5: Is the field occupied by a cell (true / false)?
-   * Bit 6: Is the field occupied by a cell with more or equal energy than the current cell (true / false)?
-   * Bit 7: Is the field occupied by a cell with less energy than the current cell (true / false)?
+   * - Bit 2: Has the field a owner that is different from the current cell (true / false)?
+   * - Bit 3: Has the owner more or equal energy than the current cell (true / false)?
+   * - Bit 4: Has the owner less energy than the current cell (true / false)?
+   * - Bit 5: Is the field occupied by a cell (true / false)?
+   * - Bit 6: Is the field occupied by a cell with more or equal energy than the current cell (true / false)?
+   * - Bit 7: Is the field occupied by a cell with less energy than the current cell (true / false)?
    */
   private prepareInput(
     input: Uint8Array,
