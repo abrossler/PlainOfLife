@@ -67,7 +67,28 @@ export class PolLabComponent implements PolTurnListener, AfterViewInit {
       this.familyTreeWidth,
       this.familyTreeHeight
     )
-    this.familyTreeCtx.putImageData(familyTreeImage, 0, 0)
+    // Paint the family tree image by placing the two cut pieces of the image so that we get a scrolling effect:
+    const imageCutX = this.polDriver.plainOfLife.getFamilyTreeImageCutX(this.familyTreeScale)
+    // Paint the more recent left part of the image to the right
+    this.familyTreeCtx.putImageData(
+      familyTreeImage,
+      this.familyTreeWidth - imageCutX,
+      0,
+      0,
+      0,
+      imageCutX,
+      this.familyTreeHeight
+    )
+    // Paint the elder right part of the image to the left
+    this.familyTreeCtx.putImageData(
+      familyTreeImage,
+      -imageCutX,
+      0,
+      imageCutX,
+      0,
+      this.familyTreeWidth - imageCutX,
+      this.familyTreeHeight
+    )
 
     // Scaling
     // https://stackoverflow.com/questions/3448347/how-to-scale-an-imagedata-in-html-canvas

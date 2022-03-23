@@ -45,6 +45,7 @@ export type ExtPlainOfLife<E extends RuleExtensionFactory> = Pick<
   | 'getPlainImage'
   | 'getFamilyTreeImage'
   | 'getFamilyTreeScales'
+  | 'getFamilyTreeImageCutX'
 >
 
 /**
@@ -106,6 +107,9 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
       newPOL.firstCellContainer,
       newPOL.familyTree.getInitialCellContainerPositions()
     )
+
+    // Update family tree with seed cell
+    newPOL.familyTree.update(new CellContainers(newPOL.firstCellContainer), newPOL.cellCount, newPOL._currentTurn)
 
     return newPOL
   }
@@ -275,10 +279,10 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     if (cellContainers === null) {
       return false // All cells are dead, game over
     }
-
+    this._currentTurn++
     this.rules.executeTurn(this.plain, cellContainers, this._currentTurn)
     this.familyTree.update(cellContainers, this.cellCount, this._currentTurn)
-    this._currentTurn++
+
     // // Check consistency
     // for(let container of cellContainers){
     //   if(container.isDead) {
@@ -441,5 +445,12 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
    */
   getFamilyTreeScales() {
     return this.familyTree.getScales()
+  }
+
+  /**
+   * Get the x position where the image of the family tree is cut for the given scale
+   */
+  getFamilyTreeImageCutX(scale: string): number {
+    return this.familyTree.getFamilyTreeImageCutX(this.currentTurn, scale)
   }
 }

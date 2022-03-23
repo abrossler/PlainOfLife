@@ -233,6 +233,24 @@ export class FamilyTree {
   }
 
   /**
+   * Get the x position where the image (for the given scale) of the family tree is cut for the current turn:
+   *
+   * The family tree images are painted from left to right and if the total x position exceeds the width of the image,
+   * it continues painting from the very left (actually painting the column at total x modulo width). At this position
+   * the image is cut...
+   */
+  getFamilyTreeImageCutX(currentTurn: bigint, scaleName: string): number {
+    const scale = this.scales[this.scaleNames.indexOf(scaleName)]
+    const totalX = currentTurn / BigInt(scale)
+    // The full image width of the family tree is not yet filled, thus there is no cut
+    if (totalX < BigInt(this._width)) {
+      return 0
+    }
+    // The cut is at the column next right to the current total x position modulo the family tree width
+    return Number(totalX % BigInt(this._width)) + 1
+  }
+
+  /**
    * @returns The initial positions of a cell container in the family tree per scale
    */
   getInitialCellContainerPositions() {

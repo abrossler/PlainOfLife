@@ -44,6 +44,8 @@ describe('Plain of life', () => {
       expect(familyTree).toBeInstanceOf(FamilyTree)
       expect(plainOfLife.familyTreeWidth).toBe(familyTreeWidth)
       expect(plainOfLife.familyTreeHeight).toBe(familyTreeHeight)
+      // Expect first update of family tree image
+      expect(familyTree.getImage(familyTree.getScales()[0])[0]).not.toBe(0)
     })
 
     it('creates plain correctly', () => {
@@ -112,7 +114,7 @@ describe('Plain of life', () => {
       })
 
       it('calls executeTurn of rules as expected', () => {
-        expect(rules.executeTurn).toHaveBeenCalledOnceWith(plain, cellContainers as CellContainers<TestRules>, 0n)
+        expect(rules.executeTurn).toHaveBeenCalledOnceWith(plain, cellContainers as CellContainers<TestRules>, 1n)
       })
 
       it('Keeps the number of cells up to date', () => {
@@ -123,7 +125,7 @@ describe('Plain of life', () => {
         expect(familyTree.update).toHaveBeenCalledOnceWith(
           cellContainers as CellContainers<TestRules>,
           plainOfLife.cellCount,
-          plainOfLife.currentTurn - 1n
+          plainOfLife.currentTurn
         )
       })
     })
@@ -237,6 +239,38 @@ describe('Plain of life', () => {
       const scales = plainOfLife.getFamilyTreeScales()
       expect(scales.length).toBeGreaterThan(0)
       expect(familyTree.getScales).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('getFamilyTreeImageCutX', () => {
+    beforeAll(createPlainOfLife)
+
+    it('returns expected results', () => {
+      const scales = plainOfLife.getFamilyTreeScales()
+      const plain = plainOfLife as unknown as { _currentTurn: BigInt }
+      // No cut for any scale if turn < familyTreeWidth * scale
+      plain._currentTurn = BigInt(familyTreeWidth - 1)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[0])).toBe(0)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[1])).toBe(0)
+      plain._currentTurn = BigInt(familyTreeWidth * 3 - 1)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[1])).toBe(0)
+
+      // For scale 1:1 cut at 4 if turn is familyTreeWidth + 3
+      plain._currentTurn = BigInt(familyTreeWidth + 3)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[0])).toBe(4)
+
+      // For scale 1:3 ...
+      // ... cut at 2 if turn is 3*familyTreeWidth + 3 or + 4 or + 5
+      plain._currentTurn = BigInt(3 * familyTreeWidth + 3)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[1])).toBe(2)
+      plain._currentTurn = BigInt(3 * familyTreeWidth + 4)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[1])).toBe(2)
+      plain._currentTurn = BigInt(3 * familyTreeWidth + 5)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[1])).toBe(2)
+
+      // ... change to cut at 3 if turn is 3*familyTreeWidth + 6
+      plain._currentTurn = BigInt(3 * familyTreeWidth + 6)
+      expect(plainOfLife.getFamilyTreeImageCutX(scales[1])).toBe(3)
     })
   })
 
