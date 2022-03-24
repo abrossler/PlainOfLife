@@ -1,12 +1,11 @@
 import { cellNames } from '../cells/cell_names'
-import { CellContainer } from './cell_container'
+import { CellContainer, CellContainers } from './cell_container'
 import { Plain } from './plain'
 import { SerializableCellContainer } from './serializable_plain_of_life'
 import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
 import { TestCell } from '../../../test_stubs/test_cell'
 
 /* eslint-disable @typescript-eslint/no-explicit-any*/
-
 describe('Cell Container', () => {
   const posXOutsidePlain = 3
   const posYOutsidePlain = -3
@@ -28,6 +27,67 @@ describe('Cell Container', () => {
     firstCellContainer = { first: cellContainer }
     seedCell = new TestCell()
     cellContainer.initSeedCellContainer(seedCell, posXOutsidePlain, posYOutsidePlain, firstCellContainer, [1])
+  })
+
+  describe('iteration on cell containers', () => {
+    it('works for 1 cell container', () => {
+      let i = 0
+      for (const container of new CellContainers(firstCellContainer)) {
+        i++
+        expect(container).toBe(firstCellContainer.first)
+      }
+      expect(i).toBe(1)
+    })
+
+    it('works for 3 cell container', () => {
+      firstCellContainer.first.divide(0, 0, 0, 0)
+      firstCellContainer.first.divide(0, 0, 0, 0)
+      let i = 0
+      for (const container of new CellContainers(firstCellContainer)) {
+        i++
+        if (i === 1) expect(container).toBe(firstCellContainer.first)
+        if (i === 2) expect(container).toBe(firstCellContainer.first.next)
+        if (i === 3) expect(container).toBe(firstCellContainer.first.next.next)
+      }
+      expect(i).toBe(3)
+    })
+
+    it('allows usage of one iterator for multiple loops', () => {
+      firstCellContainer.first.divide(0, 0, 0, 0) // => Having two containers now
+      const iterator = new CellContainers(firstCellContainer)
+      let i = 0
+      for (const container of iterator) {
+        i++ // Two containers => two iterations
+        if (i === 1) expect(container).toBe(firstCellContainer.first)
+        if (i === 2) expect(container).toBe(firstCellContainer.first.next)
+      }
+      for (const container of iterator) {
+        // use same iterator a second time
+        i++ // Two containers => two iterations
+        if (i === 3) expect(container).toBe(firstCellContainer.first)
+        if (i === 4) expect(container).toBe(firstCellContainer.first.next)
+      }
+      expect(i).toBe(4)
+    })
+
+    it('supports adding and removing containers while iterating', () => {
+      firstCellContainer.first.divide(0, 0, 0, 0)
+      let i = 0
+      for (const container of new CellContainers(firstCellContainer)) {
+        i++
+        if (i === 1) {
+          expect(container).toBe(firstCellContainer.first)
+          container.makeChild(0, 0) // Insert child before
+          expect(container).toBe(firstCellContainer.first.next)
+        }
+        if (i === 2) {
+          expect(container).toBe(firstCellContainer.first.next.next) // Child + one old container before...
+          container.divide(0, 0, 0, 0)
+          expect(container).not.toBe(firstCellContainer.first.next.next) // Container died with divide
+        }
+      }
+      expect(i).toBe(2)
+    })
   })
 
   describe('construction', () => {

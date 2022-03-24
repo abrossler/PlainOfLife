@@ -65,17 +65,28 @@ export type FirstCellContainer<E extends RuleExtensionFactory> = { first: CellCo
  * An iterable iterator to iterate on all {@link ExtCellContainer}s of alive cells.
  */
 export class CellContainers<E extends RuleExtensionFactory> {
+  private current: CellContainer<E> | null = null
+  private done = false
   constructor(private firstCellContainer: FirstCellContainer<E>) {}
-  *[Symbol.iterator](): Iterator<ExtCellContainer<E>> {
-    let container
-    for (
-      container = this.firstCellContainer.first;
-      container.next !== this.firstCellContainer.first;
-      container = container.next
-    ) {
-      yield container
+
+  [Symbol.iterator]() {
+    return this
+  }
+
+  next() {
+    if (!this.current) {
+      this.current = this.firstCellContainer.first
+    } else if (this.done) {
+      const result = this.current
+      this.done = false
+      this.current = null
+      return { value: result, done: true }
+    } else {
+      this.current = this.current.next
     }
-    yield container // don't forget the last container where next === first
+
+    if (this.current.next === this.firstCellContainer.first) this.done = true
+    return { value: this.current, done: false }
   }
 }
 
