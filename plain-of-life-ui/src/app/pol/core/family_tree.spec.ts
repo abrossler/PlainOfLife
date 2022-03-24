@@ -136,7 +136,7 @@ describe('Family Tree', () => {
 
     it('updates all images after turn 0', () => {
       for (const scale of familyTree.getScales()) {
-        expect(familyTree.getImage(scale)[3]).not.toBe(0) // Spot check on alpha value of top pixel
+        expect(familyTree.getImage(scale)[19]).not.toBe(0) // Spot check on alpha value of top pixel
       }
       expect(cellContainer.positionsInFamilyTree).toEqual(familyTree.getInitialCellContainerPositions())
     })

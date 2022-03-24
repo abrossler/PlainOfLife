@@ -30,6 +30,11 @@ describe('Cell Container', () => {
   })
 
   describe('iteration on cell containers', () => {
+    it('can return first', () => {
+      firstCellContainer.first.divide(0, 0, 0, 0)
+      expect(new CellContainers(firstCellContainer).first).toBe(firstCellContainer.first)
+    })
+
     it('works for 1 cell container', () => {
       let i = 0
       for (const container of new CellContainers(firstCellContainer)) {

@@ -73,7 +73,11 @@ export class CellContainers<E extends RuleExtensionFactory> {
     return this
   }
 
-  next() {
+  get first(): ExtCellContainer<E> {
+    return this.firstCellContainer.first
+  }
+
+  next(): { value: ExtCellContainer<E>; done: boolean } {
     if (!this.current) {
       this.current = this.firstCellContainer.first
     } else if (this.done) {

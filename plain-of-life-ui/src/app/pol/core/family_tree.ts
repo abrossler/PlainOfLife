@@ -119,12 +119,6 @@ export class FamilyTree {
     for (let currentScale = 0; currentScale < this.scales.length; currentScale++) {
       // If the current scale is to be updated in the current turn...
       if (currentTurn % BigInt(this.scales[currentScale]) === 0n) {
-        /** The new pixel column as Uint32 array allowing to sum per pixel the RGB values of multiple cells */
-        const newColumn = new Uint32Array(this.height * 5) // * 5 => R, G, B, A and count of cells contributing to this value
-        /** The weight of the cell's old position in the family tree when calculating the smoothed new position */
-        const weightOldPos = 1 - 1 / this.smoothing[currentScale]
-        /** The weight of the cells current scale independent position in the family tree when calculating the smoothed new position  */
-        const weightCurrentPos = this.height / (this.smoothing[currentScale] * containerCount)
         /**
          * The x-position of the new column in the family tree image array.
          * Note that the position is modulo the family tree width: If the right end of the image is reached,
@@ -134,85 +128,130 @@ export class FamilyTree {
         const width4 = this._width * 4
         const image = this._images[currentScale]
 
-        let containerNumber = 0
-        /** The new smoothed position of the current container in the family tree */
-        let newPosition
-        for (const container of cellContainers) {
-          // Calculate the new position of the cell in the family tree
-          const oldPosition = (container as CellContainer<RuleExtensionFactory>).positionsInFamilyTree[currentScale]
-          // If there is at least room for one pixel height per cell...
-          if (containerCount <= this.height) {
-            newPosition = // The new position is...
-              oldPosition * weightOldPos + // ... the weighted old position plus ...
-              ((this.height - containerCount) / 2 + containerNumber) / this.smoothing[currentScale] // ... the smoothed current position assuming 1 pixel height per cell
-          }
-          // If there is less room than 1 pixel per cell
-          else {
-            newPosition = // The new position is...
-              oldPosition * weightOldPos + // ... the weighted old position plus ...
-              containerNumber * weightCurrentPos // the weighted current position
-          }
-
-          // Paint the current cell to the the new column of the family tree
-          /** Sub-pixel exact position from were to fill the new column */
-          let from
-          /** Sub-pixel exact position to were to fill the new column */
-          let to
-          if (Math.abs(newPosition - oldPosition) < 1) {
-            from = newPosition - halfPenWidth
-            to = newPosition + halfPenWidth
+        // Performance optimized calculation without smoothing
+        if (this.smoothing[currentScale] === 1) {
+          let container = cellContainers.first
+          if (containerCount < this.height) {
+            let y = ((this.height - containerCount) / 2) | 0
+            for (let i = 0; i < containerCount; i++) {
+              // faster than 'for (const container of cellContainers)'
+              let i = x + y * width4
+              image[i++] = container.color[0]
+              image[i++] = container.color[1]
+              image[i++] = container.color[2]
+              image[i] = 255
+              ;(container as CellContainer<RuleExtensionFactory>).positionsInFamilyTree[currentScale] = y++
+              container = container.next
+            }
           } else {
-            if (newPosition < oldPosition) {
-              from = newPosition - halfPenWidth
-              to = oldPosition - 1 + halfPenWidth
-            } else {
-              from = oldPosition + 1 - halfPenWidth
-              to = newPosition + halfPenWidth
+            const dy = this._height / containerCount
+            let y = 0
+            let oldY = -1
+            for (let i = 0; i < containerCount; i++) {
+              // faster than 'for (const container of cellContainers)'
+              if ((y | 0) > oldY) {
+                oldY = y | 0
+                let i = x + oldY * width4
+                image[i++] = container.color[0]
+                image[i++] = container.color[1]
+                image[i++] = container.color[2]
+                image[i] = 255
+              }
+              ;(container as CellContainer<RuleExtensionFactory>).positionsInFamilyTree[currentScale] = y
+              y += dy
+              container = container.next
             }
           }
-
-          /** Pixel exact min y position from were to fill the new column */
-          const minY = Math.floor(from)
-          /** Pixel exact max y position to were to fill the new column */
-          const maxY = Math.ceil(to)
-          // For all pixel to be filled...
-          for (let y = minY; y < maxY; y++) {
-            let i = y * 5
-            // Add the color of the cell to each pixel
-            newColumn[i++] += container.color[R]
-            newColumn[i++] += container.color[G]
-            newColumn[i++] += container.color[B]
-            // The alpha values don't sum up. The alpha value is just the max alpha value for all cells contributing to the pixel
-            // For the top pixel the alpha value corresponds to the share of the pixel that is covered by 'from'.
-            if (y === minY) {
-              newColumn[i] = Math.max(newColumn[i], (minY + 1 - from) * 255)
-            }
-            // The same for the bottom pixel, but just from the other side.
-            else if (y === maxY - 1) {
-              newColumn[i] = Math.max(newColumn[i], (to + 1 - maxY) * 255)
-            }
-            // All other pixels in the middle are fully opaque
-            else {
-              newColumn[i] = 255
-            }
-            i++
-            // Increase the number of cells contributing to this pixel
-            newColumn[i]++
-          }
-
-          ;(container as CellContainer<RuleExtensionFactory>).positionsInFamilyTree[currentScale] = newPosition
-          containerNumber++
         }
+        // Slower calculation with smoothing (would also work for smoothing === 1 but is significantly slower)
+        else {
+          /** The new pixel column as Uint32 array allowing to sum per pixel the RGB values of multiple cells */
+          const newColumn = new Uint32Array(this.height * 5) // * 5 => R, G, B, A and count of cells contributing to this value
+          /** The weight of the cell's old position in the family tree when calculating the smoothed new position */
+          const weightOldPos = 1 - 1 / this.smoothing[currentScale]
+          /** The weight of the cells current scale independent position in the family tree when calculating the smoothed new position  */
+          const weightCurrentPos = this.height / (this.smoothing[currentScale] * containerCount)
 
-        // Calculate the actual colors from the data in 'newColumn' and update the image
-        for (let y = 0; y < this.height; y++) {
-          let j = x + y * width4
-          const i = y * 5
-          // The colors are calculated as average color from all contributing cells
-          image[j++] = newColumn[i + R] / newColumn[i + COUNT]
-          image[j++] = newColumn[i + G] / newColumn[i + COUNT]
-          image[j++] = newColumn[i + B] / newColumn[i + COUNT]
-          image[j] = newColumn[i + A]
+          let containerNumber = 0
+          /** The new smoothed position of the current container in the family tree */
+          let newPosition
+          for (const container of cellContainers) {
+            // Calculate the new position of the cell in the family tree
+            const oldPosition = (container as CellContainer<RuleExtensionFactory>).positionsInFamilyTree[currentScale]
+            // If there is at least room for one pixel height per cell...
+            if (containerCount <= this.height) {
+              newPosition = // The new position is...
+                oldPosition * weightOldPos + // ... the weighted old position plus ...
+                ((this.height - containerCount) / 2 + containerNumber) / this.smoothing[currentScale] // ... the smoothed current position assuming 1 pixel height per cell
+            }
+            // If there is less room than 1 pixel per cell
+            else {
+              newPosition = // The new position is...
+                oldPosition * weightOldPos + // ... the weighted old position plus ...
+                containerNumber * weightCurrentPos // the weighted current position
+            }
+
+            // Paint the current cell to the the new column of the family tree
+            /** Sub-pixel exact position from were to fill the new column */
+            let from
+            /** Sub-pixel exact position to were to fill the new column */
+            let to
+            if (Math.abs(newPosition - oldPosition) < 1) {
+              from = newPosition - halfPenWidth
+              to = newPosition + halfPenWidth
+            } else {
+              if (newPosition < oldPosition) {
+                from = newPosition - halfPenWidth
+                to = oldPosition - 1 + halfPenWidth
+              } else {
+                from = oldPosition + 1 - halfPenWidth
+                to = newPosition + halfPenWidth
+              }
+            }
+
+            /** Pixel exact min y position from were to fill the new column */
+            const minY = Math.floor(from)
+            /** Pixel exact max y position to were to fill the new column */
+            const maxY = Math.ceil(to)
+            // For all pixel to be filled...
+            for (let y = minY; y < maxY; y++) {
+              let i = y * 5
+              // Add the color of the cell to each pixel
+              newColumn[i++] += container.color[R]
+              newColumn[i++] += container.color[G]
+              newColumn[i++] += container.color[B]
+              // The alpha values don't sum up. The alpha value is just the max alpha value for all cells contributing to the pixel
+              // For the top pixel the alpha value corresponds to the share of the pixel that is covered by 'from'.
+              if (y === minY) {
+                newColumn[i] = Math.max(newColumn[i], (minY + 1 - from) * 255)
+              }
+              // The same for the bottom pixel, but just from the other side.
+              else if (y === maxY - 1) {
+                newColumn[i] = Math.max(newColumn[i], (to + 1 - maxY) * 255)
+              }
+              // All other pixels in the middle are fully opaque
+              else {
+                newColumn[i] = 255
+              }
+              i++
+              // Increase the number of cells contributing to this pixel
+              newColumn[i]++
+            }
+
+            ;(container as CellContainer<RuleExtensionFactory>).positionsInFamilyTree[currentScale] = newPosition
+            containerNumber++
+          }
+
+          // Calculate the actual colors from the data in 'newColumn' and update the image
+          for (let y = 0; y < this.height; y++) {
+            let j = x + y * width4
+            const i = y * 5
+            // The colors are calculated as average color from all contributing cells
+            image[j++] = newColumn[i + R] / newColumn[i + COUNT]
+            image[j++] = newColumn[i + G] / newColumn[i + COUNT]
+            image[j++] = newColumn[i + B] / newColumn[i + COUNT]
+            image[j] = newColumn[i + A]
+          }
         }
       }
     }

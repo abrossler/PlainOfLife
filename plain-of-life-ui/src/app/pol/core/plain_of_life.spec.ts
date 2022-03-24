@@ -45,7 +45,7 @@ describe('Plain of life', () => {
       expect(plainOfLife.familyTreeWidth).toBe(familyTreeWidth)
       expect(plainOfLife.familyTreeHeight).toBe(familyTreeHeight)
       // Expect first update of family tree image
-      expect(familyTree.getImage(familyTree.getScales()[0])[0]).not.toBe(0)
+      expect(familyTree.getImage(familyTree.getScales()[0])[20]).not.toBe(0)
     })
 
     it('creates plain correctly', () => {
