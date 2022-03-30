@@ -4,6 +4,7 @@ import { Plain } from './plain'
 import { SerializableCellContainer } from './serializable_plain_of_life'
 import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
 import { TestCell } from '../../../test_stubs/test_cell'
+import { East, North, South, West } from '../util/direction'
 
 /* eslint-disable @typescript-eslint/no-explicit-any*/
 describe('Cell Container', () => {
@@ -26,12 +27,14 @@ describe('Cell Container', () => {
     cellContainer = new CellContainer(ruleExtensionFactory, plain)
     firstCellContainer = { first: cellContainer }
     seedCell = new TestCell()
-    cellContainer.initSeedCellContainer(seedCell, posXOutsidePlain, posYOutsidePlain, firstCellContainer, [1])
+    cellContainer.initSeedCellContainer(seedCell, plain.getAt(posXOutsidePlain, posYOutsidePlain), firstCellContainer, [
+      1
+    ])
   })
 
   describe('iteration on cell containers', () => {
     it('can return first', () => {
-      firstCellContainer.first.divide(0, 0, 0, 0)
+      firstCellContainer.first.divide(North, North)
       expect(new CellContainers(firstCellContainer).first).toBe(firstCellContainer.first)
     })
 
@@ -45,8 +48,8 @@ describe('Cell Container', () => {
     })
 
     it('works for 3 cell container', () => {
-      firstCellContainer.first.divide(0, 0, 0, 0)
-      firstCellContainer.first.divide(0, 0, 0, 0)
+      firstCellContainer.first.divide(North, North)
+      firstCellContainer.first.divide(North, North)
       let i = 0
       for (const container of new CellContainers(firstCellContainer)) {
         i++
@@ -58,7 +61,7 @@ describe('Cell Container', () => {
     })
 
     it('allows usage of one iterator for multiple loops', () => {
-      firstCellContainer.first.divide(0, 0, 0, 0) // => Having two containers now
+      firstCellContainer.first.divide(North, North) // => Having two containers now
       const iterator = new CellContainers(firstCellContainer)
       let i = 0
       for (const container of iterator) {
@@ -76,18 +79,18 @@ describe('Cell Container', () => {
     })
 
     it('supports adding and removing containers while iterating', () => {
-      firstCellContainer.first.divide(0, 0, 0, 0)
+      firstCellContainer.first.divide(North, North)
       let i = 0
       for (const container of new CellContainers(firstCellContainer)) {
         i++
         if (i === 1) {
           expect(container).toBe(firstCellContainer.first)
-          container.makeChild(0, 0) // Insert child before
+          container.makeChildTo(0, 0) // Insert child before
           expect(container).toBe(firstCellContainer.first.next)
         }
         if (i === 2) {
           expect(container).toBe(firstCellContainer.first.next.next) // Child + one old container before...
-          container.divide(0, 0, 0, 0)
+          container.divide(North, North)
           expect(container).not.toBe(firstCellContainer.first.next.next) // Container died with divide
         }
       }
@@ -130,11 +133,11 @@ describe('Cell Container', () => {
     let child1Container: CellContainer<TestRuleExtensionFactory>
 
     beforeEach(() => {
-      child1Container = cellContainer.makeChild(1, 1) as CellContainer<TestRuleExtensionFactory>
+      child1Container = cellContainer.makeChildTo(1, 1) as CellContainer<TestRuleExtensionFactory>
     })
     it('throws a syntax error if arguments dx or dy are no integer', () => {
-      expect(() => cellContainer.makeChild(1.1, 1)).toThrowError(SyntaxError)
-      expect(() => cellContainer.makeChild(1, '1' as unknown as number)).toThrowError(SyntaxError)
+      expect(() => cellContainer.makeChildTo(1.1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.makeChildTo(1, '1' as unknown as number)).toThrowError(SyntaxError)
     })
 
     it('creates a child container', () => {
@@ -144,7 +147,7 @@ describe('Cell Container', () => {
     it('creates a child cell by calling cell.makeChild', () => {
       expect((child1Container as any).cell).toBeInstanceOf(TestCell)
       spyOn(seedCell, 'makeChild')
-      cellContainer.makeChild(0, 1)
+      cellContainer.makeChildTo(0, 1)
       expect(seedCell.makeChild).toHaveBeenCalledTimes(1)
     })
 
@@ -161,25 +164,25 @@ describe('Cell Container', () => {
     })
 
     it('does not move the first cell container if another container than the first makes a child', () => {
-      cellContainer.makeChild(0, 1) // If second container makes child...
+      cellContainer.makeChildTo(0, 1) // If second container makes child...
       expect(firstCellContainer.first).toBe(child1Container) // ...first isn't moved
       expect((child1Container as any).firstCellContainer).toBe(firstCellContainer)
     })
 
     it('adds a child before the parent container', () => {
-      const child2Container = cellContainer.makeChild(0, 1)
+      const child2Container = cellContainer.makeChildTo(0, 1)
       expect((cellContainer as any)._prev).toBe(child2Container)
     })
 
     it('creates a cyclic list of parent and children', () => {
-      cellContainer.makeChild(0, 1)
+      cellContainer.makeChildTo(0, 1)
       expect((cellContainer as any).next.next.next).toBe(cellContainer)
       expect((cellContainer as any)._prev._prev._prev).toBe(cellContainer)
     })
 
     it('considers the torus topography when making a child', () => {
-      expect(cellContainer.makeChild(0, 1).posY).toBe(0)
-      expect(cellContainer.makeChild(1, 0).posX).toBe(0)
+      expect(cellContainer.makeChildTo(0, 1).posY).toBe(0)
+      expect(cellContainer.makeChildTo(1, 0).posX).toBe(0)
     })
 
     it('increases the number of cells', () => {
@@ -191,21 +194,21 @@ describe('Cell Container', () => {
     })
   })
 
-  describe('divide', () => {
+  describe('divideTo', () => {
     let child1Container: CellContainer<TestRuleExtensionFactory>
     let child2Container: CellContainer<TestRuleExtensionFactory>
 
     beforeEach(() => {
-      ;[child1Container, child2Container] = cellContainer.divide(-1, 0, 0, -1) as [
+      ;[child1Container, child2Container] = cellContainer.divideTo(-1, 0, 0, -1) as [
         CellContainer<TestRuleExtensionFactory>,
         CellContainer<TestRuleExtensionFactory>
       ]
     })
     it('throws a syntax error if arguments for dx or dy are no integer', () => {
-      expect(() => cellContainer.divide(1.1, 1, 1, 1)).toThrowError(SyntaxError)
-      expect(() => cellContainer.divide(1, 1.1, 1, 1)).toThrowError(SyntaxError)
-      expect(() => cellContainer.divide(1, 1, 1.1, 1)).toThrowError(SyntaxError)
-      expect(() => cellContainer.divide(1, 1, 1, 1.1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divideTo(1.1, 1, 1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divideTo(1, 1.1, 1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divideTo(1, 1, 1.1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.divideTo(1, 1, 1, 1.1)).toThrowError(SyntaxError)
     })
 
     it('creates the two child containers', () => {
@@ -233,7 +236,7 @@ describe('Cell Container', () => {
     })
 
     it('considers the torus topography for both children when dividing', () => {
-      const grandChildren = child1Container.divide(-2, 1, 2, -3)
+      const grandChildren = child1Container.divideTo(-2, 1, 2, -3)
       expect(grandChildren[0].posX).toBe(0)
       expect(grandChildren[0].posY).toBe(0)
       expect(grandChildren[1].posX).toBe(0)
@@ -250,10 +253,51 @@ describe('Cell Container', () => {
     })
   })
 
+  describe('divide', () => {
+    let child1Container: CellContainer<TestRuleExtensionFactory>
+    let child2Container: CellContainer<TestRuleExtensionFactory>
+
+    beforeEach(() => {
+      ;[child1Container, child2Container] = cellContainer.divide(West, East) as [
+        CellContainer<TestRuleExtensionFactory>,
+        CellContainer<TestRuleExtensionFactory>
+      ]
+    })
+
+    it('creates the two child containers', () => {
+      expect(child1Container).toBeInstanceOf(CellContainer)
+      expect(child2Container).toBeInstanceOf(CellContainer)
+    })
+
+    it('lets the parent die', () => {
+      expect(cellContainer.isDead).toBe(true)
+    })
+
+    it('places the child containers on the plain', () => {
+      expect(child1Container.posX).toBe(0)
+      expect(child1Container.posY).toBe(1)
+      expect(plain.getAt(0, 1).getCellContainers()[0]).toBe(child1Container)
+
+      expect(child2Container.posX).toBe(0)
+      expect(child2Container.posY).toBe(1)
+      expect(plain.getAt(0, 1).getCellContainers()[1]).toBe(child2Container)
+    })
+
+    it('works in all directions', () => {
+      // East and west are already tested, now test north and south...
+      ;[child1Container, child2Container] = child1Container.divide(North, South) as [
+        CellContainer<TestRuleExtensionFactory>,
+        CellContainer<TestRuleExtensionFactory>
+      ]
+      expect(plain.getAt(0, 0).getCellContainers()[0]).toBe(child1Container)
+      expect(plain.getAt(0, 0).getCellContainers()[1]).toBe(child2Container)
+    })
+  })
+
   describe('die', () => {
     beforeEach(() => {
-      child1Container = cellContainer.makeChild(1, 1) as CellContainer<TestRuleExtensionFactory>
-      child2Container = cellContainer.makeChild(-1, 0) as CellContainer<TestRuleExtensionFactory>
+      child1Container = cellContainer.makeChildTo(1, 1) as CellContainer<TestRuleExtensionFactory>
+      child2Container = cellContainer.makeChildTo(-1, 0) as CellContainer<TestRuleExtensionFactory>
       child2Container.die()
     })
     it('marks the died container as dead', () => {
@@ -304,14 +348,14 @@ describe('Cell Container', () => {
     })
   })
 
-  describe('move', () => {
+  describe('moveTo', () => {
     beforeEach(() => {
-      cellContainer.move(-1, -1)
+      cellContainer.moveTo(-1, -1)
     })
 
     it('throws a syntax error if arguments dx or dy are no integer', () => {
-      expect(() => cellContainer.move(1.1, 1)).toThrowError(SyntaxError)
-      expect(() => cellContainer.move(1, '1' as unknown as number)).toThrowError(SyntaxError)
+      expect(() => cellContainer.moveTo(1.1, 1)).toThrowError(SyntaxError)
+      expect(() => cellContainer.moveTo(1, '1' as unknown as number)).toThrowError(SyntaxError)
     })
 
     it('adjusts posX and posY of the container', () => {
@@ -327,14 +371,56 @@ describe('Cell Container', () => {
     })
 
     it('considers the torus topography when moving', () => {
-      cellContainer.move(-3, 0)
+      cellContainer.moveTo(-3, 0)
       expect(cellContainer.posX).toBe(1)
-      cellContainer.move(0, -3)
+      cellContainer.moveTo(0, -3)
       expect(cellContainer.posY).toBe(1)
-      cellContainer.move(3, 0)
+      cellContainer.moveTo(3, 0)
       expect(cellContainer.posX).toBe(0)
-      cellContainer.move(0, 3)
+      cellContainer.moveTo(0, 3)
       expect(cellContainer.posY).toBe(0)
+    })
+  })
+
+  describe('move', () => {
+    beforeEach(() => {
+      cellContainer.move(North)
+    })
+
+    it('adjusts posX and posY of the container', () => {
+      expect(cellContainer.posX).toBe(1)
+      expect(cellContainer.posY).toBe(0)
+      expect(cellContainer.plainField.posX).toBe(1)
+      expect(cellContainer.plainField.posY).toBe(0)
+    })
+
+    it('moves the container on the plain', () => {
+      expect(plain.getAt(0, 0).getCellContainers().length).toBe(0)
+      expect(plain.getAt(0, 1).getCellContainers().length).toBe(0)
+      expect(plain.getAt(1, 0).getCellContainers()[0]).toBe(cellContainer)
+      expect(plain.getAt(1, 1).getCellContainers().length).toBe(0)
+    })
+
+    it('moves the container in all directions', () => {
+      cellContainer.move(South)
+      expect(cellContainer.posY).toBe(1)
+      cellContainer.move(North)
+      expect(cellContainer.posY).toBe(0)
+      cellContainer.move(West)
+      expect(cellContainer.posX).toBe(0)
+      cellContainer.move(East)
+      expect(cellContainer.posX).toBe(1)
+    })
+
+    it('considers the torus topography when moving', () => {
+      cellContainer.move(North)
+      expect(cellContainer.posY).toBe(1)
+      cellContainer.move(South)
+      expect(cellContainer.posY).toBe(0)
+      cellContainer.move(East)
+      expect(cellContainer.posX).toBe(0)
+      cellContainer.move(West)
+      expect(cellContainer.posX).toBe(1)
     })
   })
 
@@ -397,8 +483,8 @@ describe('Cell Container', () => {
     let allCellContainers: CellContainer<TestRuleExtensionFactory>[]
 
     beforeEach(() => {
-      child1Container = cellContainer.makeChild(1, 0) as CellContainer<TestRuleExtensionFactory>
-      child2Container = cellContainer.makeChild(0, 1) as CellContainer<TestRuleExtensionFactory>
+      child1Container = cellContainer.makeChildTo(1, 0) as CellContainer<TestRuleExtensionFactory>
+      child2Container = cellContainer.makeChildTo(0, 1) as CellContainer<TestRuleExtensionFactory>
       child2Container.die()
       spyOn(cellNames, 'getName').and.returnValue('TestCell')
       allSerializableCellContainers = [

@@ -42,20 +42,16 @@ export interface SeedCellAddListener<E extends RuleExtensionFactory> {
 }
 
 /**
- * Listener on cells moved
+ * Listener on cells moved to an arbitrary position
  */
 export interface CellMoveListener<E extends RuleExtensionFactory> {
   /**
    * Method called for registered listeners after a cell was moved.
    *
-   * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
-   * @param cellContainer of the moved cell
-   * @param oldX position of the cell before the move
-   * @param oldY position of the cell before the move
-   * @param dX delta, distance moved in x- direction
-   * @param dY delta, distance moved in y- direction
+   * @param cellContainer The container of the moved cell
+   * @param from The field the container was placed on before the move
    */
-  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void
+  onCellMove(cellContainer: ExtCellContainer<E>, from: ExtPlainField<E>): void
 }
 
 /**
@@ -64,14 +60,10 @@ export interface CellMoveListener<E extends RuleExtensionFactory> {
 export interface CellMakeChildListener<E extends RuleExtensionFactory> {
   /**
    * Method called for registered listeners after a cell made a child
-   *
-   * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
    * @param child container of the child cell
    * @param parent container of the parent cell
-   * @param dX delta, distance from parent to child in x- direction
-   * @param dY delta, distance from parent to child in y- direction
    */
-  onCellMakeChild(child: ExtCellContainer<E>, parent: ExtCellContainer<E>, dX: number, dY: number): void
+  onCellMakeChild(child: ExtCellContainer<E>, parent: ExtCellContainer<E>): void
 }
 
 /**
@@ -81,24 +73,11 @@ export interface CellDivideListener<E extends RuleExtensionFactory> {
   /**
    * Method called for registered listeners after a parent cell divided in two children. Note that the parent dies when dividing.
    *
-   * Note that the delta arguments are useful as it's not easy to calculate these values due to the torus topography of the plain.
    * @param parent container of the (dead) parent cell
    * @param child1 container of the first child
-   * @param dX1 delta, distance from parent to child1 in x- direction
-   * @param dY1 delta, distance from parent to child1 in y- direction
    * @param child2 container of the second child
-   * @param dX2 delta, distance from parent to child2 in x- direction
-   * @param dY2 delta, distance from parent to child2 in y- direction
    */
-  onCellDivide(
-    parent: ExtCellContainer<E>,
-    child1: ExtCellContainer<E>,
-    dX1: number,
-    dY1: number,
-    child2: ExtCellContainer<E>,
-    dX2: number,
-    dY2: number
-  ): void
+  onCellDivide(parent: ExtCellContainer<E>, child1: ExtCellContainer<E>, child2: ExtCellContainer<E>): void
 }
 
 /**
@@ -151,6 +130,18 @@ export class Plain<E extends RuleExtensionFactory> {
         return new PlainField<E>(fieldRecordFactory)
       })
     })
+
+    for (let x = 0; x < _width; x++) {
+      for (let y = 0; y < _height; y++) {
+        const field = this.array[y][x]
+        field._posX = x
+        field._posY = y
+        field.neighbors.push(this.getAtInt(x, y - 1)) // North
+        field.neighbors.push(this.getAtInt(x + 1, y)) // East
+        field.neighbors.push(this.getAtInt(x, y + 1)) // South
+        field.neighbors.push(this.getAtInt(x - 1, y)) // West
+      }
+    }
   }
 
   /**
@@ -191,19 +182,21 @@ export class Plain<E extends RuleExtensionFactory> {
   }
 
   /**
-   * Add a cell container to the plain at a given position
+   * Add a cell container to the plain
    */
   addCellContainer(cellContainer: ExtCellContainer<E>): void {
     this._cellCount++
-    this.array[cellContainer.posY][cellContainer.posX].addCellContainer(cellContainer)
+    const to = cellContainer.plainField
+    this.array[to.posY][to.posX].addCellContainer(cellContainer)
   }
 
   /**
-   * Remove a cell container from the plain at a given position
+   * Remove a cell container from the plain
    */
   removeCellContainer(cellContainer: ExtCellContainer<E>): void {
     this._cellCount--
-    this.array[cellContainer.posY][cellContainer.posX].removeCellContainer(cellContainer)
+    const from = cellContainer.plainField
+    this.array[from.posY][from.posX].removeCellContainer(cellContainer)
   }
 
   /**
@@ -235,12 +228,13 @@ export class Plain<E extends RuleExtensionFactory> {
   /**
    * If a cell is moved, adjust the position of the cell container on the plain and notify registered listeners.
    */
-  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void {
-    this.array[oldY][oldX].removeCellContainer(cellContainer)
-    this.array[cellContainer.posY][cellContainer.posX].addCellContainer(cellContainer)
+  onCellMove(cellContainer: ExtCellContainer<E>, from: ExtPlainField<E>): void {
+    this.array[from.posY][from.posX].removeCellContainer(cellContainer)
+    const to = cellContainer.plainField
+    this.array[to.posY][to.posX].addCellContainer(cellContainer)
 
     this.cellMoveListeners.forEach((listener) => {
-      listener.onCellMove(cellContainer, oldX, oldY, dX, dY)
+      listener.onCellMove(cellContainer, from)
     })
   }
 
@@ -262,11 +256,11 @@ export class Plain<E extends RuleExtensionFactory> {
   /**
    * If a cell made a child, add the container of the child to the plain and notify registered listeners.
    */
-  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void {
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>): void {
     this.addCellContainer(child)
 
     this.cellMakeChildListeners.forEach((listener) => {
-      listener.onCellMakeChild(child, parent, dX, dY)
+      listener.onCellMakeChild(child, parent)
     })
   }
 
@@ -289,21 +283,13 @@ export class Plain<E extends RuleExtensionFactory> {
    * If a cell divided, remove the container of the parent and add the containers of the two children to the plain.
    * Then notify registered listeners.
    */
-  onCellDivide(
-    parent: ExtCellContainer<E>,
-    child1: ExtCellContainer<E>,
-    dX1: number,
-    dY1: number,
-    child2: ExtCellContainer<E>,
-    dX2: number,
-    dY2: number
-  ): void {
+  onCellDivide(parent: ExtCellContainer<E>, child1: ExtCellContainer<E>, child2: ExtCellContainer<E>): void {
     this.removeCellContainer(parent)
     this.addCellContainer(child1)
     this.addCellContainer(child2)
 
     this.cellDivideListeners.forEach((listener) => {
-      listener.onCellDivide(parent, child1, dX1, dY1, child2, dX2, dY2)
+      listener.onCellDivide(parent, child1, child2)
     })
   }
 

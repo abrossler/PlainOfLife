@@ -102,8 +102,7 @@ export class PlainOfLife<E extends RuleExtensionFactory> {
     const posY = Math.floor(plainHeight / 2)
     newPOL.firstCellContainer.first.initSeedCellContainer(
       seedCell,
-      posX,
-      posY,
+      newPOL.plain.getAt(posX, posY),
       newPOL.firstCellContainer,
       newPOL.familyTree.getInitialCellContainerPositions()
     )

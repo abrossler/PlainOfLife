@@ -1,3 +1,4 @@
+import { ExtPlainField } from 'src/app/pol/core/plain_field'
 import { ExtCellContainer } from '../app/pol/core/cell_container'
 import {
   SeedCellAddListener,
@@ -14,23 +15,15 @@ export class MySeedCellAddListener<E extends RuleExtensionFactory> implements Se
 }
 
 export class MyCellMoveListener<E extends RuleExtensionFactory> implements CellMoveListener<E> {
-  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void {}
+  onCellMove(cellContainer: ExtCellContainer<E>, from: ExtPlainField<E>): void {}
 }
 
 export class MyCellMakeChildListener<E extends RuleExtensionFactory> implements CellMakeChildListener<E> {
-  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void {}
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>): void {}
 }
 
 export class MyCellDivideListener<E extends RuleExtensionFactory> implements CellDivideListener<E> {
-  onCellDivide(
-    parent: ExtCellContainer<E>,
-    child1: ExtCellContainer<E>,
-    dX1: number,
-    dY1: number,
-    child2: ExtCellContainer<E>,
-    dX2: number,
-    dY2: number
-  ): void {}
+  onCellDivide(parent: ExtCellContainer<E>, child1: ExtCellContainer<E>, child2: ExtCellContainer<E>): void {}
 }
 
 export class MyCellDeathListener<E extends RuleExtensionFactory> implements CellDeathListener<E> {

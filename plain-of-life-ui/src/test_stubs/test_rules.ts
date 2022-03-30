@@ -35,7 +35,7 @@ export class TestRules extends Rules<TestRules> {
         this.makeChild(cellContainer, plain, 0, 1) // ... reproduce in turn 1
       }
       if (currentTurn === 2n) {
-        this.move(cellContainer, plain, 0, 1) // ... move in turn 2
+        this.moveTo(cellContainer, plain, 0, 1) // ... move in turn 2
       }
     }
   }
@@ -97,7 +97,7 @@ export class TestRules extends Rules<TestRules> {
     dX: number,
     dY: number
   ): void {
-    const child = cellContainer.makeChild(dX, dY)
+    const child = cellContainer.makeChildTo(dX, dY)
     child.cellRecord.parent = cellContainer
     plain.getAt(child.posX, child.posY).fieldRecord.owner = child
   }
@@ -105,8 +105,8 @@ export class TestRules extends Rules<TestRules> {
   /**
    * Move a cell container and make the cell container the owner of the field it is moved to
    */
-  private move(cellContainer: ExtCellContainer<TestRules>, plain: ExtPlain<TestRules>, dX: number, dY: number): void {
-    cellContainer.move(dX, dY)
+  private moveTo(cellContainer: ExtCellContainer<TestRules>, plain: ExtPlain<TestRules>, dX: number, dY: number): void {
+    cellContainer.moveTo(dX, dY)
     plain.getAt(cellContainer.posX, cellContainer.posY).fieldRecord.owner = cellContainer
   }
 }

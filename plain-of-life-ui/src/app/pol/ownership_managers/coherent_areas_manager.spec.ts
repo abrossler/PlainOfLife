@@ -5,6 +5,7 @@ import { PlainOfLife } from '../core/plain_of_life'
 import { TestRules } from '../../../test_stubs/test_rules'
 import { TestCell } from '../../../test_stubs/test_cell'
 import { FloodFill } from '../util/flood_fill'
+import { East, West } from '../util/direction'
 
 describe('CoherentAreasManager', () => {
   describe('test', () => {
@@ -41,8 +42,8 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(1, 1).getCellContainers()[0]
-      a.move(0, -1)
-      a.move(0, -1)
+      a.moveTo(0, -1)
+      a.moveTo(0, -1)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(4)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
@@ -61,8 +62,8 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(1, 0)
-      a.move(1, 0)
+      a.moveTo(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -79,8 +80,8 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(0, 1)
-      a.move(0, 1)
+      a.moveTo(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -97,9 +98,9 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(-1, 0)
-      a.move(-1, 0)
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
+      a.moveTo(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(4)
     })
@@ -119,7 +120,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(2, 1).getCellContainers()[0]
-      a.move(0, -2)
+      a.moveTo(0, -2)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(1)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -136,7 +137,7 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(2, 0).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -155,7 +156,7 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(2, 2).getCellContainers()[0]
-      a.move(0, 2)
+      a.moveTo(0, 2)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -170,7 +171,7 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(-2, 0)
+      a.moveTo(-2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -187,7 +188,7 @@ describe('CoherentAreasManager', () => {
       ]
       let plain = prepare(plainBefore).plain
       let a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(3)
 
@@ -203,7 +204,7 @@ describe('CoherentAreasManager', () => {
       ]
       plain = prepare(plainBefore).plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
 
       plainBefore = [
@@ -218,7 +219,7 @@ describe('CoherentAreasManager', () => {
       ]
       plain = prepare(plainBefore).plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
 
       plainBefore = [
@@ -233,7 +234,7 @@ describe('CoherentAreasManager', () => {
       ]
       plain = prepare(plainBefore).plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -248,7 +249,7 @@ describe('CoherentAreasManager', () => {
       ]
       const plain = prepare(plainBefore).plain
       const a = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
     })
@@ -267,11 +268,11 @@ describe('CoherentAreasManager', () => {
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(0, 1).getCellContainers()[0]
       const b = prep.plain.getAt(1, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
       expect(b.cellRecord.ownedFieldsCount).toBe(0)
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expectedPlainAfter = [
         [' ', ' ', ' '],
         ['a', 'Ba', 'A'],
@@ -298,7 +299,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(0, 1).getCellContainers()[0]
       let b = plain.getAt(1, 2).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
@@ -317,7 +318,7 @@ describe('CoherentAreasManager', () => {
       plain = prepare(plainBefore).plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
 
       plainBefore = [
@@ -333,7 +334,7 @@ describe('CoherentAreasManager', () => {
       plain = prepare(plainBefore).plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(2, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
 
       plainBefore = [
@@ -349,7 +350,7 @@ describe('CoherentAreasManager', () => {
       plain = prepare(plainBefore).plain
       a = plain.getAt(2, 1).getCellContainers()[0]
       b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -371,7 +372,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(0, 2).getCellContainers()[0]
       let b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
       expect(b.cellRecord.ownedFieldsCount).toBe(4)
@@ -394,7 +395,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 2).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
       expect(b.cellRecord.ownedFieldsCount).toBe(7)
@@ -417,7 +418,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 2).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(2)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -439,7 +440,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 2).getCellContainers()[0]
       b = plain.getAt(2, 0).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
@@ -461,7 +462,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(0, 1).getCellContainers()[0]
       let b = plain.getAt(3, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(4)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
@@ -483,7 +484,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(3, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(7)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -505,7 +506,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(3, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(2)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -528,7 +529,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(3, 2).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
@@ -550,7 +551,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(2, 1).getCellContainers()[0]
       let b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(3)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
@@ -570,7 +571,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(3, 1).getCellContainers()[0]
       b = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -594,7 +595,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(3, 1).getCellContainers()[0]
       b = plain.getAt(3, 4).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(4)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -618,7 +619,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(4, 1).getCellContainers()[0]
       b = plain.getAt(0, 0).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(8)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
@@ -640,7 +641,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(2, 1).getCellContainers()[0]
       let b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(3)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
@@ -660,7 +661,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(3, 1).getCellContainers()[0]
       b = plain.getAt(1, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -682,7 +683,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(1, 2).getCellContainers()[0]
       let b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(0, -1)
+      a.moveTo(0, -1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -704,7 +705,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(7)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -728,7 +729,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 4).getCellContainers()[0]
       b = plain.getAt(3, 1).getCellContainers()[0]
-      a.move(0, -1)
+      a.moveTo(0, -1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(6)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
@@ -752,7 +753,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(0, 1).getCellContainers()[0]
       let b = plain.getAt(1, 2).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -772,7 +773,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(1, 2).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(2)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -794,7 +795,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(1, 0).getCellContainers()[0]
       let b = plain.getAt(2, 2).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
@@ -815,7 +816,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(2, 1).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(a.cellRecord.ownedFieldsCount).toBe(2)
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
@@ -840,7 +841,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -864,7 +865,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(3, 3).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(7)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
@@ -888,7 +889,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(3, 3).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(9)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -910,7 +911,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(2, 3).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -932,7 +933,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(3, 2).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(7)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
@@ -952,7 +953,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(1, 0).getCellContainers()[0]
       b = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(0, 1)
+      a.moveTo(0, 1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
@@ -975,7 +976,7 @@ describe('CoherentAreasManager', () => {
       let prep = prepare(plainBefore)
       let plain = prep.plain
       let a = plain.getAt(2, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
 
@@ -995,7 +996,7 @@ describe('CoherentAreasManager', () => {
       prep = prepare(plainBefore)
       plain = prep.plain
       a = plain.getAt(2, 1).getCellContainers()[0]
-      a.move(-1, 0)
+      a.moveTo(-1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2)
     })
@@ -1015,7 +1016,7 @@ describe('CoherentAreasManager', () => {
       let prep = prepare(plainBefore)
       let plain = prep.plain
       let a = plain.getAt(1, 2).getCellContainers()[0]
-      a.move(0, -1)
+      a.moveTo(0, -1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
 
@@ -1033,7 +1034,7 @@ describe('CoherentAreasManager', () => {
       prep = prepare(plainBefore)
       plain = prep.plain
       a = plain.getAt(1, 2).getCellContainers()[0]
-      a.move(0, -1)
+      a.moveTo(0, -1)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
     })
@@ -1055,7 +1056,7 @@ describe('CoherentAreasManager', () => {
       let prep = prepare(plainBefore)
       let plain = prep.plain
       let a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(0)
 
@@ -1075,7 +1076,7 @@ describe('CoherentAreasManager', () => {
       prep = prepare(plainBefore)
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(1, 0)
+      a.moveTo(1, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1)
     })
@@ -1098,7 +1099,7 @@ describe('CoherentAreasManager', () => {
       let plain = prep.plain
       let a = plain.getAt(0, 1).getCellContainers()[0]
       let b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(8)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1) // Called one time when filling old position of A, independent from B
@@ -1120,7 +1121,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(7)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(1) // Called one time when filling old position of A, independent from B
@@ -1142,7 +1143,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(3)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2) // Called one time when filling old position of A, independent from B
@@ -1162,7 +1163,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(5)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2) // Called one time when filling old position of A, independent from B
@@ -1182,7 +1183,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(3, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(1)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(2) // Called one time when filling old position of A, independent from B
@@ -1204,7 +1205,7 @@ describe('CoherentAreasManager', () => {
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
       b = plain.getAt(1, 0).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(b.cellRecord.ownedFieldsCount).toBe(3)
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
@@ -1223,7 +1224,7 @@ describe('CoherentAreasManager', () => {
       prep = prepare(plainBefore)
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(3) // Called one time when filling old position of A, independent from B
 
@@ -1243,7 +1244,7 @@ describe('CoherentAreasManager', () => {
       prep = prepare(plainBefore)
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(4) // Called one time when filling old position of A, independent from B
 
@@ -1261,7 +1262,7 @@ describe('CoherentAreasManager', () => {
       prep = prepare(plainBefore)
       plain = prep.plain
       a = plain.getAt(0, 1).getCellContainers()[0]
-      a.move(2, 0)
+      a.moveTo(2, 0)
       expect(compare(plain, expectedPlainAfter)).toEqual('')
       expect(prep.floodFill.fill).toHaveBeenCalledTimes(4) // Called one time when filling old position of A, independent from B
     })
@@ -1279,8 +1280,8 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(0, 0).getCellContainers()[0]
-      a.makeChild(1, 0)
-      a.makeChild(0, 1)
+      a.makeChildTo(1, 0)
+      a.makeChildTo(0, 1)
       const s = prep.plain.getAt(1, 0).getCellContainers()[0]
       const t = prep.plain.getAt(0, 1).getCellContainers()[0]
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
@@ -1301,9 +1302,9 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(0, 0).getCellContainers()[0]
-      a.makeChild(0, 0)
-      a.makeChild(1, 0)
-      a.makeChild(1, 0)
+      a.makeChildTo(0, 0)
+      a.makeChildTo(1, 0)
+      a.makeChildTo(1, 0)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -1320,7 +1321,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(0, 0).getCellContainers()[0]
-      a.makeChild(1, 1)
+      a.makeChildTo(1, 1)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
     })
   })
@@ -1337,7 +1338,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(2, 0).getCellContainers()[0]
-      a.divide(-2, 0, 2, 0)
+      a.divideTo(-2, 0, 2, 0)
       const s = prep.plain.getAt(0, 0).getCellContainers()[0]
       const t = prep.plain.getAt(4, 0).getCellContainers()[0]
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
@@ -1363,7 +1364,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(2, 0).getCellContainers()[0]
-      a.divide(-1, 0, 1, 0)
+      a.divide(West, East)
       const s = prep.plain.getAt(1, 0).getCellContainers()[0]
       const t = prep.plain.getAt(3, 0).getCellContainers()[0]
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
@@ -1389,7 +1390,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(2, 0).getCellContainers()[0]
-      a.divide(-2, 1, 2, 2)
+      a.divideTo(-2, 1, 2, 2)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -1414,7 +1415,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(2, 0).getCellContainers()[0]
-      a.divide(-1, 0, 2, 0)
+      a.divideTo(-1, 0, 2, 0)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -1437,7 +1438,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(0, 0).getCellContainers()[0]
-      a.divide(0, 0, 3, 2)
+      a.divideTo(0, 0, 3, 2)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
     })
 
@@ -1452,7 +1453,7 @@ describe('CoherentAreasManager', () => {
       ]
       const prep = prepare(plainBefore)
       const a = prep.plain.getAt(0, 0).getCellContainers()[0]
-      a.divide(1, 0, 1, 0)
+      a.divide(East, East)
       expect(compare(prep.plain, expectedPlainAfter)).toEqual('')
     })
   })
@@ -1491,7 +1492,7 @@ function prepare(plainToPrepare: string[][]): {
   const plain: Plain<TestRules> = (plainOfLife as any).plain
   const seedCellContainer: ExtCellContainer<TestRules> = (plainOfLife as any).firstCellContainer.first
   /* eslint-enable @typescript-eslint/no-explicit-any*/
-  seedCellContainer.move(-seedCellContainer.posX, -seedCellContainer.posY)
+  seedCellContainer.moveTo(-seedCellContainer.posX, -seedCellContainer.posY)
 
   const stringContainerMap = new Map<string, ExtCellContainer<TestRules>>()
 
@@ -1507,7 +1508,7 @@ function prepare(plainToPrepare: string[][]): {
 
       for (const c of newContainers) {
         if (!stringContainerMap.has(c)) {
-          const container = seedCellContainer.makeChild(x, y)
+          const container = seedCellContainer.makeChildTo(x, y)
           container.cellRecord.name = c
           stringContainerMap.set(c, container)
         } else {

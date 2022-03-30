@@ -12,7 +12,7 @@ export class DemoRules extends Rules<DemoRules> {
 
   executeTurn(plain: ExtPlain<DemoRules>, cellContainers: CellContainers<DemoRules>): void {
     for (const container of cellContainers) {
-      container.makeChild(1, 1)
+      container.makeChildTo(1, 1)
       plain.getAt(0, 0).fieldRecord.owner = container
     }
   }
@@ -36,7 +36,7 @@ export class DemoRules2 extends Rules<DemoRules> {
 
   executeTurn(plain: ExtPlain<DemoRules2>, cellContainers: CellContainers<DemoRules2>): void {
     for (const container of cellContainers) {
-      container.makeChild(1, 1)
+      container.makeChildTo(1, 1)
 
       plain.getAt(0, 0).fieldRecord.owner = container
     }

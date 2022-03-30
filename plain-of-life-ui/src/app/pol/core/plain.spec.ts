@@ -1,6 +1,6 @@
 import { CellContainer } from './cell_container'
 import { Plain } from './plain'
-import { PlainField } from './plain_field'
+import { ExtPlainField, PlainField } from './plain_field'
 import { TestRuleExtensionFactory } from '../../../test_stubs/test_rule_extension_factory'
 import {
   MyCellDeathListener,
@@ -41,6 +41,19 @@ describe('Plain', () => {
     expect(() => new Plain(ruleExtensionFactory, 100000, 100000)).toThrowError(Error) // Too huge
   })
 
+  it('construction inits position of plain fields', () => {
+    expect(plain.getAt(2, 1).posX).toBe(2)
+    expect(plain.getAt(2, 1).posY).toBe(1)
+  })
+
+  it('construction inits neighbors of plain fields', () => {
+    expect(plain.getAtInt(2, 1).neighbors.length).toBe(4)
+    expect(plain.getAtInt(2, 1).neighbors[0]).toBe(plain.getAtInt(2, 0))
+    expect(plain.getAtInt(2, 1).neighbors[1]).toBe(plain.getAtInt(0, 1)) // Torus topography => exit to east and re-enter from very west
+    expect(plain.getAtInt(2, 1).neighbors[2]).toBe(plain.getAtInt(2, 0)) // Torus topography => exit to south and re-enter from very north
+    expect(plain.getAtInt(2, 1).neighbors[3]).toBe(plain.getAtInt(1, 1))
+  })
+
   it('getAt and getAtInt get individual plain fields', () => {
     expect(plain.getAt(0, 1)).toBe((plain as any).array[1][0])
     expect(plain.getAtInt(0, 1)).toBe((plain as any).array[1][0])
@@ -53,16 +66,14 @@ describe('Plain', () => {
     {
       beforeEach(() => {
         cellContainer = new CellContainer(ruleExtensionFactory, plain)
-        ;(cellContainer as unknown as { _posX: number })._posX = 1
-        ;(cellContainer as unknown as { _posY: number })._posY = 1
+        ;(cellContainer as unknown as { _plainField: ExtPlainField<TestRuleExtensionFactory> })._plainField =
+          plain.getAt(1, 1)
 
         child1 = new CellContainer(ruleExtensionFactory, plain)
-        ;(child1 as unknown as { _posX: number })._posX = 1
-        ;(child1 as unknown as { _posY: number })._posY = 0
+        ;(child1 as unknown as { _plainField: ExtPlainField<TestRuleExtensionFactory> })._plainField = plain.getAt(1, 0)
 
         child2 = new CellContainer(ruleExtensionFactory, plain)
-        ;(child2 as unknown as { _posX: number })._posX = 0
-        ;(child2 as unknown as { _posY: number })._posY = 1
+        ;(child2 as unknown as { _plainField: ExtPlainField<TestRuleExtensionFactory> })._plainField = plain.getAt(0, 1)
       })
     }
     describe('SeedCellAddListener', () => {
@@ -111,16 +122,16 @@ describe('Plain', () => {
         })
       }
       it('is called like expected', () => {
-        plain.onCellMove(cellContainer, 1, 1, -1, -1)
+        plain.onCellMove(cellContainer, cellContainer.plainField)
         expect(cellMoveListener.onCellMove).toHaveBeenCalledTimes(2)
         expect(cellMoveListener2.onCellMove).toHaveBeenCalledTimes(1)
-        expect(cellMoveListener2.onCellMove).toHaveBeenCalledWith(cellContainer, 1, 1, -1, -1)
+        expect(cellMoveListener2.onCellMove).toHaveBeenCalledWith(cellContainer, cellContainer.plainField)
       })
 
       it('can be removed', () => {
         const removed = plain.removeCellMoveListener(cellMoveListener)
         expect(removed).toBe(2)
-        plain.onCellMove(cellContainer, 1, 1, -1, -1)
+        plain.onCellMove(cellContainer, cellContainer.plainField)
         expect(cellMoveListener.onCellMove).toHaveBeenCalledTimes(0)
         expect(cellMoveListener2.onCellMove).toHaveBeenCalledTimes(1)
       })
@@ -137,15 +148,15 @@ describe('Plain', () => {
         })
       }
       it('is called like expected', () => {
-        plain.onCellMakeChild(cellContainer, child1, 0, -1)
+        plain.onCellMakeChild(cellContainer, child1)
         expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledTimes(1)
-        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledWith(child1, cellContainer, 0, -1)
+        expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledWith(child1, cellContainer)
       })
 
       it('can be removed', () => {
         const removed = plain.removeCellMakeChildListener(cellMakeChildListener)
         expect(removed).toBe(1)
-        plain.onCellMakeChild(cellContainer, child1, 0, -1)
+        plain.onCellMakeChild(cellContainer, child1)
         expect(cellMakeChildListener.onCellMakeChild).toHaveBeenCalledTimes(0)
       })
     })
@@ -161,15 +172,15 @@ describe('Plain', () => {
         })
       }
       it('is called like expected', () => {
-        plain.onCellDivide(cellContainer, child1, 0, -1, child2, -1, 0)
+        plain.onCellDivide(cellContainer, child1, child2)
         expect(cellDivideListener.onCellDivide).toHaveBeenCalledTimes(1)
-        expect(cellDivideListener.onCellDivide).toHaveBeenCalledWith(cellContainer, child1, 0, -1, child2, -1, 0)
+        expect(cellDivideListener.onCellDivide).toHaveBeenCalledWith(cellContainer, child1, child2)
       })
 
       it('can be removed', () => {
         const removed = plain.removeCellDivideListener(cellDivideListener)
         expect(removed).toBe(1)
-        plain.onCellDivide(cellContainer, child1, 0, -1, child2, -1, 0)
+        plain.onCellDivide(cellContainer, child1, child2)
         expect(cellDivideListener.onCellDivide).toHaveBeenCalledTimes(0)
       })
     })

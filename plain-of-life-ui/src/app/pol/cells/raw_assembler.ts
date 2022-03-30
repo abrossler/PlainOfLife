@@ -142,7 +142,7 @@ export class RawAssembler extends Cell {
     child.outputOffset = this.outputOffset
 
     // Random change of mutation probability
-    child.mutationProbability += randIntTo(11) - 5
+    child.mutationProbability = this.mutationProbability + randIntTo(11) - 5
     if (child.mutationProbability <= 0) {
       child.mutationProbability = 1
     }

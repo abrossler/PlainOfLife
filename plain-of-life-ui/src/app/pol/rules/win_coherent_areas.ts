@@ -2,16 +2,7 @@ import { Rules } from '../core/rules'
 import { ExtPlain } from '../core/plain'
 import { CellContainers, ExtCellContainer } from '../core/cell_container'
 import { CoherentAreasManager } from '../ownership_managers/coherent_areas_manager'
-import {
-  Direction,
-  getPos4Neighbors,
-  getDeltaLeft,
-  getDeltaRight,
-  turnLeft,
-  turnRight,
-  getDeltaAhead,
-  getDeltaBehind
-} from '../util/direction'
+import { Direction, turnLeft, turnRight, getRelativeDirections } from '../util/direction'
 import { ExtPlainField } from '../core/plain_field'
 
 const maxCellLifeTime = 50
@@ -39,8 +30,7 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
     const output = new Uint8Array(3)
     for (const container of cellContainers) {
       const record = container.cellRecord
-      const x = container.posX
-      const y = container.posY
+      const currentField = container.plainField
 
       // Let too old cells die
       if (record.remainingLifeTime === 0) {
@@ -51,14 +41,14 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
 
       // Cells with too less energy become inactive and can't do anything
       if (record.energy >= minCellEnergy) {
-        // Get depending on the cell heading the 4 neighbor plain fields
-        let [ahead, behind, atLeft, atRight] = get4Neighbors(plain, x, y, record.heading)
+        // Get depending on the cell heading the 4 relative neighbor directions
+        let [ahead, atRight, behind, atLeft] = getRelativeDirections(record.heading)
 
         // Prepare input for cell
-        this.prepareInput(input, 0, ahead, container, record)
-        this.prepareInput(input, 1, behind, container, record)
-        this.prepareInput(input, 2, atRight, container, record)
-        this.prepareInput(input, 3, atLeft, container, record)
+        this.prepareInput(input, 0, currentField.getNeighbor(ahead), container, record)
+        this.prepareInput(input, 1, currentField.getNeighbor(behind), container, record)
+        this.prepareInput(input, 2, currentField.getNeighbor(atRight), container, record)
+        this.prepareInput(input, 3, currentField.getNeighbor(atLeft), container, record)
 
         // Execute turn for cell
         output[0] = output[1] = output[2] = 0
@@ -74,7 +64,8 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
             record.heading = turnRight(record.heading)
           }
           record.energy -= costCellTurn
-          ;[ahead, behind, atLeft, atRight] = get4Neighbors(plain, x, y, record.heading)
+          // With turning the relative directions change
+          ;[ahead, atRight, behind, atLeft] = getRelativeDirections(record.heading)
         }
 
         // Divide cell according to output:
@@ -84,10 +75,12 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         // If the cell is divided, it dies. Child 1 is placed left, child 2 right from the parent relative to the parent's heading.
         // If child 1 is turned, it turns to the left away from the parent.
         // If child 2 is turned, it turns to the right away from the parent.
-        if (output[1] & 0b00000001 && atLeft.isFree() && atRight.isFree()) {
-          const [dxAtLeft, dyAtLeft] = getDeltaLeft(record.heading)
-          const [dxAtRight, dyAtRight] = getDeltaRight(record.heading)
-          const [child1, child2] = container.divide(dxAtLeft, dyAtLeft, dxAtRight, dyAtRight)
+        if (
+          output[1] & 0b00000001 &&
+          currentField.getNeighbor(atLeft).isFree() &&
+          currentField.getNeighbor(atRight).isFree()
+        ) {
+          const [child1, child2] = container.divide(atLeft, atRight)
           const childEnergy = ((record.energy * percentageEnergyPerChildOnDivide) / 100) | 0
           const record1 = child1.cellRecord
           record1.energy = childEnergy
@@ -113,16 +106,8 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
         // the moving cell is stronger, it eats the attacked cell and gains a share of the eaten cell's energy. If the attacked
         // cell is stronger the attack fails and the moving cell just dies.
         if (output[2] & 0b00000001) {
-          let dxToMove: number
-          let dyToMove: number
-          let targetField: ExtPlainField<WinCoherentAreas>
-          if (output[2] & 0b00000010) {
-            ;[dxToMove, dyToMove] = getDeltaAhead(record.heading)
-            targetField = ahead
-          } else {
-            ;[dxToMove, dyToMove] = getDeltaBehind(record.heading)
-            targetField = behind
-          }
+          const moveDirection = output[2] & 0b00000010 ? ahead : behind
+          const targetField = currentField.getNeighbor(moveDirection)
           if (!targetField.isFree()) {
             const targetCellContainer = targetField.getCellContainers()[0]
             if (targetCellContainer.cellRecord.energy > record.energy) {
@@ -133,18 +118,18 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
               targetCellContainer.die()
             }
           }
-          container.move(dxToMove, dyToMove)
+          container.move(moveDirection)
           record.energy -= costCellMove
         }
       }
 
       // Gain energy from owned fields
-      record.energy += record.ownedFieldsCount * this.irradiance[container.posY]
+      record.energy += record.ownedFieldsCount * this.irradiance[currentField.posY]
     }
   }
 
   createNewCellRecord(): { heading: Direction; energy: number; remainingLifeTime: number; ownedFieldsCount: number } {
-    return { heading: 'UP', energy: 0, remainingLifeTime: maxCellLifeTime, ownedFieldsCount: 0 }
+    return { heading: 0, energy: 0, remainingLifeTime: maxCellLifeTime, ownedFieldsCount: 0 }
   }
 
   createNewFieldRecord(): { owner: ExtCellContainer<WinCoherentAreas> | null } {
@@ -212,24 +197,4 @@ export class WinCoherentAreas extends Rules<WinCoherentAreas> {
       }
     }
   }
-}
-
-function get4Neighbors(
-  plain: ExtPlain<WinCoherentAreas>,
-  x: number,
-  y: number,
-  heading: Direction
-): [
-  ExtPlainField<WinCoherentAreas>,
-  ExtPlainField<WinCoherentAreas>,
-  ExtPlainField<WinCoherentAreas>,
-  ExtPlainField<WinCoherentAreas>
-] {
-  const [xAhead, yAhead, xBehind, yBehind, xAtLeft, yAtLeft, xAtRight, yAtRight] = getPos4Neighbors(x, y, heading)
-  return [
-    plain.getAt(xAhead, yAhead),
-    plain.getAt(xBehind, yBehind),
-    plain.getAt(xAtLeft, yAtLeft),
-    plain.getAt(xAtRight, yAtRight)
-  ]
 }

@@ -122,8 +122,7 @@ describe('Family Tree', () => {
       seedCell = new TestCell()
       cellContainer.initSeedCellContainer(
         seedCell,
-        1,
-        1,
+        plain.getAt(1, 1),
         firstCellContainer,
         familyTree.getInitialCellContainerPositions()
       )
@@ -144,7 +143,7 @@ describe('Family Tree', () => {
     it('updates the positions in the family tree in subsequent turns and keeps order of the cells', () => {
       for (let i = 0; i < familyTree.getScales().length; i++) {
         const scale = (familyTree as unknown as { scales: number[] }).scales[i]
-        firstCellContainer.first.divide(0, 0, 0, 0)
+        firstCellContainer.first.divideTo(0, 0, 0, 0)
         familyTree.update(new CellContainers(firstCellContainer), i + 2, BigInt(scale))
         let lastPos = -1
         for (const container of new CellContainers(firstCellContainer)) {

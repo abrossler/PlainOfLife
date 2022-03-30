@@ -3,8 +3,8 @@ import { SerializableCellContainer, SerializableCellContainers } from './seriali
 import { cellNames } from '../cells/cell_names'
 import { RuleExtensionFactory } from './rule_extension_factory'
 import { checkBoolean, checkInt, checkNumber, checkString } from '../util/type_checks'
-import { modulo } from '../util/modulo'
 import { randIntTo } from '../util/rand'
+import { Direction } from '../util/direction'
 
 /**
  * Interface to add and remove cell containers from plain fields.
@@ -13,22 +13,24 @@ import { randIntTo } from '../util/rand'
  * cell_containers
  */
 interface Plain<E extends RuleExtensionFactory> {
+  getAt(posX: number, posY: number): PlainField<E>
   get width(): number
   get height(): number
   addCellContainer(cellContainer: ExtCellContainer<E>): void
   onSeedCellAdd(cellContainer: ExtCellContainer<E>): void
-  onCellMove(cellContainer: ExtCellContainer<E>, oldX: number, oldY: number, dX: number, dY: number): void
-  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>, dX: number, dY: number): void
-  onCellDivide(
-    parent: ExtCellContainer<E>,
-    child1: ExtCellContainer<E>,
-    dX1: number,
-    dY1: number,
-    child2: ExtCellContainer<E>,
-    dX2: number,
-    dY2: number
-  ): void
+  onCellMove(cellContainer: ExtCellContainer<E>, from: PlainField<E>): void
+  onCellMakeChild(parent: ExtCellContainer<E>, child: ExtCellContainer<E>): void
+  onCellDivide(parent: ExtCellContainer<E>, child1: ExtCellContainer<E>, child2: ExtCellContainer<E>): void
   onCellDeath(cellContainer: ExtCellContainer<E>): void
+}
+
+interface PlainField<E extends RuleExtensionFactory> {
+  fieldRecord: ReturnType<E['createNewFieldRecord']>
+  getCellContainers(): Readonly<ExtCellContainer<E>[]>
+  isFree(): boolean
+  get posX(): number
+  get posY(): number
+  getNeighbor(direction: Direction): PlainField<E>
 }
 
 /**
@@ -41,12 +43,15 @@ interface Plain<E extends RuleExtensionFactory> {
  */
 export type ExtCellContainer<E extends RuleExtensionFactory> = Pick<
   CellContainer<E>,
-  | 'makeChild'
+  | 'makeChildTo'
+  | 'divideTo'
   | 'divide'
+  | 'moveTo'
   | 'move'
   | 'executeTurn'
   | 'posX'
   | 'posY'
+  | 'plainField'
   | 'color'
   | 'die'
   | 'isDead'
@@ -97,7 +102,7 @@ export class CellContainers<E extends RuleExtensionFactory> {
 /**
  * The container for all cells - not for direct usage outside of the POL core: Outside {@link ExtCellContainer} shall be used
  *
- * Cell containers form a cyclic list of alive cells. Starting from a seed container {@link makeChild} inserts children into the
+ * Cell containers form a cyclic list of alive cells. Starting from a seed container {@link makeChildTo} inserts children into the
  * cycle, {@link die} removes the cell container from the cycle.
  *
  * Note that the list of cell containers must never be empty and as exception in case of "game over" the last cell that died
@@ -112,10 +117,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
   private plain: Plain<E>
   /** The factory to create rule specific cell records */
   private cellRecordFactory: RuleExtensionFactory
-  /** X position of the cell on the plain */
-  private _posX!: number
-  /** Y position of the cell on the plain */
-  private _posY!: number
+  /** The plain field the container is located on */
+  private _plainField!: PlainField<E>
   /** The cell this cell container holds */
   private cell!: Cell
   /** The cell record with rule specific extensions as returned by createNewCellRecord */
@@ -130,7 +133,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    */
   private firstCellContainer: FirstCellContainer<E> | undefined
   /**
-   * Color of the cell container. With {@link makeChild} the color of the child is randomly changed slightly. Thus closely related
+   * Color of the cell container. With {@link createChildContainer} the color of the child is randomly changed slightly. Thus closely related
    * cell containers have a similar color whereas not related cell containers typically have a different color
    */
   color = new Uint8ClampedArray([128, 0, 255, 255])
@@ -144,7 +147,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * Constructor of a cell container instance. Call {@link initSeedCellContainer} or {@link initFromSerializable} before using
    * the instance.
    *
-   * Note that rules must create new cells with containers using {@link makeChild}.
+   * Note that rules must create new cells with containers using methods such as {@link makeChildTo} or {@link divide}.
    *
    * @param cellRecordFactory
    * @param plain The plain the new container belongs to
@@ -160,8 +163,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    */
   initSeedCellContainer(
     cell: Cell,
-    posX: number,
-    posY: number,
+    plainField: PlainField<E>,
     firstCellContainer: FirstCellContainer<E>,
     positionsInFamilyTree: number[]
   ): void {
@@ -173,9 +175,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
     this.firstCellContainer = firstCellContainer
     firstCellContainer.first = this
 
-    // Don't forget to set the position of the container and to add the seed cell container to the plain
-    this._posX = modulo(posX, this.plain.width)
-    this._posY = modulo(posY, this.plain.height)
+    // Don't forget to place the seed cell container to the plain
+    this._plainField = plainField
     this.plain.onSeedCellAdd(this)
 
     // Copy the initial positions in the family tree to a new array
@@ -243,8 +244,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
       // cellRecord is de-serialized separately because cell records might hold cell container references and we must
       // collect all cell containers first
 
-      current._posX = modulo(posX, this.plain.width)
-      current._posY = modulo(posY, this.plain.height)
+      current._plainField = current.plain.getAt(posX, posY)
       current._isDead = isDead
       current.color[0] = colorRed
       current.color[1] = colorGreen
@@ -282,8 +282,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
     serializable.cellTypeName = cellTypeName
     serializable.cell = this.cell.toSerializable()
     serializable.isDead = this._isDead
-    serializable.posX = this._posX
-    serializable.posY = this._posY
+    serializable.posX = this._plainField.posX
+    serializable.posY = this._plainField.posY
     serializable.colorRed = this.color[0]
     serializable.colorGreen = this.color[1]
     serializable.colorBlue = this.color[2]
@@ -310,14 +310,21 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * Get the X position of the cell on the plain
    */
   get posX(): number {
-    return this._posX
+    return this._plainField.posX
   }
 
   /**
    * Get the Y position of the cell on the plain
    */
   get posY(): number {
-    return this._posY
+    return this._plainField.posY
+  }
+
+  /**
+   * Get the plain field the container is placed on
+   */
+  get plainField(): PlainField<E> {
+    return this._plainField
   }
 
   /**
@@ -336,11 +343,11 @@ export class CellContainer<E extends RuleExtensionFactory> {
   }
 
   /**
-   * Let a cell move on the plain.
+   * Let a cell move on the plain. For best performance prefer {@link move} if possible.
    * @param dX the delta to the current x position - e.g. 2 moves the container 2 fields to the right
    * @param dY the delta to the current y position - e.g. -2 moves the container 2 fields up
    */
-  move(dX: number, dY: number): void {
+  moveTo(dX: number, dY: number): void {
     checkInt(dX)
     checkInt(dY)
 
@@ -348,12 +355,19 @@ export class CellContainer<E extends RuleExtensionFactory> {
       return
     }
 
-    const oldX = this._posX
-    const oldY = this._posY
+    const from = this._plainField
 
-    this._posX = modulo(oldX + dX, this.plain.width)
-    this._posY = modulo(oldY + dY, this.plain.height)
-    this.plain.onCellMove(this, oldX, oldY, dX, dY)
+    this._plainField = this.plain.getAt(from.posX + dX, from.posY + dY)
+    this.plain.onCellMove(this, from)
+  }
+
+  /**
+   * Let a cell move to the neighbor field on the plain in a given direction
+   */
+  move(direction: Direction) {
+    const from = this._plainField
+    this._plainField = from.getNeighbor(direction)
+    this.plain.onCellMove(this, from)
   }
 
   /**
@@ -365,12 +379,14 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * @param dY the delta to the parent's y position - e.g. -2 places the child 2 fields above the parent
    * @returns the cell container of the child
    */
-  makeChild(dX: number, dY: number): ExtCellContainer<E> {
+  makeChildTo(dX: number, dY: number): ExtCellContainer<E> {
     checkInt(dX)
     checkInt(dY)
 
-    const childContainer = this.createChildContainer(this._posX + dX, this._posY + dY)
-    this.plain.onCellMakeChild(this, childContainer, dX, dY)
+    const childContainer = this.createChildContainer(
+      this.plain.getAt(this._plainField.posX + dX, this._plainField.posY + dY)
+    )
+    this.plain.onCellMakeChild(this, childContainer)
 
     return childContainer
   }
@@ -380,24 +396,46 @@ export class CellContainer<E extends RuleExtensionFactory> {
    *
    * The parent cell dies. The two children are added before the parent to the cell containers. Thus when iterating on the cell
    * containers, the just created children will not be included in the current iteration.
+   *
+   * For best performance prefer {@link divide} if possible.
    * @param dX1 the delta of child 1 to the parent's x position
    * @param dY1 the delta of child 1 to the parent's y position
    * @param dX2 the delta of child 2 to the parent's x position
    * @param dY2 the delta of child 2 to the parent's y position
    * @returns the cell containers of the two children
    */
-  divide(dX1: number, dY1: number, dX2: number, dY2: number): [ExtCellContainer<E>, ExtCellContainer<E>] {
+  divideTo(dX1: number, dY1: number, dX2: number, dY2: number): [ExtCellContainer<E>, ExtCellContainer<E>] {
     checkInt(dX1)
     checkInt(dY1)
     checkInt(dX2)
     checkInt(dY2)
 
-    const childContainer1 = this.createChildContainer(this._posX + dX1, this._posY + dY1)
-    const childContainer2 = this.createChildContainer(this._posX + dX2, this._posY + dY2)
+    const posX = this._plainField.posX
+    const posY = this._plainField.posY
+
+    const childContainer1 = this.createChildContainer(this.plain.getAt(posX + dX1, posY + dY1))
+    const childContainer2 = this.createChildContainer(this.plain.getAt(posX + dX2, posY + dY2))
 
     this._isDead = true
     this.removeDead()
-    this.plain.onCellDivide(this, childContainer1, dX1, dY1, childContainer2, dX2, dY2)
+    this.plain.onCellDivide(this, childContainer1, childContainer2)
+
+    return [childContainer1, childContainer2]
+  }
+
+  /**
+   * Let a cell divide in two children. The children are placed on neighbor fields of the parent's position in the given directions.
+   *
+   * The parent cell dies. The two children are added before the parent to the cell containers. Thus when iterating on the cell
+   * containers, the just created children will not be included in the current iteration.
+   */
+  divide(direction1: Direction, direction2: Direction): [ExtCellContainer<E>, ExtCellContainer<E>] {
+    const childContainer1 = this.createChildContainer(this._plainField.getNeighbor(direction1))
+    const childContainer2 = this.createChildContainer(this._plainField.getNeighbor(direction2))
+
+    this._isDead = true
+    this.removeDead()
+    this.plain.onCellDivide(this, childContainer1, childContainer2)
 
     return [childContainer1, childContainer2]
   }
@@ -436,7 +474,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
    * Create and init the cell container of a new child
    * @returns the cell container
    */
-  private createChildContainer(posX: number, posY: number): CellContainer<E> {
+  private createChildContainer(posChild: PlainField<E>): CellContainer<E> {
     const childContainer = new CellContainer<E>(this.cellRecordFactory, this.plain)
 
     // Insert child before parent
@@ -456,8 +494,7 @@ export class CellContainer<E extends RuleExtensionFactory> {
     childContainer.cell = this.cell.makeChild()
 
     // Set the position of the child on the plain
-    childContainer._posX = modulo(posX, this.plain.width)
-    childContainer._posY = modulo(posY, this.plain.height)
+    childContainer._plainField = posChild
 
     // Random drift of colors to indicate how close cells are related: Similar colors (likely) indicate that cells are
     // closely related
