@@ -1,19 +1,7 @@
 {
-    "compilerOptions": {
-        "lib": ["es2015"],
-        "module": "commonjs",
-//        "declaration": true, // Needed to include types if building a package
-        "outDir": "./dist",
-        "sourceMap": true,
-        "strict": true,
-        "target": "ES2020",
-        "experimentalDecorators": true
-    },
-    "include": [
-        "src"
-, "tests/app/pol/stubs/test_cell.ts"    ],
-    "exclude": [
-//        "node_modules",
-        "**/__tests__/*"
-    ]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }

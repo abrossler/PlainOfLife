@@ -3,7 +3,21 @@
     "allow": [
       "Bash(ssh-keygen:*)",
       "Bash(ssh:*)",
-      "Bash(ssh-keyscan:*)"
+      "Bash(ssh-keyscan:*)",
+      "Bash(npm --version)",
+      "Bash(npm show:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx svelte-check:*)",
+      "Bash(npx vite:*)",
+      "Bash(node fix-type-imports.mjs)",
+      "Bash(npm outdated:*)",
+      "Bash(node migrate-specs.mjs)",
+      "Bash(rm migrate-specs.mjs)",
+      "Bash(npx vitest:*)",
+      "Bash(node fix-paths.mjs)",
+      "Bash(rm fix-paths.mjs)",
+      "Bash(node -e ':*)"
     ]
   }
 }
