@@ -3,7 +3,22 @@
     "allow": [
       "Bash(git push:*)",
       "Bash(npm run:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(cat)",
+      "Bash(npx tsx:*)",
+      "Bash(tsx --version)",
+      "Bash(node:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('packages',{}\\).keys\\(\\)\\)[:30]\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('type:', d.get\\('type'\\)\\); print\\('main:', d.get\\('main'\\)\\); print\\('module:', d.get\\('module'\\)\\); print\\('exports:', d.get\\('exports'\\)\\)\")",
+      "Bash(npm install:*)",
+      "Bash(curl -s http://127.0.0.1:3001/sessions/test)",
+      "Bash(kill %1)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3001)",
+      "Bash(taskkill:*)",
+      "Bash(cmd:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(powershell:*)"
     ]
   }
 }

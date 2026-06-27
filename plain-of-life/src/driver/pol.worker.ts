@@ -56,9 +56,10 @@ class PolWorker {
     const timeStampBefore = performance.now()
     this.plainOfLife.executeTurn()
     if (this.plainOfLife.currentTurn % logTurn === 0n) {
+      const dt = performance.now() - timeStampBefore
       const cellCount = this.plainOfLife.cellCount
-      this.logger.info('Turn ' + this.plainOfLife.currentTurn + ' with ' + cellCount + ' cells')
-      this.logger.debug('Time per cell: ' + (performance.now() - timeStampBefore) / cellCount, false)
+      const timePerCell = cellCount > 0 ? (dt / cellCount).toFixed(5) : 'n/a'
+      this.logger.info(`Turn ${this.plainOfLife.currentTurn} | ${cellCount} cells | ${dt.toFixed(1)} ms/turn | ${timePerCell} ms/cell`)
     }
 
     this.channel.port1.postMessage(null) // schedule next turn

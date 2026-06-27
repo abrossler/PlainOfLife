@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { PolDriver, type PolTurnListener } from './driver/pol_driver'
-  import { RawAssembler } from './pol/cells/raw_assembler'
-  import { WinCoherentAreas } from './pol/rules/win_coherent_areas'
+  import { cellNames } from './pol/cells/cell_names'
+  import { ruleNames } from './pol/rules/rules_names'
 
   // Plain of Life geometry — matches the original Angular UI
   const plainWidth = 250
@@ -16,7 +16,7 @@
   // --- Driver setup ---
   // The driver owns the simulation. We create it once at component load and never replace it.
   const driver = new PolDriver()
-  driver.init(plainWidth, plainHeight, WinCoherentAreas, RawAssembler, familyTreeWidth, familyTreeHeight)
+  driver.init(plainWidth, plainHeight, ruleNames.getConstructor('Win Coherent Areas')!, cellNames.getConstructor('Raw Assembler')!, familyTreeWidth, familyTreeHeight)
 
   // --- Reactive UI state ---
   // $state() makes these reactive — when they change, anything reading them re-renders.
@@ -25,6 +25,8 @@
   let familyTreeScales: string[] = $state(driver.plainOfLife.getFamilyTreeScales())
   let familyTreeScale = $state(familyTreeScales[0])
   let selectedScale = $state(familyTreeScale)
+  let selectedCellName = $state('Raw Assembler')
+  let selectedRulesName = $state('Win Coherent Areas')
   let showScaleDialog = $state(false)
   let showRestartDialog = $state(false)
   let currentTurn = $state(0n)
@@ -88,7 +90,9 @@
   }
 
   function confirmRestart() {
-    driver.init(plainWidth, plainHeight, WinCoherentAreas, RawAssembler, familyTreeWidth, familyTreeHeight)
+    const Cell = cellNames.getConstructor(selectedCellName)!
+    const Rules = ruleNames.getConstructor(selectedRulesName)!
+    driver.init(plainWidth, plainHeight, Rules, Cell, familyTreeWidth, familyTreeHeight)
     isRunning = false
     showRestartDialog = false
     paint()
@@ -159,6 +163,24 @@
     <div class="modal-backdrop" onclick={() => (showRestartDialog = false)} role="presentation">
       <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog">
         <h2>Restart simulation?</h2>
+        <div class="restart-options">
+          <label>
+            Cells
+            <select bind:value={selectedCellName}>
+              {#each cellNames.getNames() as name (name)}
+                <option>{name}</option>
+              {/each}
+            </select>
+          </label>
+          <label>
+            Rules
+            <select bind:value={selectedRulesName}>
+              {#each ruleNames.getNames() as name (name)}
+                <option>{name}</option>
+              {/each}
+            </select>
+          </label>
+        </div>
         <p>Current state will be lost. Save first if you want to keep it.</p>
         <div class="modal-actions">
           <button onclick={() => (showRestartDialog = false)}>Cancel</button>
@@ -291,8 +313,25 @@
     cursor: pointer;
   }
 
-  .scale-options {
+  .restart-options {
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .restart-options label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .restart-options select {
+    flex: 1;
+  }
+
+  .scale-options {    display: flex;
     flex-direction: column;
     gap: 0.5rem;
     margin: 1rem 0;
