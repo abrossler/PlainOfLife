@@ -124,17 +124,17 @@ describe('Serialization', () => {
       const object = getTstObject().typedArrays
       const serializable = new Serialization().toSerializable(object)
       it('performs the standard mappings for typed arrays correctly', () => {
-        expect(serializable.int8Array__Int8Array__).toEqual(encode(object.int8Array))
-        expect(serializable.uint8Array__Uint8Array__).toEqual(encode(object.uint8Array))
-        expect(serializable.uint8ClampedArray__Uint8ClampedArray__).toEqual(encode(object.uint8ClampedArray))
-        expect(serializable.int16Array__Int16Array__).toEqual(encode(object.int16Array.buffer))
-        expect(serializable.uint16Array__Uint16Array__).toEqual(encode(object.uint16Array.buffer))
-        expect(serializable.int32Array__Int32Array__).toEqual(encode(object.int32Array.buffer))
-        expect(serializable.uint32Array__Uint32Array__).toEqual(encode(object.uint32Array.buffer))
-        expect(serializable.float32Array__Float32Array__).toEqual(encode(object.float32Array.buffer))
-        expect(serializable.float64Array__Float64Array__).toEqual(encode(object.float64Array.buffer))
-        expect(serializable.bigInt64Array__BigInt64Array__).toEqual(encode(object.bigInt64Array.buffer))
-        expect(serializable.bigUint64Array__BigUint64Array__).toEqual(encode(object.bigUint64Array.buffer))
+        expect(serializable.int8Array__Int8Array__).toEqual(encode(object.int8Array.buffer as ArrayBuffer))
+        expect(serializable.uint8Array__Uint8Array__).toEqual(encode(object.uint8Array.buffer as ArrayBuffer))
+        expect(serializable.uint8ClampedArray__Uint8ClampedArray__).toEqual(encode(object.uint8ClampedArray.buffer as ArrayBuffer))
+        expect(serializable.int16Array__Int16Array__).toEqual(encode(object.int16Array.buffer as ArrayBuffer))
+        expect(serializable.uint16Array__Uint16Array__).toEqual(encode(object.uint16Array.buffer as ArrayBuffer))
+        expect(serializable.int32Array__Int32Array__).toEqual(encode(object.int32Array.buffer as ArrayBuffer))
+        expect(serializable.uint32Array__Uint32Array__).toEqual(encode(object.uint32Array.buffer as ArrayBuffer))
+        expect(serializable.float32Array__Float32Array__).toEqual(encode(object.float32Array.buffer as ArrayBuffer))
+        expect(serializable.float64Array__Float64Array__).toEqual(encode(object.float64Array.buffer as ArrayBuffer))
+        expect(serializable.bigInt64Array__BigInt64Array__).toEqual(encode(object.bigInt64Array.buffer as ArrayBuffer))
+        expect(serializable.bigUint64Array__BigUint64Array__).toEqual(encode(object.bigUint64Array.buffer as ArrayBuffer))
       })
     }
 

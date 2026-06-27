@@ -35,7 +35,7 @@ export class FamilyTree {
   toSerializable(): SerializableFamilyTree {
     const encodedImages: string[] = []
     this._images.forEach((image) => {
-      encodedImages.push(encode(image))
+      encodedImages.push(encode(image.buffer as ArrayBuffer))
     })
 
     return {

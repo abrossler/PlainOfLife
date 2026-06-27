@@ -48,7 +48,7 @@ describe('Family Tree', () => {
       expect(serializableFamilyTree.height).toBe(familyTreeHeight)
     })
     it('serializes images correctly', () => {
-      expect(serializableFamilyTree.images[0]).toEqual(encode(familyTree.getImage(familyTree.getScales()[0])))
+      expect(serializableFamilyTree.images[0]).toEqual(encode(familyTree.getImage(familyTree.getScales()[0]).buffer as ArrayBuffer))
       expect(serializableFamilyTree.images.length).toBe(familyTree.getScales().length)
     })
   })

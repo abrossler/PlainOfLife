@@ -147,7 +147,7 @@ describe('Cell Container', () => {
 
     it('creates a child cell by calling cell.makeChild', () => {
       expect((child1Container as any).cell).toBeInstanceOf(TestCell)
-      vi.spyOn(seedCell, 'makeChild').mockImplementation(() => {})
+      vi.spyOn(seedCell, 'makeChild').mockImplementation(() => new TestCell())
       cellContainer.makeChildTo(0, 1)
       expect(seedCell.makeChild).toHaveBeenCalledTimes(1)
     })

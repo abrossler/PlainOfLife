@@ -13,7 +13,7 @@ export class TestRuleExtensionFactory implements RuleExtensionFactory {
   }
 
   createNewFieldRecord(): { recordId: number } {
-    return { recordId: TestRuleExtensionFactory.fieldRecordId } // TODO ++
+    return { recordId: TestRuleExtensionFactory.fieldRecordId++ }
   }
 }
 

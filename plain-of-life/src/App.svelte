@@ -46,7 +46,7 @@
     plainCtx.putImageData(img, 0, 0)
 
     const familyTreeImage = new ImageData(
-      driver.plainOfLife.getFamilyTreeImage(familyTreeScale),
+      driver.plainOfLife.getFamilyTreeImage(familyTreeScale) as unknown as Uint8ClampedArray<ArrayBuffer>,
       familyTreeWidth,
       familyTreeHeight
     )
@@ -100,8 +100,8 @@
     paint()
   }
 
-  function save() {
-    driver.saveToFile()
+  async function save() {
+    await driver.saveToFile()
   }
 
   function openFile() {

@@ -48,73 +48,67 @@ export class Serialization {
       this.addMapping(
         Int8Array,
         '__Int8Array__',
-        (toMap: Int8Array) => encode(toMap.buffer),
-        (toMap: string) => new Int8Array(decode(toMap))
-      )
-      this.addMapping(
-        Int8Array,
-        '__Int8Array__',
-        (toMap: Int8Array) => encode(toMap.buffer),
+        (toMap: Int8Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Int8Array(decode(toMap))
       )
       this.addMapping(
         Uint8Array,
         '__Uint8Array__',
-        (toMap: Uint8Array) => encode(toMap.buffer),
+        (toMap: Uint8Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Uint8Array(decode(toMap))
       )
       this.addMapping(
         Uint8ClampedArray,
         '__Uint8ClampedArray__',
-        (toMap: Uint8ClampedArray) => encode(toMap.buffer),
+        (toMap: Uint8ClampedArray) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Uint8ClampedArray(decode(toMap))
       )
       this.addMapping(
         Int16Array,
         '__Int16Array__',
-        (toMap: Int16Array) => encode(toMap.buffer),
+        (toMap: Int16Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Int16Array(decode(toMap))
       )
       this.addMapping(
         Uint16Array,
         '__Uint16Array__',
-        (toMap: Uint16Array) => encode(toMap.buffer),
+        (toMap: Uint16Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Uint16Array(decode(toMap))
       )
       this.addMapping(
         Int32Array,
         '__Int32Array__',
-        (toMap: Int32Array) => encode(toMap.buffer),
+        (toMap: Int32Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Int32Array(decode(toMap))
       )
       this.addMapping(
         Uint32Array,
         '__Uint32Array__',
-        (toMap: Uint32Array) => encode(toMap.buffer),
+        (toMap: Uint32Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Uint32Array(decode(toMap))
       )
       this.addMapping(
         Float32Array,
         '__Float32Array__',
-        (toMap: Float32Array) => encode(toMap.buffer),
+        (toMap: Float32Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Float32Array(decode(toMap))
       )
       this.addMapping(
         Float64Array,
         '__Float64Array__',
-        (toMap: Float64Array) => encode(toMap.buffer),
+        (toMap: Float64Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new Float64Array(decode(toMap))
       )
       this.addMapping(
         BigInt64Array,
         '__BigInt64Array__',
-        (toMap: BigInt64Array) => encode(toMap.buffer),
+        (toMap: BigInt64Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new BigInt64Array(decode(toMap))
       )
       this.addMapping(
         BigUint64Array,
         '__BigUint64Array__',
-        (toMap: BigUint64Array) => encode(toMap.buffer),
+        (toMap: BigUint64Array) => encode(toMap.buffer as ArrayBuffer),
         (toMap: string) => new BigUint64Array(decode(toMap))
       )
     }
@@ -148,7 +142,7 @@ export class Serialization {
    * @param toMap Constructor of the properties to map. The mapping is applied to any property were (property instanceof toMap) is true
    * @param mapAs Suffix to the name of the mapped property in the serializable object
    */
-  addClassMapping<T>(toMap: new () => T, mapAs: string): Serialization {
+  addClassMapping<T extends object>(toMap: new () => T, mapAs: string): Serialization {
     this.mappings.push({
       toMap,
       mapAs,
@@ -208,7 +202,7 @@ export class Serialization {
 
   private _toSerializable(from: unknown): unknown {
     // All kinds of non null and non empty objects...
-    if (typeof from === 'object' && from !== {} && from !== null) {
+    if (typeof from === 'object' && from !== null) {
       const to: { [key: string]: unknown } = {}
       // For the values of all properties
       for (let key in from) {
@@ -311,7 +305,7 @@ export class Serialization {
 
   private _fromSerializable(from: unknown): unknown {
     // All kinds of non null and non empty objects...
-    if (typeof from === 'object' && from !== {} && from !== null) {
+    if (typeof from === 'object' && from !== null) {
       const to: { [key: string]: unknown } = {}
       // For all properties
       for (let key in from) {

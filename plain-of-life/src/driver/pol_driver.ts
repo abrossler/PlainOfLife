@@ -8,9 +8,6 @@ import { LogService } from '../pol/util/log.service'
 /** Log every n'th turn */
 const logTurn = 100n
 
-/** Milliseconds to wait before a web worker is started to continue with the turn execution in background after the tab became invisible */
-const msToWaitBeforeWorkerStart = 5000
-
 /**
  * An interface called by the driver whenever a Plain of Life turn was executed in the foreground.
  *
@@ -45,13 +42,7 @@ export class PolDriver {
         this.switchToForeground()
       } else {
         this.logger.info('Tab became invisible')
-        setTimeout(() => {
-          // Still not visible after timeout
-          if (document.visibilityState !== 'visible') {
-            this.logger.info('Tab still invisible')
-            this.switchToBackground()
-          }
-        }, msToWaitBeforeWorkerStart)
+        this.switchToBackground()
       }
     })
   }
@@ -72,21 +63,34 @@ export class PolDriver {
   }
 
   /**
-   * Save the Plain of Life run by the driver to a local file via a browser download.
+   * Save the Plain of Life run by the driver to a local file.
    *
-   * Uses a programmatic <a download> click instead of file-saver — keeps the dependency footprint tiny.
+   * Uses the File System Access API (showSaveFilePicker) when available — gives a native Save dialog.
+   * Falls back to a programmatic <a download> click for browsers that don't support it (e.g. Firefox).
    */
-  saveToFile(fileName?: string | undefined): void {
+  async saveToFile(fileName?: string | undefined): Promise<void> {
     if (!fileName) {
       fileName = 'Turn' + this.plainOfLife.currentTurn + '_' + this.plainOfLife.getRulesName().replace(/\s/g, '') + '.json'
     }
-    const blob = new Blob([JSON.stringify(this.plainOfLife.toSerializable())])
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileName
-    a.click()
-    URL.revokeObjectURL(url)
+    const json = JSON.stringify(this.plainOfLife.toSerializable())
+
+    if ('showSaveFilePicker' in window) {
+      const fileHandle = await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'Plain of Life JSON', accept: { 'application/json': ['.json'] } }],
+      })
+      const writable = await fileHandle.createWritable()
+      await writable.write(json)
+      await writable.close()
+    } else {
+      const blob = new Blob([json])
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
+    }
   }
 
   /**
@@ -126,7 +130,8 @@ export class PolDriver {
   }
 
   /**
-   * If running, terminate the worker and schedule the turn execution in the foreground.
+   * If running, request the latest state from the worker, then terminate it and
+   * resume foreground execution from that state.
    */
   private switchToForeground(): void {
     if (!this._plainOfLife || !this.isRunning || !this.worker) {
@@ -134,9 +139,18 @@ export class PolDriver {
     }
 
     this.logger.info('Switching to foreground')
-    this.worker.terminate()
+    const workerToTerminate = this.worker
     this.worker = null
-    this.setInterval()
+
+    // Ask the worker for its latest state before terminating it.
+    // The onmessage handler updates _plainOfLife, then we terminate and start the interval.
+    workerToTerminate.onmessage = ({ data }) => {
+      this.logger.info('Got final POL from worker - turn ' + data.currentTurn)
+      this._plainOfLife = PlainOfLife.createFromSerializable(data)
+      workerToTerminate.terminate()
+      this.setInterval()
+    }
+    workerToTerminate.postMessage('flush')
   }
 
   /**
@@ -152,10 +166,6 @@ export class PolDriver {
     this.logger.debug('Starting worker')
     // Vite worker import syntax: ?worker gives us a constructor that builds the worker module
     this.worker = new PolWorkerCtor()
-    this.worker.onmessage = ({ data }) => {
-      this.logger.info(`Got POL from worker - turn ` + data.currentTurn)
-      this._plainOfLife = PlainOfLife.createFromSerializable(data)
-    }
     this.worker.postMessage(this.plainOfLife?.toSerializable())
     window.clearInterval(this.interval)
     this.interval = undefined
