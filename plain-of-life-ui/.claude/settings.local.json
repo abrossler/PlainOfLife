@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh-keygen:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-keyscan:*)"
+    ]
+  }
+}
