@@ -27,7 +27,7 @@ export interface PolTurnListener {
  *   back to a web worker
  * - on tab show: fetches latest state from whichever backend was running
  *
- * Framework-agnostic: no Angular dependencies.
+ * Framework-agnostic
  */
 export class PolDriver {
   private _plainOfLife: ExtPlainOfLife<RuleExtensionFactory> | null = null

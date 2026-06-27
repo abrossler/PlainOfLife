@@ -1,6 +1,5 @@
 import { Cell } from '../core/cell'
 import { Name2ConstructorMap } from '../util/name_2_constructor_map'
-import { DemoCell, DemoCell2 } from './demo_cell'
 import { RawAssembler } from './raw_assembler'
 import { ClaudeAssembler } from './claude_assembler'
 
@@ -11,8 +10,6 @@ import { ClaudeAssembler } from './claude_assembler'
  * This is e.g. necessary for serialization and de-serialization
  */
 export const cellNames: Name2ConstructorMap<new () => Cell> = new Name2ConstructorMap([
-  ['Demo Cell', DemoCell],
-  ['Demo Cell 2', DemoCell2],
   ['Raw Assembler', RawAssembler],
   ['Claude Assembler', ClaudeAssembler]
 ] as [string, new () => Cell][])
