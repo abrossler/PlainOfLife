@@ -26,6 +26,8 @@ export class FamilyTree {
   private smoothing = [1, 1, 3, 40, 40, 60, 80, 100, 110]
   /** The images of the family tree for all scales as RGBA arrays */
   private _images: Uint8ClampedArray[] = []
+  /** Reusable scratch buffer for the smoothed column calculation — allocated once at init, reused every turn */
+  private smoothingBuffer: Uint32Array = new Uint32Array(0)
 
   /**
    * Transform a family tree to a serializable format (e.g. by a base4 encoding of the image data)
@@ -56,6 +58,7 @@ export class FamilyTree {
     this.scales.forEach(() => {
       this._images.push(new Uint8ClampedArray(this._width * this._height * 4)) // *4 => 4 bytes per pixel (RGBA)
     })
+    this.smoothingBuffer = new Uint32Array(this._height * 5)
     this.createScaleNames()
   }
 
@@ -91,6 +94,7 @@ export class FamilyTree {
       }
       this._images.push(array)
     })
+    this.smoothingBuffer = new Uint32Array(this._height * 5)
     this.createScaleNames()
   }
 
@@ -165,8 +169,9 @@ export class FamilyTree {
         }
         // Slower calculation with smoothing (would also work for smoothing === 1 but is significantly slower)
         else {
-          /** The new pixel column as Uint32 array allowing to sum per pixel the RGB values of multiple cells */
-          const newColumn = new Uint32Array(this.height * 5) // * 5 => R, G, B, A and count of cells contributing to this value
+          /** Reusable scratch buffer: R, G, B, A and count of cells contributing per pixel row */
+          const newColumn = this.smoothingBuffer
+          newColumn.fill(0) // must clear before reuse — typed arrays don't auto-zero
           /** The weight of the cell's old position in the family tree when calculating the smoothed new position */
           const weightOldPos = 1 - 1 / this.smoothing[currentScale]
           /** The weight of the cells current scale independent position in the family tree when calculating the smoothed new position  */

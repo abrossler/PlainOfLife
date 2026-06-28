@@ -205,8 +205,8 @@ export class CellContainer<E extends RuleExtensionFactory> {
     let isFirst = true
 
     for (const serializable of serializableContainers) {
-      const posX = checkInt(serializable.posX, 0, current.plain.width)
-      const posY = checkInt(serializable.posY, 0, current.plain.height)
+      const posX = checkInt(serializable.posX, 0, current.plain.width - 1)
+      const posY = checkInt(serializable.posY, 0, current.plain.height - 1)
       const isDead = checkBoolean(serializable.isDead)
       const colorRed = checkInt(serializable.colorRed, 0, 255)
       const colorGreen = checkInt(serializable.colorGreen, 0, 255)

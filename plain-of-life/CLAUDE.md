@@ -8,12 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev         # Dev server at http://localhost:5173/ with hot reload
-npm run start       # Start BOTH the Node simulation server (port 3001) + Vite dev server
 npm run build       # Production build → dist/ (Vite + Rolldown)
 npm test            # Vitest in watch mode
 npx vitest run      # Run all tests once and exit
 npm run check       # svelte-check type check across .svelte and .ts files
 npm run preview     # Serve the production build locally for spot-checks
+npm run run-pol     # Headless CLI runner (see Headless runner section below)
 ```
 
 To run a single test file: `npx vitest run path/to/file.spec.ts`. To focus an individual test, use `describe.only` / `it.only` inside the file.
@@ -40,17 +40,39 @@ Pure TypeScript with no framework dependencies — the simulation engine. Lifted
 `PlainOfLife` uses **BigInt** for turn counting. State can be serialized to/from JSON for file save/load.
 
 ### UI layer
-- `src/driver/pol_driver.ts` — framework-agnostic `PolDriver` class. Owns the `ExtPlainOfLife` instance, schedules turn execution via `setInterval(0)`. When the tab is hidden, hands off to a local Node server (`localhost:3001`) if available — no browser throttling there — with automatic fallback to a Web Worker (`pol.worker.ts`). No Angular zone tricks needed — Svelte does not run change detection across the app.
+- `src/driver/pol_driver.ts` — framework-agnostic `PolDriver` class. Owns the `ExtPlainOfLife` instance, schedules turn execution via `setInterval(0)`. When the tab is hidden, hands off to a Web Worker (`pol.worker.ts`). No Angular zone tricks needed — Svelte does not run change detection across the app.
 - `src/driver/pol.worker.ts` — the web worker; imported in `pol_driver.ts` via Vite's `?worker` suffix, which compiles it as a dedicated worker bundle. Uses a `MessageChannel` self-posting loop (not `setInterval`) to avoid browser timer throttling in background tabs.
 - `src/App.svelte` — the single-page UI. Two canvases (plain + family tree), control buttons, and two modal dialogs (restart confirm, family tree scale). Uses Svelte 5 runes (`$state`) for reactivity.
 - `src/main.ts` — Svelte 5 mount entry point.
+
+### Headless runner: `src/server/pol_runner.ts`
+A standalone CLI for overnight or long-running simulations without a browser. Saves periodic JSON snapshots that can be loaded back in the UI.
+
+```bash
+npm run run-pol                                              # use all defaults
+npm run run-pol -- --rules "Climate And Chemistry" --turns 500000 --save-every 50000
+npm run run-pol -- --load saved-plains/Turn100000_WinCoherentAreas_RawAssembler.json --turns 200000
+```
+
+Options and defaults:
+
+| Option | Default |
+|---|---|
+| `--rules` | `Win Coherent Areas` |
+| `--cell` | `Raw Assembler` (seed cell) |
+| `--turns` | `1000000` |
+| `--save-every` | `100000` |
+| `--load <file>` | — |
+| `--output-dir` | `saved-plains` |
+
+Plain size is fixed at 250×150 to match the UI. Files are named `Turn<N>_<RulesName>.json`.
 
 ### Key patterns
 - **Turn listeners**: `App.svelte` registers a `PolTurnListener` on `PolDriver` to repaint canvases after each foreground turn.
 - **Rule extension factory**: `RuleExtensionFactory` enables typed per-field rule-specific data attached to `PlainField`.
 - **Serialization**: The `SerializablePlainOfLife` wrapper and `src/pol/util/serialization.ts` handle full round-trip save/restore. File save uses the File System Access API (`showSaveFilePicker`) with a fallback to `<a download>` for Firefox.
 - **Dual-canvas rendering**: Plain canvas is 250×150 fields × 5px/field = 1250×750px. Family tree canvas is 1250×400px with configurable scale.
-- **Background execution**: When the tab is hidden the driver first tries the local Node server (`localhost:3001`). If available, state is POST-ed there and the server runs at full CPU speed with `setImmediate` loops (no browser throttling). When the tab returns, the driver GET-fetches the latest state back. If the Node server is not running, the driver falls back to the web worker (flush protocol). `src/server/pol_server.ts` supports multiple simultaneous sessions keyed by UUID (one per browser tab).
+- **Background execution**: When the tab is hidden the driver hands off to a web worker (`pol.worker.ts`). The worker uses a `MessageChannel` self-posting loop — no browser timer throttling. When the tab returns, the driver sends a `flush` message to the worker and receives the latest state back.
 
 ### Test stubs
 `src/test_stubs/` contains shared mocks/stubs for unit tests. Unit tests (`*.spec.ts`) live alongside the files they test inside `src/pol/`. Tests use Vitest's API — `vi.spyOn` rather than Jasmine's `spyOn`, `.mockReturnValue()` rather than `.and.returnValue()`.
@@ -65,14 +87,13 @@ The simulation runs entirely in the browser for the production build. Three reas
 2. **Cost**: The simulation is CPU/memory intensive and runs indefinitely. One server process per active user would be expensive with no revenue model. The browser offloads computation to the user's own hardware.
 3. **UI simplicity**: The two-canvas repaint runs every turn. Running locally avoids streaming state from a server on every turn.
 
-**`src/server/pol_server.ts` is a dev-only local helper** and does not compromise this model:
-- Binds to `127.0.0.1` only — never accessible from outside the machine
+**`src/server/pol_runner.ts` is a dev/research-only local tool** and does not compromise this model:
+- Runs entirely on the developer's own machine, produces JSON files, never serves network traffic
 - Not part of the production build (`npm run build` produces a browser-only bundle)
-- `PolDriver` falls back to the web worker if the server is not running — the app is fully functional without it
-- Use `npm run start` (instead of `npm run dev`) to get the Node server + Vite together
+- Output files are standard serialized PlainOfLife state — can be loaded in the UI via "Open file"
 
 ### Domain layer must stay environment-agnostic
-`src/pol/` has no DOM or framework dependencies. This is intentional — it's what makes the web worker approach possible (the same `PlainOfLife` class runs in both the main thread and the worker). Never add browser or Svelte dependencies to `src/pol/`.
+`src/pol/` has no DOM or framework dependencies. This is intentional — it's what makes the web worker and headless runner approaches possible (the same `PlainOfLife` class runs in the main thread, the worker, and Node.js). Never add browser or Svelte dependencies to `src/pol/`.
 
 ## History
 

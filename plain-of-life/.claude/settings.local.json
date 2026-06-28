@@ -18,7 +18,11 @@
       "Bash(taskkill:*)",
       "Bash(cmd:*)",
       "Bash(echo \"exit: $?\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(ls -la C:\\\\\\\\Users\\\\\\\\D033985\\\\\\\\git_pers\\\\\\\\PlainOfLife\\\\\\\\plain-of-life\\\\\\\\src\\\\\\\\pol)",
+      "Bash(mkdir -p /tmp/pol-idx)",
+      "Bash(touch \"/tmp/pol-idx/POL1_Turn100000_WinCoherentAreas.json\" \"/tmp/pol-idx/POL3_Turn50000_WinCoherentAreas.json\")",
+      "Read(//tmp/**)"
     ]
   }
 }

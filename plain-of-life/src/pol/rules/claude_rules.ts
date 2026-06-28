@@ -289,7 +289,9 @@ export class ClimateAndChemistry extends Rules<ClimateAndChemistry> {
     }
 
     // Compute diffused values into pheromoneNext
+    // keep must be positive — if pheromoneDiffuse * 4 + pheromoneDecay >= 1, pheromone amplifies instead of decaying
     const keep = 1 - pheromoneDiffuse * 4 - pheromoneDecay
+    if (keep <= 0) throw new Error(`Pheromone diffusion is unstable: keep=${keep}. Reduce pheromoneDiffuse or pheromoneDecay.`)
     for (let y = 0; y < h; y++) {
       const yN = y === 0 ? h - 1 : y - 1
       const yS = y === h - 1 ? 0 : y + 1

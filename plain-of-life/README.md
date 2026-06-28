@@ -5,18 +5,11 @@ A cellular automaton simulation (Game-of-Life variant) with a Svelte 5 UI.
 ## Getting Started
 
 ```bash
-npm install        # Install dependencies
-npm run start      # Start Node simulation server + Vite dev server (recommended)
-npm run dev        # Vite only — no Node server, falls back to web worker in background
+npm install      # Install dependencies
+npm run dev      # Dev server at http://localhost:5173/ with hot reload
 ```
 
 Open http://localhost:5173/ in your browser.
-
-### Why two start commands?
-
-When the browser tab is hidden, browsers throttle background execution ~4×. `npm run start` also launches a local Node.js server on `localhost:3001` that runs the simulation at full speed when the tab is hidden — useful for overnight runs. If you don't need that, `npm run dev` is enough.
-
-The Node server is strictly local (`127.0.0.1` only) and not required — the app falls back to a web worker automatically if the server is not running.
 
 ## Commands
 
@@ -27,6 +20,30 @@ npm run check      # Type-check all .svelte and .ts files
 npm test           # Run tests in watch mode
 npx vitest run     # Run all tests once and exit
 ```
+
+## Headless runner
+
+For overnight or long simulation runs without the browser:
+
+```bash
+npm run run-pol                       # all defaults: Win Coherent Areas, Raw Assembler, 1M turns
+npm run run-pol -- --turns 500000 --save-every 50000
+npm run run-pol -- --rules "Climate And Chemistry" --cell "Raw Assembler" --turns 200000
+npm run run-pol -- --load saved-plains/Turn100000_WinCoherentAreas_RawAssembler.json --turns 500000
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `--rules <name>` | `Win Coherent Areas` | Rules class (case-insensitive) |
+| `--cell <name>` | `Raw Assembler` | Seed cell class (case-insensitive) |
+| `--turns <n>` | `1000000` | Total turns to run |
+| `--save-every <n>` | `100000` | Save a snapshot every N turns |
+| `--load <file>` | — | Load saved JSON instead of starting new |
+| `--output-dir <dir>` | `saved-plains` | Where to write snapshot files |
+
+Plain size is fixed at 250×150 to match the UI. The seed cell sets the starting population — rules determine what cell types may appear during evolution.
+
+Snapshots are named `Turn<N>_<RulesName>.json` and can be loaded back in the browser UI via the "Open file" button.
 
 ## Running a single test file
 
